@@ -1,4 +1,5 @@
-import { prisma, StatusProcesso } from 'database';
+import { prisma } from 'database';
+import { StatusProcesso } from '@prisma/client';
 
 export class ProcessoService {
   async getAll(filters: {
@@ -242,7 +243,7 @@ export class ProcessoService {
       prisma.processo.groupBy({
         by: ['clienteId'],
         where: { advogadoId },
-      }).then(result => result.length), // Conta clientes únicos do advogado
+      }).then((result: Array<{ clienteId: string }>) => result.length), // Conta clientes únicos do advogado
       prisma.processo.count({ where: { advogadoId } }),
       prisma.processo.count({
         where: {
@@ -283,7 +284,7 @@ export class ProcessoService {
       processosEmAndamento,
       processosConcluidos,
       mensagensNaoLidas,
-      processosPorStatus: processosPorStatus.map(p => ({
+      processosPorStatus: processosPorStatus.map((p: { status: StatusProcesso; _count: number }) => ({
         status: p.status,
         count: p._count
       }))

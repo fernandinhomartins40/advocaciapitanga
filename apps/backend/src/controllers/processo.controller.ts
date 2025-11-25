@@ -1,7 +1,7 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { ProcessoService } from '../services/processo.service';
 import { AuthRequest } from '../types';
-import { StatusProcesso } from 'database';
+import { StatusProcesso } from '@prisma/client';
 
 const processoService = new ProcessoService();
 
@@ -90,22 +90,22 @@ export class ProcessoController {
     }
   }
 
-  async update(req: Request, res: Response, next: NextFunction) {
+  async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const processo = await processoService.update(id, req.body);
       res.json(processo);
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
 
-  async delete(req: Request, res: Response, next: NextFunction) {
+  async delete(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
       const result = await processoService.delete(id);
       res.json(result);
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
