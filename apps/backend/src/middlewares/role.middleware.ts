@@ -2,13 +2,15 @@ import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 
 export const requireRole = (roles: string[]) => {
-  return (req: AuthRequest, res: Response, next: NextFunction) => {
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
     if (!req.user) {
-      return res.status(401).json({ error: 'Não autenticado' });
+      res.status(401).json({ error: 'Não autenticado' });
+      return;
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ error: 'Acesso negado' });
+      res.status(403).json({ error: 'Acesso negado' });
+      return;
     }
 
     next();
