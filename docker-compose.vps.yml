@@ -1,0 +1,93 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: advocacia-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-advocacia}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-advocacia2024secure}
+      POSTGRES_DB: ${POSTGRES_DB:-advocacia_pitanga}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - advocacia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-advocacia}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.vps
+      args:
+        BUILD_TIMESTAMP: ${BUILD_TIMESTAMP:-0}
+    container_name: advocacia-vps
+    restart: unless-stopped
+    environment:
+      # Node.js
+      NODE_ENV: production
+
+      # Database
+      DATABASE_URL: ${DATABASE_URL:-postgresql://advocacia:advocacia2024secure@postgres:5432/advocacia_pitanga}
+
+      # JWT
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+
+      # OpenAI
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+
+      # Frontend
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://advocaciapitanga.com.br/api}
+
+      # CORS
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://advocaciapitanga.com.br,https://www.advocaciapitanga.com.br}
+
+      # Ports
+      PORT: ${PORT:-3001}
+      FRONTEND_PORT: ${FRONTEND_PORT:-3000}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - uploads_data:/app/uploads
+    ports:
+      - "3190:80"
+    networks:
+      - advocacia-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: ${CONTAINER_CPU_LIMIT:-2}
+          memory: ${CONTAINER_MEMORY_LIMIT:-1g}
+        reservations:
+          cpus: '1'
+          memory: 512M
+
+networks:
+  advocacia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  uploads_data:
+    driver: local

@@ -1,0 +1,79 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: advocacia-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: advocacia_pitanga
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - advocacia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    container_name: advocacia-backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres123@postgres:5432/advocacia_pitanga
+      JWT_SECRET: advocacia_pitanga_secret_key_2024
+      JWT_EXPIRES_IN: 7d
+      PORT: 3001
+      NODE_ENV: development
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./apps/backend/uploads:/app/uploads
+    ports:
+      - "3001:3001"
+    networks:
+      - advocacia-network
+    command: npm run dev
+
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    container_name: advocacia-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost/api
+      NODE_ENV: development
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+    networks:
+      - advocacia-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: advocacia-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - advocacia-network
+
+networks:
+  advocacia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

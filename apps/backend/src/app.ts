@@ -1,0 +1,65 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
+import { logger } from './utils/logger';
+import { errorMiddleware } from './middlewares/error.middleware';
+
+// Importar rotas
+import authRoutes from './routes/auth.routes';
+import clienteRoutes from './routes/cliente.routes';
+import advogadoRoutes from './routes/advogado.routes';
+import processoRoutes from './routes/processo.routes';
+import documentoRoutes from './routes/documento.routes';
+import mensagemRoutes from './routes/mensagem.routes';
+import iaRoutes from './routes/ia.routes';
+
+const app = express();
+
+// Middlewares de segurança
+app.use(helmet());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production'
+    ? ['http://localhost']
+    : ['http://localhost:3000', 'http://localhost'],
+  credentials: true
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutos
+  max: 100, // limite de 100 requisições por IP
+  message: 'Muitas requisições deste IP, tente novamente mais tarde.'
+});
+app.use('/api/', limiter);
+
+// Body parsers
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+// Logging de requisições
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.path}`);
+  next();
+});
+
+// Rotas
+app.use('/api/auth', authRoutes);
+app.use('/api/clientes', clienteRoutes);
+app.use('/api/advogado', advogadoRoutes);
+app.use('/api/processos', processoRoutes);
+app.use('/api/documentos', documentoRoutes);
+app.use('/api/mensagens', mensagemRoutes);
+app.use('/api/ia', iaRoutes);
+
+// Rota de health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Middleware de tratamento de erros (deve ser o último)
+app.use(errorMiddleware);
+
+export default app;

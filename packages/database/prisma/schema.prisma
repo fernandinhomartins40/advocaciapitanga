@@ -1,0 +1,99 @@
+// Prisma Schema para Advocacia Pitanga
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  password     String
+  role         Role     @default(CLIENTE)
+  nome         String
+  refreshToken String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  cliente   Cliente?
+  advogado  Advogado?
+}
+
+enum Role {
+  ADVOGADO
+  CLIENTE
+}
+
+model Cliente {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cpf       String   @unique
+  endereco  String?
+  telefone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  processos Processo[]
+}
+
+model Advogado {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oab       String   @unique
+  telefone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  processos Processo[]
+}
+
+model Processo {
+  id          String          @id @default(cuid())
+  numero      String          @unique
+  clienteId   String
+  cliente     Cliente         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  advogadoId  String
+  advogado    Advogado        @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  descricao   String
+  status      StatusProcesso  @default(EM_ANDAMENTO)
+  dataInicio  DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  documentos  Documento[]
+  mensagens   Mensagem[]
+}
+
+enum StatusProcesso {
+  EM_ANDAMENTO
+  SUSPENSO
+  CONCLUIDO
+  ARQUIVADO
+}
+
+model Documento {
+  id          String   @id @default(cuid())
+  titulo      String
+  caminho     String
+  tipo        String
+  tamanho     Int
+  processoId  String
+  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
+
+model Mensagem {
+  id          String   @id @default(cuid())
+  conteudo    String
+  processoId  String
+  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  remetente   String
+  lida        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}

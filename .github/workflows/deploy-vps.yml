@@ -1,0 +1,376 @@
+name: Deploy Advocacia Pitanga to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_PASSWORD }}" > ~/.ssh/vps_password
+          chmod 600 ~/.ssh/vps_password
+
+      - name: Sync code to VPS
+        run: |
+          # Instalar sshpass para autenticação com senha
+          sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+          # Criar diretório no VPS
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "mkdir -p /root/advocaciapitanga"
+
+          # Verificar estrutura do projeto antes do rsync
+          echo "=== Verificando estrutura localmente antes do rsync ==="
+          ls -la apps/backend/
+          ls -la apps/frontend/
+
+          # Sincronizar código via rsync
+          sshpass -f ~/.ssh/vps_password rsync -avz --delete \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='dist' \
+            --exclude='.next' \
+            --exclude='*.db' \
+            --exclude='*.db-*' \
+            --exclude='apps/backend/uploads' \
+            --exclude='.env' \
+            --exclude='.env.local' \
+            -e "ssh -o StrictHostKeyChecking=no" \
+            ./ root@72.60.10.112:/root/advocaciapitanga/
+
+          # Verificar se código foi copiado
+          echo "=== Verificando estrutura na VPS após rsync ==="
+          sshpass -f ~/.ssh/vps_password ssh -o StrictHostKeyChecking=no root@72.60.10.112 "ls -la /root/advocaciapitanga/apps/"
+
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        with:
+          host: 72.60.10.112
+          username: root
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: 22
+          timeout: 600s
+          command_timeout: 600s
+          envs: OPENAI_API_KEY
+          script: |
+            set -e
+
+            echo "=== Iniciando Deploy Advocacia Pitanga ==="
+
+            # Diretório da aplicação
+            APP_DIR="/root/advocaciapitanga"
+
+            # Parar containers existentes (SEM -v para preservar volumes)
+            echo "Parando containers existentes..."
+            cd $APP_DIR
+            docker-compose -f docker-compose.vps.yml down || true
+
+            # Verificar e garantir que volumes críticos existam
+            echo "=== Verificando volumes Docker ==="
+            if ! docker volume ls | grep -q "advocaciapitanga.*postgres_data"; then
+              echo "⚠️ Volume postgres_data não existe, será criado no próximo docker-compose up"
+            else
+              echo "✓ Volume postgres_data encontrado"
+            fi
+
+            echo "Verificando código sincronizado..."
+            ls -la
+
+            # Criar arquivo .env
+            echo "Criando arquivo .env..."
+            cat > .env << 'EOF'
+            # Node.js
+            NODE_ENV=production
+
+            # Application
+            PORT=3001
+            FRONTEND_PORT=3000
+
+            # PostgreSQL
+            POSTGRES_USER=advocacia
+            POSTGRES_PASSWORD=advocacia2024secure
+            POSTGRES_DB=advocacia_pitanga
+
+            # Database URL
+            DATABASE_URL=postgresql://advocacia:advocacia2024secure@postgres:5432/advocacia_pitanga
+
+            # JWT
+            JWT_SECRET=advocacia-pitanga-production-secret-$(date +%s)-$(openssl rand -hex 16)
+            JWT_EXPIRES_IN=7d
+
+            # OpenAI
+            OPENAI_API_KEY=${OPENAI_API_KEY:-sua-chave-openai-aqui}
+
+            # Frontend
+            NEXT_PUBLIC_API_URL=https://advocaciapitanga.com.br/api
+
+            # CORS
+            CORS_ORIGIN=https://advocaciapitanga.com.br,https://www.advocaciapitanga.com.br
+
+            # Container Limits
+            CONTAINER_MEMORY_LIMIT=1g
+            CONTAINER_CPU_LIMIT=2
+            EOF
+
+            # Adicionar BUILD_TIMESTAMP ao .env
+            echo "BUILD_TIMESTAMP=$(date +%s)" >> .env
+
+            # Limpar containers e imagens antigas (PRESERVAR volumes)
+            echo "Limpando recursos antigos..."
+            docker container prune -f || true
+            docker image prune -af || true
+
+            # Garantir BUILD_TIMESTAMP como variável de ambiente
+            export BUILD_TIMESTAMP=$(date +%s)
+            echo "BUILD_TIMESTAMP=${BUILD_TIMESTAMP}"
+
+            # ===== VALIDAÇÃO PRÉ-BUILD =====
+            echo "=== Validando estrutura do projeto antes do build ==="
+
+            if [ ! -f "apps/backend/package.json" ]; then
+              echo "❌ ERRO: apps/backend/package.json não encontrado!"
+              exit 1
+            fi
+            echo "✓ backend/package.json encontrado"
+
+            if [ ! -f "apps/frontend/package.json" ]; then
+              echo "❌ ERRO: apps/frontend/package.json não encontrado!"
+              exit 1
+            fi
+            echo "✓ frontend/package.json encontrado"
+
+            if [ ! -d "packages/database" ]; then
+              echo "❌ ERRO: diretório packages/database não encontrado!"
+              exit 1
+            fi
+            echo "✓ Estrutura database encontrada"
+
+            echo "=== Todos os arquivos críticos validados ==="
+
+            # Parar e remover containers antigos
+            echo "Parando e removendo containers antigos (preservando volumes)..."
+            docker-compose -f docker-compose.vps.yml down --remove-orphans || true
+
+            # Remover imagens antigas
+            echo "Removendo imagens antigas..."
+            docker rmi advocaciapitanga-vps 2>/dev/null || true
+            docker rmi $(docker images -q 'advocaciapitanga*') 2>/dev/null || true
+
+            # Build da imagem Docker
+            echo "Construindo imagem Docker..."
+            docker-compose -f docker-compose.vps.yml build --no-cache --pull || { echo "❌ Erro ao construir imagem Docker"; exit 1; }
+            echo "✅ Imagem Docker construída com sucesso"
+
+            # Iniciar containers
+            echo "Iniciando containers..."
+            docker-compose -f docker-compose.vps.yml up -d --remove-orphans || { echo "❌ Erro ao iniciar containers"; exit 1; }
+            echo "✅ Containers iniciados"
+
+            # Aguardar containers iniciarem
+            echo "Aguardando containers iniciarem..."
+            sleep 20
+
+            # Verificar status dos containers
+            echo "=== Verificando status dos containers ==="
+            docker-compose -f docker-compose.vps.yml ps
+
+            # Verificar se containers estão rodando
+            if ! docker ps | grep -q advocacia-vps; then
+              echo "❌ Container advocacia-vps não está rodando!"
+              echo "=== Logs do container ==="
+              docker logs advocacia-vps --tail=100
+              exit 1
+            fi
+            echo "✓ Container advocacia-vps está rodando"
+
+            if ! docker ps | grep -q advocacia-postgres; then
+              echo "❌ Container advocacia-postgres não está rodando!"
+              echo "=== Logs do PostgreSQL ==="
+              docker logs advocacia-postgres --tail=50
+              exit 1
+            fi
+            echo "✓ Container advocacia-postgres está rodando"
+
+            # Aguardar aplicação inicializar
+            echo "Aguardando aplicação inicializar (20s)..."
+            sleep 20
+
+            # Executar migrations
+            echo "=== Executando migrations ==="
+            docker exec advocacia-vps sh -c "cd /app && npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma" || echo "⚠️ Migrations falharam"
+
+            # ===== LOGS DE DIAGNÓSTICO =====
+            echo "=== Logs da Aplicação (últimas 100 linhas) ==="
+            docker logs advocacia-vps --tail=100
+
+            # ===== CONFIGURAR NGINX =====
+            echo "=== Configurando Nginx para porta 3190 ==="
+
+            # Criar configuração do Nginx
+            cat > /etc/nginx/sites-available/advocaciapitanga.conf << 'NGINX_EOF'
+            # HTTP - Advocacia Pitanga
+            server {
+                listen 80;
+                listen [::]:80;
+
+                server_name advocaciapitanga.com.br www.advocaciapitanga.com.br;
+
+                # Redirecionar HTTP para HTTPS
+                return 301 https://$server_name$request_uri;
+            }
+
+            # HTTPS - Advocacia Pitanga
+            server {
+                listen 443 ssl http2;
+                listen [::]:443 ssl http2;
+
+                server_name advocaciapitanga.com.br www.advocaciapitanga.com.br;
+
+                # SSL Configuration (certbot irá adicionar certificados)
+                # ssl_certificate e ssl_certificate_key serão configurados pelo certbot
+
+                # Logs
+                access_log /var/log/nginx/advocaciapitanga-access.log;
+                error_log /var/log/nginx/advocaciapitanga-error.log;
+
+                # Limite de upload (para documentos)
+                client_max_body_size 100M;
+                client_body_timeout 600s;
+
+                # API Backend
+                location /api {
+                    proxy_pass http://127.0.0.1:3190/api;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+
+                    proxy_connect_timeout 300s;
+                    proxy_send_timeout 300s;
+                    proxy_read_timeout 300s;
+                }
+
+                # Health check
+                location /health {
+                    proxy_pass http://127.0.0.1:3190/health;
+                    proxy_http_version 1.1;
+                    proxy_set_header Host $host;
+                }
+
+                # Frontend Next.js
+                location / {
+                    proxy_pass http://127.0.0.1:3190/;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                    proxy_set_header X-Real-IP $remote_addr;
+                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_set_header X-Forwarded-Proto $scheme;
+                }
+
+                # Next.js WebSocket (HMR - apenas para desenvolvimento)
+                location /_next/webpack-hmr {
+                    proxy_pass http://127.0.0.1:3190/_next/webpack-hmr;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection "upgrade";
+                }
+            }
+            NGINX_EOF
+
+            # Habilitar site
+            ln -sf /etc/nginx/sites-available/advocaciapitanga.conf /etc/nginx/sites-enabled/
+
+            # Testar e recarregar Nginx
+            nginx -t && systemctl reload nginx
+            echo "✅ Nginx configurado com sucesso na porta 3190"
+
+            # Aguardar Nginx iniciar
+            sleep 3
+
+            # Verificar se está escutando nas portas
+            echo "=== Verificando portas em uso ==="
+            netstat -tulpn | grep nginx | grep ":80 " || echo "⚠️ Nginx não encontrado na porta 80"
+            netstat -tulpn | grep nginx | grep ":443 " || echo "⚠️ Nginx não encontrado na porta 443"
+            netstat -tulpn | grep node | grep ":3190 " || echo "⚠️ App não encontrado na porta 3190"
+
+            # ===== VERIFICAR HEALTH CHECK =====
+            echo "=== Verificando health check ==="
+            for i in {1..20}; do
+              if curl -f http://localhost:3190/health 2>/dev/null; then
+                echo "✅ Advocacia Pitanga está rodando na porta 3190!"
+
+                echo ""
+                echo "=== Testando frontend porta 3190 ==="
+                curl -I http://localhost:3190 2>/dev/null | head -5
+
+                echo ""
+                echo "=== Testando API ==="
+                curl -I http://localhost:3190/api/health 2>/dev/null | head -5 || echo "⚠️ API health check não disponível"
+
+                echo ""
+                echo "✅ Deploy concluído - aplicação está rodando!"
+                echo "📍 URLs:"
+                echo "   - https://advocaciapitanga.com.br"
+                echo "   - https://www.advocaciapitanga.com.br"
+                echo "📍 Porta interna: 3190"
+                echo "📦 Volumes persistentes:"
+                echo "   - postgres_data: PostgreSQL database"
+
+                echo ""
+                echo "⚠️ IMPORTANTE: Configure SSL com certbot:"
+                echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br"
+
+                exit 0
+              fi
+              echo "Tentativa $i/20 falhou, aguardando 10s..."
+
+              # Mostrar logs a cada 4 tentativas
+              if [ $((i % 4)) -eq 0 ]; then
+                echo "=== Logs recentes ==="
+                docker logs advocacia-vps --tail=30
+              fi
+
+              sleep 10
+            done
+
+            echo "⚠️ Health check falhou após 20 tentativas"
+            echo "Logs completos:"
+            docker-compose -f docker-compose.vps.yml logs
+            exit 1
+
+      - name: Verify Deployment
+        if: success()
+        run: |
+          echo "✅ Deploy concluído com sucesso!"
+          echo "🌐 Advocacia Pitanga disponível em:"
+          echo "   - https://advocaciapitanga.com.br"
+          echo "   - https://www.advocaciapitanga.com.br"
+          echo "📊 Health check: https://advocaciapitanga.com.br/health"
+          echo "🐳 Containers rodando:"
+          echo "   - advocacia-vps (aplicação)"
+          echo "   - advocacia-postgres (banco de dados)"
+          echo ""
+          echo "⚠️ PRÓXIMO PASSO: Configure SSL executando na VPS:"
+          echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br"

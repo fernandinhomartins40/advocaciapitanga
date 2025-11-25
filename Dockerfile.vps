@@ -1,0 +1,164 @@
+# Multi-stage Dockerfile otimizado para VPS
+# Build único que serve backend e frontend via Nginx interno
+
+FROM node:18-alpine AS base
+RUN apk add --no-cache libc6-compat openssl
+
+# ============================================
+# STAGE 1: Instalar dependências
+# ============================================
+FROM base AS deps
+WORKDIR /app
+
+# Copiar package.json files
+COPY package*.json ./
+COPY turbo.json ./
+COPY apps/backend/package*.json ./apps/backend/
+COPY apps/frontend/package*.json ./apps/frontend/
+COPY packages/database/package*.json ./packages/database/
+
+# Instalar dependências de produção
+RUN npm ci --only=production && \
+    cp -R node_modules /tmp/prod_node_modules
+
+# Instalar todas as dependências (incluindo dev)
+RUN npm ci
+
+# ============================================
+# STAGE 2: Build do projeto
+# ============================================
+FROM base AS builder
+WORKDIR /app
+
+# Copiar dependências
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/package*.json ./
+
+# Copiar código fonte
+COPY . .
+
+# Gerar Prisma Client
+RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
+
+# Build do Backend
+WORKDIR /app/apps/backend
+RUN npm run build
+
+# Build do Frontend
+WORKDIR /app/apps/frontend
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+RUN npm run build
+
+# ============================================
+# STAGE 3: Runner - Imagem final otimizada
+# ============================================
+FROM base AS runner
+WORKDIR /app
+
+# Instalar Nginx e Supervisor
+RUN apk add --no-cache nginx supervisor wget
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Criar usuário não-root
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 appuser
+
+# Copiar node_modules de produção
+COPY --from=deps /tmp/prod_node_modules ./node_modules
+
+# Copiar Prisma Client gerado
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Copiar arquivos do workspace raiz
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/turbo.json ./
+
+# Copiar Backend build
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY --from=builder /app/apps/backend/package*.json ./apps/backend/
+
+# Copiar Frontend build
+COPY --from=builder /app/apps/frontend/.next/standalone ./apps/frontend/
+COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
+COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
+
+# Copiar Prisma schema (necessário para migrations)
+COPY --from=builder /app/packages/database ./packages/database
+
+# Criar diretórios necessários
+RUN mkdir -p /app/uploads/documentos \
+             /app/uploads/documentos-gerados \
+             /var/log/nginx \
+             /var/lib/nginx/tmp \
+             /run/nginx \
+             /var/log/supervisor
+
+# Configurar Nginx
+COPY nginx.vps.conf /etc/nginx/nginx.conf
+
+# Configurar Supervisor
+RUN cat > /etc/supervisor/conf.d/supervisord.conf << 'EOF'
+[supervisord]
+nodaemon=true
+user=root
+logfile=/var/log/supervisor/supervisord.log
+pidfile=/var/run/supervisord.pid
+
+[program:backend]
+command=node /app/apps/backend/dist/server.js
+directory=/app
+autostart=true
+autorestart=true
+user=appuser
+environment=NODE_ENV=production,PORT=3001
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+priority=1
+
+[program:frontend]
+command=node /app/apps/frontend/server.js
+directory=/app/apps/frontend
+autostart=true
+autorestart=true
+user=appuser
+environment=NODE_ENV=production,PORT=3000,HOSTNAME=0.0.0.0
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+priority=2
+
+[program:nginx]
+command=/usr/sbin/nginx -g 'daemon off;'
+autostart=true
+autorestart=true
+user=root
+stdout_logfile=/dev/stdout
+stdout_logfile_maxbytes=0
+stderr_logfile=/dev/stderr
+stderr_logfile_maxbytes=0
+priority=3
+EOF
+
+# Ajustar permissões
+RUN chown -R appuser:nodejs /app/uploads && \
+    chown -R appuser:nodejs /app/apps/frontend/.next && \
+    chmod -R 755 /app/uploads && \
+    chmod -R 755 /var/lib/nginx && \
+    chmod -R 755 /var/log/nginx && \
+    chmod -R 755 /run/nginx
+
+# Health check endpoint
+RUN mkdir -p /usr/share/nginx/html && \
+    echo '{"status":"ok"}' > /usr/share/nginx/html/health.json
+
+# Expor porta 80 (Nginx interno)
+EXPOSE 80
+
+# Iniciar Supervisor
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

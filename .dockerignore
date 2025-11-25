@@ -1,0 +1,17 @@
+node_modules
+npm-debug.log
+.next
+.env*.local
+.git
+.gitignore
+README.md
+SETUP.md
+.vscode
+.idea
+*.md
+dist
+build
+coverage
+.turbo
+postgres_data
+uploads
