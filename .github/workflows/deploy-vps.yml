@@ -210,13 +210,79 @@ jobs:
             echo "Aguardando aplicação inicializar (20s)..."
             sleep 20
 
-            # Executar migrations
-            echo "=== Executando migrations ==="
-            docker exec advocacia-vps sh -c "cd /app && npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma" || echo "⚠️ Migrations falharam"
+            # Executar migrations ou db push
+            echo "=== Sincronizando schema do banco de dados ==="
 
-            # Executar seed (popular banco de dados com usuários de teste)
-            echo "=== Executando seed do banco de dados ==="
-            docker exec advocacia-vps sh -c "cd /app && npx tsx packages/database/prisma/seed.ts" || echo "⚠️ Seed falhou (pode ser normal se já existem dados)"
+            # Tentar primeiro com migrate deploy (se existirem migrations)
+            if docker exec advocacia-vps sh -c "cd /app && ls packages/database/prisma/migrations 2>/dev/null" | grep -q "migration"; then
+              echo "📦 Migrations encontradas, executando migrate deploy..."
+
+              if docker exec advocacia-vps sh -c "cd /app && npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma"; then
+                echo "✅ Migrations aplicadas com sucesso"
+              else
+                echo "❌ ERRO: Migrate deploy falhou!"
+                docker logs advocacia-vps --tail=50
+                exit 1
+              fi
+            else
+              echo "⚠️ Nenhuma migration encontrada, usando db push..."
+
+              # Usar db push para criar/atualizar schema diretamente
+              if docker exec advocacia-vps sh -c "cd /app && npx prisma db push --schema=./packages/database/prisma/schema.prisma --accept-data-loss --skip-generate"; then
+                echo "✅ Schema sincronizado com sucesso via db push"
+              else
+                echo "❌ ERRO: DB push falhou!"
+                docker logs advocacia-vps --tail=50
+                exit 1
+              fi
+            fi
+
+            # Verificar se tabelas foram criadas
+            echo "=== Validando criação de tabelas ==="
+            TABLE_COUNT=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -o '[0-9]\+' | tail -1 || echo "0")
+
+            if [ "$TABLE_COUNT" -gt "0" ]; then
+              echo "✅ Validado: $TABLE_COUNT tabela(s) criada(s) no banco"
+            else
+              echo "❌ ERRO: Nenhuma tabela encontrada após sincronização!"
+              exit 1
+            fi
+
+            # Verificar se seed já foi executado (verificar se existe usuário admin)
+            echo "=== Verificando necessidade de executar seed ==="
+            ADMIN_EXISTS=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) as count FROM \"User\" WHERE email = 'admin@pitanga.com';" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "0")
+
+            if [ "$ADMIN_EXISTS" = "0" ] || [ -z "$ADMIN_EXISTS" ]; then
+              echo "📦 Banco de dados vazio, executando seed..."
+
+              # Executar seed usando prisma db seed
+              if docker exec advocacia-vps sh -c "cd /app/packages/database && npx prisma db seed"; then
+                echo "✅ Seed executado com sucesso!"
+
+                # Validar que usuário foi criado
+                echo "=== Validando criação de usuários ==="
+                USER_COUNT=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) as count FROM \"User\";" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "0")
+
+                if [ "$USER_COUNT" -gt "0" ]; then
+                  echo "✅ Validado: $USER_COUNT usuário(s) criado(s) no banco"
+                else
+                  echo "⚠️ AVISO: Nenhum usuário encontrado após seed"
+                fi
+              else
+                echo "❌ ERRO: Seed falhou!"
+                echo "=== Tentando método alternativo (execução direta) ==="
+                if docker exec advocacia-vps sh -c "cd /app && npx tsx packages/database/prisma/seed.ts"; then
+                  echo "✅ Seed executado com método alternativo"
+                else
+                  echo "❌ ERRO CRÍTICO: Seed falhou em ambos métodos!"
+                  docker logs advocacia-vps --tail=100
+                  exit 1
+                fi
+              fi
+            else
+              echo "✓ Seed já foi executado anteriormente (usuário admin existe)"
+              echo "ℹ️ Para reexecutar o seed, limpe o banco de dados manualmente"
+            fi
 
             # ===== LOGS DE DIAGNÓSTICO =====
             echo "=== Logs da Aplicação (últimas 100 linhas) ==="

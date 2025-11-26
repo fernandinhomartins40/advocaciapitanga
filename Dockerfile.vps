@@ -75,6 +75,13 @@ COPY --from=deps /tmp/prod_node_modules ./node_modules
 # Copiar Prisma Client gerado
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copiar dependências necessárias para seeds (tsx e bcryptjs)
+COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
+COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
+COPY --from=builder /app/node_modules/esbuild ./node_modules/esbuild
+COPY --from=builder /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
+COPY --from=builder /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
+
 # Copiar arquivos do workspace raiz
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/turbo.json ./

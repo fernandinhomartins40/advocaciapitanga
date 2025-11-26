@@ -20,5 +20,8 @@
     "@types/node": "^20.0.0",
     "bcryptjs": "^2.4.3",
     "@types/bcryptjs": "^2.4.6"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
