@@ -25,9 +25,11 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    setMounted(true);
     loadUser();
   }, []);
 
@@ -52,11 +54,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(user);
 
-      // Redirecionar baseado no role
-      if (user.role === 'ADVOGADO') {
-        router.push('/advogado/dashboard');
-      } else {
-        router.push('/cliente/meus-processos');
+      // Redirecionar baseado no role (apenas no cliente)
+      if (mounted) {
+        if (user.role === 'ADVOGADO') {
+          router.push('/advogado/dashboard');
+        } else {
+          router.push('/cliente/meus-processos');
+        }
       }
     } catch (error: any) {
       throw new Error(error.response?.data?.error || 'Erro ao fazer login');
@@ -70,7 +74,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('Erro ao fazer logout:', error);
     } finally {
       setUser(null);
-      router.push('/login');
+      if (mounted) {
+        router.push('/login');
+      }
     }
   };
 

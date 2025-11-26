@@ -17,6 +17,9 @@ import iaRoutes from './routes/ia.routes';
 
 const app = express();
 
+// Confiar no proxy (Nginx)
+app.set('trust proxy', 1);
+
 // Middlewares de segurança
 app.use(helmet());
 app.use(cors({
