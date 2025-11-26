@@ -237,20 +237,32 @@ jobs:
               fi
             fi
 
-            # Verificar se tabelas foram criadas
+            # Verificar se tabelas foram criadas usando o psql
             echo "=== Validando criação de tabelas ==="
-            TABLE_COUNT=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | grep -o '[0-9]\+' | tail -1 || echo "0")
+            TABLE_COUNT=$(docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | tr -d '[:space:]' || echo "0")
 
-            if [ "$TABLE_COUNT" -gt "0" ]; then
+            echo "DEBUG: TABLE_COUNT='$TABLE_COUNT'"
+
+            if [ -n "$TABLE_COUNT" ] && [ "$TABLE_COUNT" -gt "0" ] 2>/dev/null; then
               echo "✅ Validado: $TABLE_COUNT tabela(s) criada(s) no banco"
             else
-              echo "❌ ERRO: Nenhuma tabela encontrada após sincronização!"
-              exit 1
+              echo "⚠️ Não foi possível validar tabelas via SQL, tentando método alternativo..."
+              # Verificar se pelo menos uma tabela User existe
+              if docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -c "\dt" 2>/dev/null | grep -q "User"; then
+                echo "✅ Tabela User encontrada, schema aplicado com sucesso"
+              else
+                echo "❌ ERRO: Nenhuma tabela encontrada após sincronização!"
+                echo "=== Listando tabelas ==="
+                docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -c "\dt"
+                exit 1
+              fi
             fi
 
             # Verificar se seed já foi executado (verificar se existe usuário admin)
             echo "=== Verificando necessidade de executar seed ==="
-            ADMIN_EXISTS=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) as count FROM \"User\" WHERE email = 'admin@pitanga.com';" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "0")
+            ADMIN_EXISTS=$(docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -t -c "SELECT COUNT(*) FROM \"User\" WHERE email = 'admin@pitanga.com';" 2>/dev/null | tr -d '[:space:]' || echo "0")
+
+            echo "DEBUG: ADMIN_EXISTS='$ADMIN_EXISTS'"
 
             if [ "$ADMIN_EXISTS" = "0" ] || [ -z "$ADMIN_EXISTS" ]; then
               echo "📦 Banco de dados vazio, executando seed..."
@@ -261,10 +273,16 @@ jobs:
 
                 # Validar que usuário foi criado
                 echo "=== Validando criação de usuários ==="
-                USER_COUNT=$(docker exec advocacia-vps sh -c "cd /app && npx prisma db execute --stdin --schema=./packages/database/prisma/schema.prisma" <<< "SELECT COUNT(*) as count FROM \"User\";" 2>/dev/null | grep -o '[0-9]\+' | head -1 || echo "0")
+                USER_COUNT=$(docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -t -c "SELECT COUNT(*) FROM \"User\";" 2>/dev/null | tr -d '[:space:]' || echo "0")
 
-                if [ "$USER_COUNT" -gt "0" ]; then
+                echo "DEBUG: USER_COUNT='$USER_COUNT'"
+
+                if [ -n "$USER_COUNT" ] && [ "$USER_COUNT" -gt "0" ] 2>/dev/null; then
                   echo "✅ Validado: $USER_COUNT usuário(s) criado(s) no banco"
+
+                  # Listar usuários criados
+                  echo "=== Usuários criados ==="
+                  docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -c "SELECT email, role, nome FROM \"User\";"
                 else
                   echo "⚠️ AVISO: Nenhum usuário encontrado após seed"
                 fi
