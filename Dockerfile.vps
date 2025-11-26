@@ -80,13 +80,13 @@ COPY --from=builder /app/turbo.json ./
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 COPY --from=builder /app/apps/backend/package*.json ./apps/backend/
 
-# Copiar Frontend build
-COPY --from=builder /app/apps/frontend/.next/standalone ./apps/frontend/
+# Copiar Frontend build (Next.js standalone gera estrutura completa)
+COPY --from=builder /app/apps/frontend/.next/standalone ./
 COPY --from=builder /app/apps/frontend/.next/static ./apps/frontend/.next/static
 COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 
-# Copiar Prisma schema (necessário para migrations)
-COPY --from=builder /app/packages/database ./packages/database
+# Copiar apenas o Prisma schema compilado (não os arquivos TypeScript)
+COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
 
 # Criar diretórios necessários
 RUN mkdir -p /app/uploads/documentos \

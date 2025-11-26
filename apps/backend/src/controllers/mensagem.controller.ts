@@ -1,5 +1,5 @@
 import { Response, NextFunction } from 'express';
-import { prisma } from 'database';
+import { prisma } from '../lib/prisma';
 import { AuthRequest } from '../types';
 
 export class MensagemController {

@@ -1,4 +1,4 @@
-import { prisma } from 'database';
+import { prisma } from '../lib/prisma';
 import { hashPassword } from '../utils/bcrypt';
 import { validarCPF } from '../utils/cpf';
 

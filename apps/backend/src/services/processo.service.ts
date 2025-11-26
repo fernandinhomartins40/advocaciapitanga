@@ -1,4 +1,4 @@
-import { prisma } from 'database';
+import { prisma } from '../lib/prisma';
 import { StatusProcesso } from '@prisma/client';
 
 export class ProcessoService {
