@@ -1,12 +1,17 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-const Tabs = ({ defaultValue, children, className }: {
-  defaultValue: string;
+const Tabs = ({ defaultValue, value, onValueChange, children, className }: {
+  defaultValue?: string;
+  value?: string;
+  onValueChange?: (value: string) => void;
   children: React.ReactNode;
   className?: string;
 }) => {
-  const [activeTab, setActiveTab] = React.useState(defaultValue);
+  const [internalActiveTab, setInternalActiveTab] = React.useState(defaultValue || '');
+
+  const activeTab = value !== undefined ? value : internalActiveTab;
+  const setActiveTab = onValueChange !== undefined ? onValueChange : setInternalActiveTab;
 
   return (
     <div className={className}>

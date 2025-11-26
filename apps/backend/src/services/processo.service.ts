@@ -44,6 +44,7 @@ export class ProcessoService {
             select: {
               documentos: true,
               mensagens: true,
+              partes: true,
             }
           }
         },
@@ -87,6 +88,9 @@ export class ProcessoService {
         },
         mensagens: {
           orderBy: { createdAt: 'asc' }
+        },
+        partes: {
+          orderBy: { createdAt: 'asc' }
         }
       }
     });
@@ -103,14 +107,7 @@ export class ProcessoService {
     return processo;
   }
 
-  async create(data: {
-    numero: string;
-    clienteId: string;
-    advogadoId: string;
-    descricao: string;
-    status?: StatusProcesso;
-    dataInicio?: Date;
-  }) {
+  async create(data: any) {
     // Verificar se número já existe
     const existing = await prisma.processo.findUnique({
       where: { numero: data.numero }
@@ -138,14 +135,45 @@ export class ProcessoService {
       throw new Error('Advogado não encontrado');
     }
 
+    // Extrair partes do payload
+    const { partes, ...processoData } = data;
+
     const processo = await prisma.processo.create({
       data: {
-        numero: data.numero,
-        clienteId: data.clienteId,
-        advogadoId: data.advogadoId,
-        descricao: data.descricao,
+        ...processoData,
         status: data.status || StatusProcesso.EM_ANDAMENTO,
         dataInicio: data.dataInicio || new Date(),
+        // Criar partes processuais se fornecidas
+        partes: partes && partes.length > 0 ? {
+          create: partes.map((parte: any) => ({
+            tipoParte: parte.tipoParte,
+            tipoPessoa: parte.tipoPessoa,
+            nomeCompleto: parte.nomeCompleto,
+            cpf: parte.cpf,
+            rg: parte.rg,
+            orgaoEmissor: parte.orgaoEmissor,
+            nacionalidade: parte.nacionalidade,
+            estadoCivil: parte.estadoCivil,
+            profissao: parte.profissao,
+            dataNascimento: parte.dataNascimento ? new Date(parte.dataNascimento) : null,
+            razaoSocial: parte.razaoSocial,
+            nomeFantasia: parte.nomeFantasia,
+            cnpj: parte.cnpj,
+            inscricaoEstadual: parte.inscricaoEstadual,
+            representanteLegal: parte.representanteLegal,
+            cargoRepresentante: parte.cargoRepresentante,
+            email: parte.email,
+            telefone: parte.telefone,
+            celular: parte.celular,
+            cep: parte.cep,
+            logradouro: parte.logradouro,
+            numero: parte.numero,
+            complemento: parte.complemento,
+            bairro: parte.bairro,
+            cidade: parte.cidade,
+            uf: parte.uf,
+          }))
+        } : undefined,
       },
       include: {
         cliente: {
@@ -172,10 +200,7 @@ export class ProcessoService {
     return processo;
   }
 
-  async update(id: string, data: {
-    descricao?: string;
-    status?: StatusProcesso;
-  }) {
+  async update(id: string, data: any) {
     const processo = await prisma.processo.findUnique({
       where: { id }
     });
@@ -186,10 +211,7 @@ export class ProcessoService {
 
     const updated = await prisma.processo.update({
       where: { id },
-      data: {
-        descricao: data.descricao,
-        status: data.status,
-      },
+      data,
       include: {
         cliente: {
           include: {

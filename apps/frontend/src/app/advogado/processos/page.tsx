@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText } from 'lucide-react';
 import { useProcessos, useCreateProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
@@ -16,16 +17,76 @@ import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
+import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
+import { ListaPartes } from '@/components/processos/ListaPartes';
+
+interface ProcessoFormData {
+  numero: string;
+  clienteId: string;
+
+  // Classificação
+  tipoAcao: string;
+  areaDireito: string;
+
+  // Localização Judicial
+  justica: string;
+  instancia: string;
+  comarca: string;
+  foro: string;
+  vara: string;
+  uf: string;
+
+  // Informações Processuais
+  objetoAcao: string;
+  pedidoPrincipal: string;
+  valorCausa: string;
+  valorHonorarios: string;
+
+  // Datas
+  dataDistribuicao: string;
+  proximoPrazo: string;
+  descricaoPrazo: string;
+
+  // Controle
+  status: string;
+  prioridade: string;
+  observacoes: string;
+
+  // Partes
+  partes: ParteProcessualData[];
+}
+
+const INITIAL_FORM_DATA: ProcessoFormData = {
+  numero: '',
+  clienteId: '',
+  tipoAcao: '',
+  areaDireito: '',
+  justica: '',
+  instancia: '',
+  comarca: '',
+  foro: '',
+  vara: '',
+  uf: '',
+  objetoAcao: '',
+  pedidoPrincipal: '',
+  valorCausa: '',
+  valorHonorarios: '',
+  dataDistribuicao: '',
+  proximoPrazo: '',
+  descricaoPrazo: '',
+  status: 'EM_ANDAMENTO',
+  prioridade: 'NORMAL',
+  observacoes: '',
+  partes: [],
+};
 
 export default function ProcessosPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    numero: '',
-    clienteId: '',
-    descricao: '',
-    status: 'EM_ANDAMENTO',
-  });
+  const [formData, setFormData] = useState<ProcessoFormData>(INITIAL_FORM_DATA);
+  const [isParteModalOpen, setIsParteModalOpen] = useState(false);
+  const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
+  const [currentTab, setCurrentTab] = useState('basico');
 
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
@@ -34,14 +95,64 @@ export default function ProcessosPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validações
+    if (!formData.numero || !formData.clienteId) {
+      toast({ title: 'Erro', description: 'Preencha os campos obrigatórios', variant: 'error' });
+      return;
+    }
+
     try {
-      await createMutation.mutateAsync(formData);
+      const payload = {
+        ...formData,
+        valorCausa: formData.valorCausa ? parseFloat(formData.valorCausa.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+        valorHonorarios: formData.valorHonorarios ? parseFloat(formData.valorHonorarios.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+        dataDistribuicao: formData.dataDistribuicao || null,
+        proximoPrazo: formData.proximoPrazo || null,
+      };
+
+      await createMutation.mutateAsync(payload);
       toast({ title: 'Sucesso', description: 'Processo criado com sucesso', variant: 'success' });
       setIsCreateOpen(false);
-      setFormData({ numero: '', clienteId: '', descricao: '', status: 'EM_ANDAMENTO' });
+      setFormData(INITIAL_FORM_DATA);
+      setCurrentTab('basico');
     } catch (error: any) {
       toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao criar processo', variant: 'error' });
     }
+  };
+
+  const handleAddParte = (parte: ParteProcessualData) => {
+    if (parteEditIndex !== null) {
+      // Editar parte existente
+      const novasPartes = [...formData.partes];
+      novasPartes[parteEditIndex] = parte;
+      setFormData({ ...formData, partes: novasPartes });
+      setParteEditIndex(null);
+    } else {
+      // Adicionar nova parte
+      setFormData({ ...formData, partes: [...formData.partes, parte] });
+    }
+    setIsParteModalOpen(false);
+  };
+
+  const handleEditParte = (parte: ParteProcessualData, index: number) => {
+    setParteEditIndex(index);
+    setIsParteModalOpen(true);
+  };
+
+  const handleRemoveParte = (index: number) => {
+    const novasPartes = formData.partes.filter((_, i) => i !== index);
+    setFormData({ ...formData, partes: novasPartes });
+  };
+
+  const formatCurrency = (value: string) => {
+    const num = value.replace(/\D/g, '');
+    if (!num) return '';
+    const formatted = (parseInt(num) / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return `R$ ${formatted}`;
   };
 
   const statusColors: Record<string, any> = {
@@ -128,10 +239,11 @@ export default function ProcessosPage() {
                     <span className="font-semibold">Início:</span>{' '}
                     {formatDate(processo.dataInicio)}
                   </div>
-                  <p className="text-gray-600 line-clamp-2 mt-2">{processo.descricao}</p>
+                  <p className="text-gray-600 line-clamp-2 mt-2">{processo.objetoAcao || processo.descricao}</p>
                   <div className="flex gap-2 text-xs text-gray-500 mt-3">
                     <span>📄 {processo._count?.documentos || 0} docs</span>
                     <span>💬 {processo._count?.mensagens || 0} msgs</span>
+                    <span>👥 {processo._count?.partes || 0} partes</span>
                   </div>
                 </div>
                 <Link href={`/advogado/processos/${processo.id}`} className="block mt-4">
@@ -151,63 +263,323 @@ export default function ProcessosPage() {
         </Card>
       )}
 
-      {/* Modal Criar */}
+      {/* Modal Criar Processo */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Processo</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <Label htmlFor="numero">Número do Processo *</Label>
-              <Input
-                id="numero"
-                value={formData.numero}
-                onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
-                placeholder="0000000-00.0000.0.00.0000"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="cliente">Cliente *</Label>
-              <Select
-                id="cliente"
-                value={formData.clienteId}
-                onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
-                required
-              >
-                <option value="">Selecione um cliente</option>
-                {clientesData?.clientes?.map((cliente: any) => (
-                  <option key={cliente.id} value={cliente.id}>
-                    {cliente.user.nome}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="descricao">Descrição *</Label>
-              <Textarea
-                id="descricao"
-                value={formData.descricao}
-                onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                rows={4}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                id="status"
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              >
-                <option value="EM_ANDAMENTO">Em Andamento</option>
-                <option value="SUSPENSO">Suspenso</option>
-                <option value="CONCLUIDO">Concluído</option>
-                <option value="ARQUIVADO">Arquivado</option>
-              </Select>
-            </div>
-            <div className="flex justify-end gap-2">
+
+          <form onSubmit={handleCreate}>
+            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="basico">Básico</TabsTrigger>
+                <TabsTrigger value="localizacao">Localização</TabsTrigger>
+                <TabsTrigger value="partes">Partes</TabsTrigger>
+                <TabsTrigger value="informacoes">Informações</TabsTrigger>
+                <TabsTrigger value="controle">Controle</TabsTrigger>
+              </TabsList>
+
+              {/* Aba 1: Dados Básicos */}
+              <TabsContent value="basico" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="numero">Número do Processo *</Label>
+                  <Input
+                    id="numero"
+                    value={formData.numero}
+                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    placeholder="0000000-00.0000.0.00.0000"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cliente">Cliente *</Label>
+                  <Select
+                    id="cliente"
+                    value={formData.clienteId}
+                    onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione um cliente</option>
+                    {clientesData?.clientes?.map((cliente: any) => (
+                      <option key={cliente.id} value={cliente.id}>
+                        {cliente.user.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoAcao">Tipo de Ação *</Label>
+                  <Select
+                    id="tipoAcao"
+                    value={formData.tipoAcao}
+                    onChange={(e) => setFormData({ ...formData, tipoAcao: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    <option value="Ação Civil Pública">Ação Civil Pública</option>
+                    <option value="Ação de Cobrança">Ação de Cobrança</option>
+                    <option value="Ação de Indenização">Ação de Indenização</option>
+                    <option value="Ação Trabalhista">Ação Trabalhista</option>
+                    <option value="Execução">Execução</option>
+                    <option value="Mandado de Segurança">Mandado de Segurança</option>
+                    <option value="Outros">Outros</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="areaDireito">Área do Direito *</Label>
+                  <Select
+                    id="areaDireito"
+                    value={formData.areaDireito}
+                    onChange={(e) => setFormData({ ...formData, areaDireito: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    <option value="Cível">Cível</option>
+                    <option value="Trabalhista">Trabalhista</option>
+                    <option value="Penal">Penal</option>
+                    <option value="Tributário">Tributário</option>
+                    <option value="Família">Família</option>
+                    <option value="Consumidor">Consumidor</option>
+                    <option value="Administrativo">Administrativo</option>
+                    <option value="Previdenciário">Previdenciário</option>
+                  </Select>
+                </div>
+              </TabsContent>
+
+              {/* Aba 2: Localização Judicial */}
+              <TabsContent value="localizacao" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="justica">Justiça *</Label>
+                    <Select
+                      id="justica"
+                      value={formData.justica}
+                      onChange={(e) => setFormData({ ...formData, justica: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      <option value="ESTADUAL">Estadual</option>
+                      <option value="FEDERAL">Federal</option>
+                      <option value="TRABALHO">Trabalho</option>
+                      <option value="ELEITORAL">Eleitoral</option>
+                      <option value="MILITAR">Militar</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="instancia">Instância *</Label>
+                    <Select
+                      id="instancia"
+                      value={formData.instancia}
+                      onChange={(e) => setFormData({ ...formData, instancia: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      <option value="PRIMEIRA">1ª Instância</option>
+                      <option value="SEGUNDA">2ª Instância</option>
+                      <option value="SUPERIOR">Superior</option>
+                      <option value="SUPREMO">Supremo</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="comarca">Comarca</Label>
+                    <Input
+                      id="comarca"
+                      value={formData.comarca}
+                      onChange={(e) => setFormData({ ...formData, comarca: e.target.value })}
+                      placeholder="Nome da comarca"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="foro">Foro</Label>
+                    <Input
+                      id="foro"
+                      value={formData.foro}
+                      onChange={(e) => setFormData({ ...formData, foro: e.target.value })}
+                      placeholder="Nome do foro"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vara">Vara</Label>
+                    <Input
+                      id="vara"
+                      value={formData.vara}
+                      onChange={(e) => setFormData({ ...formData, vara: e.target.value })}
+                      placeholder="Ex: 1ª Vara Cível"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="uf">UF *</Label>
+                    <Select
+                      id="uf"
+                      value={formData.uf}
+                      onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Aba 3: Partes Processuais */}
+              <TabsContent value="partes" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold">Partes do Processo</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setParteEditIndex(null);
+                      setIsParteModalOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Parte
+                  </Button>
+                </div>
+
+                <ListaPartes
+                  partes={formData.partes}
+                  onEdit={handleEditParte}
+                  onRemove={handleRemoveParte}
+                />
+              </TabsContent>
+
+              {/* Aba 4: Informações Processuais */}
+              <TabsContent value="informacoes" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="objetoAcao">Objeto da Ação *</Label>
+                  <Textarea
+                    id="objetoAcao"
+                    value={formData.objetoAcao}
+                    onChange={(e) => setFormData({ ...formData, objetoAcao: e.target.value })}
+                    rows={4}
+                    placeholder="Descreva o objeto da ação"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="pedidoPrincipal">Pedido Principal</Label>
+                  <Textarea
+                    id="pedidoPrincipal"
+                    value={formData.pedidoPrincipal}
+                    onChange={(e) => setFormData({ ...formData, pedidoPrincipal: e.target.value })}
+                    rows={3}
+                    placeholder="Descreva o pedido principal"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="valorCausa">Valor da Causa</Label>
+                    <Input
+                      id="valorCausa"
+                      value={formData.valorCausa}
+                      onChange={(e) => setFormData({ ...formData, valorCausa: formatCurrency(e.target.value) })}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valorHonorarios">Valor dos Honorários</Label>
+                    <Input
+                      id="valorHonorarios"
+                      value={formData.valorHonorarios}
+                      onChange={(e) => setFormData({ ...formData, valorHonorarios: formatCurrency(e.target.value) })}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Aba 5: Controle e Prazos */}
+              <TabsContent value="controle" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dataDistribuicao">Data de Distribuição</Label>
+                    <Input
+                      id="dataDistribuicao"
+                      type="date"
+                      value={formData.dataDistribuicao}
+                      onChange={(e) => setFormData({ ...formData, dataDistribuicao: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="proximoPrazo">Próximo Prazo</Label>
+                    <Input
+                      id="proximoPrazo"
+                      type="date"
+                      value={formData.proximoPrazo}
+                      onChange={(e) => setFormData({ ...formData, proximoPrazo: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label htmlFor="descricaoPrazo">Descrição do Prazo</Label>
+                    <Input
+                      id="descricaoPrazo"
+                      value={formData.descricaoPrazo}
+                      onChange={(e) => setFormData({ ...formData, descricaoPrazo: e.target.value })}
+                      placeholder="Ex: Apresentar contestação"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      id="status"
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    >
+                      <option value="EM_ANDAMENTO">Em Andamento</option>
+                      <option value="SUSPENSO">Suspenso</option>
+                      <option value="CONCLUIDO">Concluído</option>
+                      <option value="ARQUIVADO">Arquivado</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="prioridade">Prioridade</Label>
+                    <Select
+                      id="prioridade"
+                      value={formData.prioridade}
+                      onChange={(e) => setFormData({ ...formData, prioridade: e.target.value })}
+                    >
+                      <option value="NORMAL">Normal</option>
+                      <option value="URGENTE">Urgente</option>
+                      <option value="MUITO_URGENTE">Muito Urgente</option>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label htmlFor="observacoes">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      value={formData.observacoes}
+                      onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                      rows={3}
+                      placeholder="Observações gerais sobre o processo"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end gap-2 mt-6">
               <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
                 Cancelar
               </Button>
@@ -218,6 +590,14 @@ export default function ProcessosPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal Adicionar/Editar Parte */}
+      <ModalParteProcessual
+        open={isParteModalOpen}
+        onOpenChange={setIsParteModalOpen}
+        onSave={handleAddParte}
+        parteEdit={parteEditIndex !== null ? formData.partes[parteEditIndex] : undefined}
+      />
     </div>
   );
 }

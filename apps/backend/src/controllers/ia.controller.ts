@@ -238,7 +238,7 @@ export class IAController {
             processo: {
               select: {
                 numero: true,
-                descricao: true
+                objetoAcao: true
               }
             }
           },
@@ -299,7 +299,7 @@ export class IAController {
           processo: {
             select: {
               numero: true,
-              descricao: true
+              objetoAcao: true
             }
           }
         }

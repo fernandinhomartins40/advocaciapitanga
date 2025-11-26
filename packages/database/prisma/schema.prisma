@@ -58,21 +58,98 @@ model Advogado {
 }
 
 model Processo {
-  id          String          @id @default(cuid())
-  numero      String          @unique
-  clienteId   String
-  cliente     Cliente         @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  advogadoId  String
-  advogado    Advogado        @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
-  descricao   String
-  status      StatusProcesso  @default(EM_ANDAMENTO)
-  dataInicio  DateTime        @default(now())
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  id         String   @id @default(cuid())
+  numero     String   @unique
+  clienteId  String
+  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  advogadoId String
+  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
 
+  // Classificação
+  tipoAcao    String?
+  areaDireito String?
+
+  // Localização Judicial
+  justica   Justica?
+  instancia Instancia?
+  comarca   String?
+  foro      String?
+  vara      String?
+  uf        String?
+
+  // Informações Processuais
+  objetoAcao      String?  @db.Text
+  pedidoPrincipal String?  @db.Text
+  valorCausa      Decimal? @db.Decimal(15, 2)
+  valorHonorarios Decimal? @db.Decimal(15, 2)
+
+  // Datas
+  dataDistribuicao DateTime?
+  dataInicio       DateTime  @default(now())
+  proximoPrazo     DateTime?
+  descricaoPrazo   String?
+
+  // Controle
+  status      StatusProcesso @default(EM_ANDAMENTO)
+  prioridade  Prioridade     @default(NORMAL)
+  observacoes String?        @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relações
+  partes       ParteProcessual[]
   documentos   Documento[]
   mensagens    Mensagem[]
   documentosIA DocumentoIA[]
+}
+
+model ParteProcessual {
+  id         String   @id @default(cuid())
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  // Tipo e posição
+  tipoParte  TipoParte
+  tipoPessoa TipoPessoa
+
+  // Pessoa Física
+  nomeCompleto   String
+  cpf            String?
+  rg             String?
+  orgaoEmissor   String?
+  nacionalidade  String?      @default("Brasileiro(a)")
+  estadoCivil    EstadoCivil?
+  profissao      String?
+  dataNascimento DateTime?
+
+  // Pessoa Jurídica
+  razaoSocial        String?
+  nomeFantasia       String?
+  cnpj               String?
+  inscricaoEstadual  String?
+  representanteLegal String?
+  cargoRepresentante String?
+
+  // Contato
+  email    String?
+  telefone String?
+  celular  String?
+
+  // Endereço
+  cep         String?
+  logradouro  String?
+  numero      String?
+  complemento String?
+  bairro      String?
+  cidade      String?
+  uf          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([processoId])
+  @@index([tipoParte])
 }
 
 enum StatusProcesso {
@@ -82,39 +159,82 @@ enum StatusProcesso {
   ARQUIVADO
 }
 
+enum Justica {
+  ESTADUAL
+  FEDERAL
+  TRABALHO
+  ELEITORAL
+  MILITAR
+}
+
+enum Instancia {
+  PRIMEIRA
+  SEGUNDA
+  SUPERIOR
+  SUPREMO
+}
+
+enum Prioridade {
+  NORMAL
+  URGENTE
+  MUITO_URGENTE
+}
+
+enum TipoParte {
+  AUTOR
+  REU
+  TERCEIRO_INTERESSADO
+  ASSISTENTE
+  DENUNCIADO_LIDE
+  CHAMADO_PROCESSO
+}
+
+enum TipoPessoa {
+  FISICA
+  JURIDICA
+}
+
+enum EstadoCivil {
+  SOLTEIRO
+  CASADO
+  DIVORCIADO
+  VIUVO
+  UNIAO_ESTAVEL
+}
+
 model Documento {
-  id          String   @id @default(cuid())
-  titulo      String
-  caminho     String
-  tipo        String
-  tamanho     Int
-  processoId  String
-  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  titulo     String
+  caminho    String
+  tipo       String
+  tamanho    Int
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
 }
 
 model Mensagem {
-  id          String   @id @default(cuid())
-  conteudo    String
-  processoId  String
-  processo    Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
-  remetente   String
-  lida        Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  conteudo   String
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  remetente  String
+  lida       Boolean  @default(false)
+  createdAt  DateTime @default(now())
 }
 
 model AuditLog {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  action      AuditAction
-  entityType  String
-  entityId    String?
-  oldValue    String?
-  newValue    String?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime    @default(now())
+  id         String      @id @default(cuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action     AuditAction
+  entityType String
+  entityId   String?
+  oldValue   String?
+  newValue   String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime    @default(now())
 
   @@index([userId])
   @@index([action])
