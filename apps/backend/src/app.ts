@@ -48,11 +48,15 @@ app.use(cors({
   exposedHeaders: ['Set-Cookie']
 }));
 
-// Rate limiting
+// Rate limiting - mais permissivo para evitar bloqueios
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // limite de 100 requisições por IP
-  message: 'Muitas requisições deste IP, tente novamente mais tarde.'
+  max: 500, // limite de 500 requisições por IP (aumentado)
+  message: 'Muitas requisições deste IP, tente novamente mais tarde.',
+  skip: (req) => {
+    // Não aplicar rate limit em rotas de autenticação
+    return req.path === '/api/auth/me' || req.path === '/api/health';
+  }
 });
 app.use('/api/', limiter);
 
