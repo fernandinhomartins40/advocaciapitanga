@@ -7,6 +7,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata = {
   title: 'Advocacia Pitanga',
   description: 'Sistema de Gestão Jurídica',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({
