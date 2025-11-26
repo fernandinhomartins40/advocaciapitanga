@@ -75,6 +75,10 @@ COPY --from=deps /tmp/prod_node_modules ./node_modules
 # Copiar Prisma Client gerado
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
+# Copiar pacote database completo (necessário para imports 'from database')
+COPY --from=builder /app/packages/database/src ./packages/database/src
+COPY --from=builder /app/packages/database/package*.json ./packages/database/
+
 # Copiar dependências necessárias para seeds (tsx e bcryptjs)
 COPY --from=builder /app/node_modules/tsx ./node_modules/tsx
 COPY --from=builder /app/node_modules/bcryptjs ./node_modules/bcryptjs
