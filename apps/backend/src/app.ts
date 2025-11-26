@@ -22,11 +22,30 @@ app.set('trust proxy', 1);
 
 // Middlewares de segurança
 app.use(helmet());
+
+// Configurar CORS origins
+const getAllowedOrigins = () => {
+  if (process.env.CORS_ORIGIN) {
+    return process.env.CORS_ORIGIN.split(',').map(origin => origin.trim());
+  }
+
+  // Fallback para desenvolvimento
+  return [
+    'http://localhost:3000',
+    'http://localhost',
+    'https://advocaciapitanga.com.br',
+    'https://www.advocaciapitanga.com.br',
+    'http://advocaciapitanga.com.br',
+    'http://www.advocaciapitanga.com.br'
+  ];
+};
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production'
-    ? ['http://localhost']
-    : ['http://localhost:3000', 'http://localhost'],
-  credentials: true
+  origin: getAllowedOrigins(),
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 // Rate limiting
