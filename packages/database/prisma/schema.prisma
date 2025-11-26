@@ -21,6 +21,7 @@ model User {
 
   cliente   Cliente?
   advogado  Advogado?
+  auditLogs AuditLog[]
 }
 
 enum Role {
@@ -38,7 +39,8 @@ model Cliente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  processos Processo[]
+  processos    Processo[]
+  documentosIA DocumentoIA[]
 }
 
 model Advogado {
@@ -50,7 +52,9 @@ model Advogado {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  processos Processo[]
+  processos      Processo[]
+  documentosIA   DocumentoIA[]
+  configuracaoIA ConfiguracaoIA?
 }
 
 model Processo {
@@ -66,8 +70,9 @@ model Processo {
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
 
-  documentos  Documento[]
-  mensagens   Mensagem[]
+  documentos   Documento[]
+  mensagens    Mensagem[]
+  documentosIA DocumentoIA[]
 }
 
 enum StatusProcesso {
@@ -96,4 +101,67 @@ model Mensagem {
   remetente   String
   lida        Boolean  @default(false)
   createdAt   DateTime @default(now())
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      AuditAction
+  entityType  String
+  entityId    String?
+  oldValue    String?
+  newValue    String?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+enum AuditAction {
+  EMAIL_UPDATED
+  PASSWORD_UPDATED
+  PROFILE_UPDATED
+  LOGIN
+  LOGOUT
+  FAILED_LOGIN
+}
+
+model DocumentoIA {
+  id                String    @id @default(cuid())
+  advogadoId        String
+  advogado          Advogado  @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  clienteId         String?
+  cliente           Cliente?  @relation(fields: [clienteId], references: [id], onDelete: SetNull)
+  processoId        String?
+  processo          Processo? @relation(fields: [processoId], references: [id], onDelete: SetNull)
+  tipoPeca          String
+  contexto          String    @db.Text
+  fundamentosLegais String?   @db.Text
+  pedidos           String?   @db.Text
+  partes            String?
+  conteudoGerado    String    @db.Text
+  titulo            String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([advogadoId])
+  @@index([clienteId])
+  @@index([processoId])
+  @@index([createdAt])
+}
+
+model ConfiguracaoIA {
+  id           String   @id @default(cuid())
+  advogadoId   String   @unique
+  advogado     Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  openaiApiKey String?
+  modeloGPT    String   @default("gpt-4")
+  cabecalho    String?  @db.Text
+  rodape       String?  @db.Text
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
