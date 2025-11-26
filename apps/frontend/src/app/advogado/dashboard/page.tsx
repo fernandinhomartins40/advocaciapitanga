@@ -22,7 +22,7 @@ export default function DashboardPage() {
   }
 
   const statusColors: Record<string, "default" | "success" | "warning" | "danger"> = {
-    EM_ANDAMENTO: 'info',
+    EM_ANDAMENTO: 'default',
     SUSPENSO: 'warning',
     CONCLUIDO: 'success',
     ARQUIVADO: 'default',
@@ -97,7 +97,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {stats?.processosPorStatus?.map((item) => (
+            {stats?.processosPorStatus?.map((item: { status: string; count: number }) => (
               <div key={item.status} className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-600 mb-2">{item.status.replace('_', ' ')}</p>
                 <p className="text-3xl font-bold text-primary-600">{item.count}</p>
