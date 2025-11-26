@@ -1,10 +1,33 @@
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || ''
-});
-
 export class IAService {
+  private async getOpenAIClient(advogadoId: string): Promise<OpenAI> {
+    const { prisma } = await import('database');
+
+    const configuracao = await prisma.configuracaoIA.findUnique({
+      where: { advogadoId }
+    });
+
+    // Usar API key do advogado se existir, senão usar do ambiente
+    const apiKey = configuracao?.openaiApiKey || process.env.OPENAI_API_KEY || '';
+
+    if (!apiKey) {
+      throw new Error('API Key OpenAI não configurada. Configure em Configurações > IA');
+    }
+
+    return new OpenAI({ apiKey });
+  }
+
+  private async getModeloGPT(advogadoId: string): Promise<string> {
+    const { prisma } = await import('database');
+
+    const configuracao = await prisma.configuracaoIA.findUnique({
+      where: { advogadoId }
+    });
+
+    return configuracao?.modeloGPT || 'gpt-4';
+  }
+
   private getPromptByTipo(tipo: string): string {
     const prompts: Record<string, string> = {
       'Petição Inicial': `Você é um assistente jurídico especializado em elaborar petições iniciais.
@@ -38,15 +61,43 @@ export class IAService {
     fundamentosLegais?: string;
     pedidos?: string;
     partes?: string[];
-  }): Promise<string> {
+    dadosCliente?: any;
+    dadosProcesso?: any;
+  }, advogadoId: string): Promise<string> {
     try {
+      const openai = await this.getOpenAIClient(advogadoId);
+      const modelo = await this.getModeloGPT(advogadoId);
       const systemPrompt = this.getPromptByTipo(data.tipoPeca);
+
+      // Enriquecer prompt com dados do cliente e processo
+      let dadosAdicionais = '';
+
+      if (data.dadosCliente) {
+        dadosAdicionais += `\n\nDADOS DO CLIENTE:\n`;
+        dadosAdicionais += `Nome: ${data.dadosCliente.user.nome}\n`;
+        dadosAdicionais += `Email: ${data.dadosCliente.user.email}\n`;
+        if (data.dadosCliente.cpf) dadosAdicionais += `CPF: ${data.dadosCliente.cpf}\n`;
+        if (data.dadosCliente.telefone) dadosAdicionais += `Telefone: ${data.dadosCliente.telefone}\n`;
+        if (data.dadosCliente.endereco) dadosAdicionais += `Endereço: ${data.dadosCliente.endereco}\n`;
+      }
+
+      if (data.dadosProcesso) {
+        dadosAdicionais += `\n\nDADOS DO PROCESSO:\n`;
+        dadosAdicionais += `Número: ${data.dadosProcesso.numero}\n`;
+        dadosAdicionais += `Descrição: ${data.dadosProcesso.descricao}\n`;
+        dadosAdicionais += `Status: ${data.dadosProcesso.status}\n`;
+        if (data.dadosProcesso.cliente) {
+          dadosAdicionais += `Cliente do processo: ${data.dadosProcesso.cliente.user.nome}\n`;
+        }
+      }
 
       const userPrompt = `
         Elabore ${data.tipoPeca.toLowerCase()} com base nas seguintes informações:
 
         CONTEXTO:
         ${data.contexto}
+
+        ${dadosAdicionais}
 
         ${data.partes && data.partes.length > 0 ? `
         PARTES ENVOLVIDAS:
@@ -68,7 +119,7 @@ export class IAService {
       `;
 
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: modelo,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -91,14 +142,17 @@ export class IAService {
         throw new Error('Chave da API OpenAI inválida ou não configurada');
       }
 
-      throw new Error('Erro ao gerar peça jurídica com IA');
+      throw new Error('Erro ao gerar peça jurídica com IA: ' + (error.message || 'Erro desconhecido'));
     }
   }
 
-  async analisarDocumento(conteudo: string): Promise<string> {
+  async analisarDocumento(conteudo: string, advogadoId: string): Promise<string> {
     try {
+      const openai = await this.getOpenAIClient(advogadoId);
+      const modelo = await this.getModeloGPT(advogadoId);
+
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: modelo,
         messages: [
           {
             role: 'system',

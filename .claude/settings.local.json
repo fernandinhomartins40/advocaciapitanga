@@ -19,7 +19,13 @@
       "Bash(taskkill:*)",
       "Bash(curl -I https://advocaciapitanga.com.br/health)",
       "Bash(curl:*)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(cat:*)",
+      "Bash(nul)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(del appsfrontendnul)",
+      "Bash(git rm:*)"
     ],
     "deny": [],
     "ask": []

@@ -6,10 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Brain, Download, FileText, Copy } from 'lucide-react';
+import { Brain, Download, FileText, Copy, History, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import SelectCliente from '@/components/advogado/SelectCliente';
+import SelectProcesso from '@/components/advogado/SelectProcesso';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
+import Link from 'next/link';
 
 export default function IAJuridicaPage() {
   const [tipoPeca, setTipoPeca] = useState('Petição Inicial');
@@ -19,6 +22,12 @@ export default function IAJuridicaPage() {
   const [partes, setPartes] = useState('');
   const [conteudoGerado, setConteudoGerado] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [clienteId, setClienteId] = useState('');
+  const [processoId, setProcessoId] = useState('');
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
+  const [processoSelecionado, setProcessoSelecionado] = useState<any>(null);
+  const [formatoExportar, setFormatoExportar] = useState('pdf');
   const { toast } = useToast();
 
   const tiposPeca = [
@@ -46,13 +55,15 @@ export default function IAJuridicaPage() {
         fundamentosLegais,
         pedidos,
         partes: partes.split('\n').filter(p => p.trim()),
+        clienteId: clienteId || undefined,
+        processoId: processoId || undefined
       });
       setConteudoGerado(response.data.conteudo);
-      toast({ title: 'Sucesso', description: 'Peça gerada com sucesso', variant: 'success' });
+      toast({ title: 'Sucesso', description: 'Peça gerada com sucesso!', variant: 'success' });
     } catch (error: any) {
       toast({
         title: 'Erro',
-        description: error.response?.data?.error || 'Erro ao gerar peça',
+        description: error.response?.data?.error || 'Erro ao gerar peça. Verifique as configurações de IA.',
         variant: 'error',
       });
     } finally {
@@ -60,23 +71,33 @@ export default function IAJuridicaPage() {
     }
   };
 
-  const handleExportPDF = async () => {
-    if (!conteudoGerado) return;
+  const handleExport = async (formato: string) => {
+    if (!conteudoGerado) {
+      toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
+      return;
+    }
 
+    setIsExporting(true);
     try {
+      const endpoint = `/ia/exportar-${formato}`;
       const response = await api.post(
-        '/ia/exportar-pdf',
+        endpoint,
         { conteudo: conteudoGerado, titulo: tipoPeca },
         { responseType: 'blob' }
       );
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${tipoPeca}.pdf`;
+      link.download = `${tipoPeca}.${formato}`;
       link.click();
-      toast({ title: 'Sucesso', description: 'PDF exportado', variant: 'success' });
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
     } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao exportar PDF', variant: 'error' });
+      toast({ title: 'Erro', description: 'Erro ao exportar documento', variant: 'error' });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -87,9 +108,25 @@ export default function IAJuridicaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">IA Jurídica</h1>
-        <p className="text-gray-500">Geração automática de peças jurídicas com Inteligência Artificial</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">IA Jurídica</h1>
+          <p className="text-gray-500">Geração automática de peças jurídicas com Inteligência Artificial</p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/advogado/ia-juridica/historico">
+            <Button variant="outline">
+              <History className="h-4 w-4 mr-2" />
+              Histórico
+            </Button>
+          </Link>
+          <Link href="/advogado/configuracoes/ia">
+            <Button variant="outline">
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -116,6 +153,23 @@ export default function IAJuridicaPage() {
                 ))}
               </Select>
             </div>
+
+            <SelectCliente
+              value={clienteId}
+              onChange={(id, cliente) => {
+                setClienteId(id);
+                setClienteSelecionado(cliente);
+              }}
+            />
+
+            <SelectProcesso
+              value={processoId}
+              clienteId={clienteId}
+              onChange={(id, processo) => {
+                setProcessoId(id);
+                setProcessoSelecionado(processo);
+              }}
+            />
 
             <div>
               <Label htmlFor="contexto">Contexto / Descrição *</Label>
@@ -165,6 +219,7 @@ export default function IAJuridicaPage() {
               onClick={handleGenerate}
               disabled={isGenerating || !contexto.trim()}
               className="w-full"
+              size="lg"
             >
               {isGenerating ? (
                 <>
@@ -190,24 +245,57 @@ export default function IAJuridicaPage() {
                 {tipoPeca}
               </CardTitle>
               {conteudoGerado && (
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={handleCopy}>
+                <div className="flex gap-2 items-center">
+                  <Select
+                    value={formatoExportar}
+                    onChange={(e) => setFormatoExportar(e.target.value)}
+                    className="w-28"
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="txt">TXT</option>
+                    <option value="rtf">RTF</option>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCopy}
+                  >
                     <Copy className="h-4 w-4 mr-1" />
                     Copiar
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleExportPDF}>
-                    <Download className="h-4 w-4 mr-1" />
-                    Exportar PDF
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleExport(formatoExportar)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? (
+                      <LoadingSpinner size="sm" />
+                    ) : (
+                      <>
+                        <Download className="h-4 w-4 mr-1" />
+                        Exportar
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
             </div>
           </CardHeader>
           <CardContent>
+            {clienteSelecionado && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                <p className="font-semibold text-blue-900">Cliente: {clienteSelecionado.user.nome}</p>
+                {processoSelecionado && (
+                  <p className="text-blue-700">Processo: {processoSelecionado.numero}</p>
+                )}
+              </div>
+            )}
             <Textarea
               value={conteudoGerado}
               onChange={(e) => setConteudoGerado(e.target.value)}
-              placeholder="O conteúdo gerado pela IA aparecerá aqui. Você poderá editar o texto livremente."
+              placeholder="O conteúdo gerado pela IA aparecerá aqui. Você poderá editar o texto livremente antes de exportar."
               rows={25}
               className="font-mono text-sm"
             />

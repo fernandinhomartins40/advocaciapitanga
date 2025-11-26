@@ -2,8 +2,13 @@ import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
 
+export interface PDFOptions {
+  cabecalho?: string;
+  rodape?: string;
+}
+
 export class PDFService {
-  async gerarPDF(conteudo: string, titulo: string): Promise<string> {
+  async gerarPDF(conteudo: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
     // Criar diretório se não existir
@@ -19,8 +24,8 @@ export class PDFService {
         const doc = new PDFDocument({
           size: 'A4',
           margins: {
-            top: 72,
-            bottom: 72,
+            top: options?.cabecalho ? 100 : 72,
+            bottom: options?.rodape ? 100 : 72,
             left: 72,
             right: 72
           }
@@ -30,13 +35,24 @@ export class PDFService {
 
         doc.pipe(stream);
 
-        // Cabeçalho
-        doc.fontSize(16)
-          .font('Helvetica-Bold')
-          .text('Advocacia Pitanga', { align: 'center' })
-          .moveDown(0.5);
+        // Cabeçalho personalizado ou padrão
+        if (options?.cabecalho) {
+          doc.fontSize(10)
+            .font('Helvetica')
+            .text(options.cabecalho, 72, 40, {
+              align: 'center',
+              width: doc.page.width - 144
+            })
+            .moveDown(0.5);
+        } else {
+          doc.fontSize(16)
+            .font('Helvetica-Bold')
+            .text('Advocacia Pitanga', { align: 'center' })
+            .moveDown(0.5);
+        }
 
         doc.fontSize(14)
+          .font('Helvetica-Bold')
           .text(titulo, { align: 'center' })
           .moveDown(2);
 
@@ -48,17 +64,35 @@ export class PDFService {
             lineGap: 5
           });
 
-        // Rodapé
+        // Rodapé personalizado ou padrão
         const pages = doc.bufferedPageRange();
         for (let i = 0; i < pages.count; i++) {
           doc.switchToPage(i);
 
-          doc.fontSize(10)
+          if (options?.rodape) {
+            doc.fontSize(9)
+              .font('Helvetica')
+              .text(
+                options.rodape,
+                72,
+                doc.page.height - 80,
+                {
+                  align: 'center',
+                  width: doc.page.width - 144
+                }
+              );
+          }
+
+          // Número da página sempre no final
+          doc.fontSize(9)
             .text(
               `Página ${i + 1} de ${pages.count}`,
-              0,
+              72,
               doc.page.height - 50,
-              { align: 'center' }
+              {
+                align: 'center',
+                width: doc.page.width - 144
+              }
             );
         }
 
