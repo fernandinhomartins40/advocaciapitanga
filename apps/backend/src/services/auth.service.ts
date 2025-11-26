@@ -1,4 +1,4 @@
-import { prisma } from '../lib/prisma';
+import { prisma } from 'database';
 import { hashPassword, comparePassword } from '../utils/bcrypt';
 import { generateToken, generateRefreshToken, verifyRefreshToken, JwtPayload } from '../utils/jwt';
 import { validarCPF } from '../utils/cpf';

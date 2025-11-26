@@ -1,5 +1,4 @@
-import { prisma } from '../lib/prisma';
-import { StatusProcesso } from '@prisma/client';
+import { prisma, StatusProcesso } from 'database';
 
 export class ProcessoService {
   async getAll(filters: {
