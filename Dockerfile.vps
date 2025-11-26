@@ -40,6 +40,10 @@ COPY . .
 # Gerar Prisma Client
 RUN npx prisma generate --schema=./packages/database/prisma/schema.prisma
 
+# Build do pacote Database
+WORKDIR /app/packages/database
+RUN npm run build
+
 # Build do Backend
 WORKDIR /app/apps/backend
 RUN npm run build
@@ -75,9 +79,10 @@ COPY --from=deps /tmp/prod_node_modules ./node_modules
 # Copiar Prisma Client gerado
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
-# Copiar pacote database completo (necessário para imports 'from database')
-COPY --from=builder /app/packages/database/src ./packages/database/src
+# Copiar pacote database compilado (dist com JavaScript)
+COPY --from=builder /app/packages/database/dist ./packages/database/dist
 COPY --from=builder /app/packages/database/package*.json ./packages/database/
+COPY --from=builder /app/packages/database/src ./packages/database/src
 
 # Copiar dependências necessárias para seeds (tsx e bcryptjs)
 COPY --from=builder /app/node_modules/tsx ./node_modules/tsx

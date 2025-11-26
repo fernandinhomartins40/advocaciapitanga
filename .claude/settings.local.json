@@ -4,7 +4,22 @@
       "Bash(ssh:*)",
       "Bash(npm run build:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(gh run:*)",
+      "Bash(npm install:*)",
+      "Bash(git push:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npm run dev:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(del \"C:\\Projetos Cursor\\advocaciapitanga\\apps\\backend\\src\\lib\\prisma.ts\")",
+      "Bash(npm run seed:*)",
+      "Bash(taskkill:*)",
+      "Bash(curl -I https://advocaciapitanga.com.br/health)",
+      "Bash(curl:*)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

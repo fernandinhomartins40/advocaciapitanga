@@ -1,0 +1,35 @@
+2025-11-26T11:24:15.532Z [[32minfo[39m]: 🚀 Backend rodando na porta 3001
+2025-11-26T11:24:15.535Z [[32minfo[39m]: 📝 Ambiente: development
+2025-11-26T11:24:15.535Z [[32minfo[39m]: 🔗 API disponível em: http://localhost:3001/api
+2025-11-26T13:03:21.497Z [[32minfo[39m]: 🔄 Tentativa 1/10 de conectar ao banco de dados...
+2025-11-26T13:03:21.676Z [[32minfo[39m]: ✅ Banco de dados pronto!
+2025-11-26T13:03:21.677Z [[32minfo[39m]: 🔍 Verificando inicialização do banco de dados...
+2025-11-26T13:03:21.705Z [[31merror[39m]: ❌ Erro ao verificar inicialização do banco de dados: 
+Invalid `prisma.user.count()` invocation in
+C:\Projetos Cursor\advocaciapitanga\apps\backend\src\utils\init-database.ts:13:42
+
+  10 logger.info('🔍 Verificando inicialização do banco de dados...');
+  11 
+  12 // Verificar se existe pelo menos um usuário administrador
+→ 13 const adminCount = await prisma.user.count(
+The table `(not available)` does not exist in the current database.
+2025-11-26T13:03:21.705Z [[31merror[39m]: 🔄 Tentando conectar ao banco de dados...
+2025-11-26T13:03:21.705Z [[32minfo[39m]: ✅ Conexão com banco de dados estabelecida
+2025-11-26T13:03:21.709Z [[32minfo[39m]: 🚀 Backend rodando na porta 3001
+2025-11-26T13:03:21.709Z [[32minfo[39m]: 📝 Ambiente: development
+2025-11-26T13:03:21.709Z [[32minfo[39m]: 🔗 API disponível em: http://localhost:3001/api
+2025-11-26T13:04:22.908Z [[32minfo[39m]: 🔄 Tentativa 1/10 de conectar ao banco de dados...
+2025-11-26T13:04:22.974Z [[32minfo[39m]: ✅ Banco de dados pronto!
+2025-11-26T13:04:22.975Z [[32minfo[39m]: 🔍 Verificando inicialização do banco de dados...
+2025-11-26T13:04:22.989Z [[32minfo[39m]: ✅ Banco de dados inicializado corretamente
+2025-11-26T13:04:22.989Z [[32minfo[39m]: 📊 Total de usuários: 3
+2025-11-26T13:04:22.990Z [[32minfo[39m]: 👤 Administradores: 1
+2025-11-26T13:05:38.765Z [[32minfo[39m]: 🔄 Tentativa 1/10 de conectar ao banco de dados...
+2025-11-26T13:05:38.869Z [[32minfo[39m]: ✅ Banco de dados pronto!
+2025-11-26T13:05:38.869Z [[32minfo[39m]: 🔍 Verificando inicialização do banco de dados...
+2025-11-26T13:05:38.880Z [[32minfo[39m]: ✅ Banco de dados inicializado corretamente
+2025-11-26T13:05:38.881Z [[32minfo[39m]: 📊 Total de usuários: 3
+2025-11-26T13:05:38.881Z [[32minfo[39m]: 👤 Administradores: 1
+2025-11-26T13:05:38.891Z [[32minfo[39m]: 🚀 Backend rodando na porta 3001
+2025-11-26T13:05:38.891Z [[32minfo[39m]: 📝 Ambiente: development
+2025-11-26T13:05:38.892Z [[32minfo[39m]: 🔗 API disponível em: http://localhost:3001/api

@@ -5,7 +5,7 @@ import app from './app';
 import { logger } from './utils/logger';
 import { ensureDatabaseReady } from './utils/init-database';
 
-const PORT = process.env.PORT || 3001;
+const PORT = parseInt(process.env.PORT || '3001', 10);
 
 /**
  * Inicializa o servidor garantindo que o banco de dados está pronto
@@ -15,17 +15,57 @@ async function startServer() {
     // Garantir que o banco de dados está pronto e inicializado
     await ensureDatabaseReady();
 
-    // Iniciar servidor
-    app.listen(PORT, () => {
+    // Iniciar servidor escutando em todas as interfaces (0.0.0.0)
+    const server = app.listen(PORT, '0.0.0.0', () => {
       logger.info(`🚀 Backend rodando na porta ${PORT}`);
       logger.info(`📝 Ambiente: ${process.env.NODE_ENV}`);
       logger.info(`🔗 API disponível em: http://localhost:${PORT}/api`);
     });
+
+    // Tratamento de erros do servidor
+    server.on('error', (error: any) => {
+      if (error.code === 'EADDRINUSE') {
+        logger.error(`❌ Porta ${PORT} já está em uso`);
+      } else {
+        logger.error('❌ Erro no servidor:', error);
+      }
+      process.exit(1);
+    });
+
+    // Graceful shutdown
+    process.on('SIGTERM', () => {
+      logger.info('SIGTERM recebido, encerrando servidor gracefully...');
+      server.close(() => {
+        logger.info('Servidor encerrado');
+        process.exit(0);
+      });
+    });
+
+    process.on('SIGINT', () => {
+      logger.info('SIGINT recebido, encerrando servidor gracefully...');
+      server.close(() => {
+        logger.info('Servidor encerrado');
+        process.exit(0);
+      });
+    });
   } catch (error) {
     logger.error('❌ Erro ao iniciar servidor:', error);
+    logger.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
     process.exit(1);
   }
 }
+
+// Tratamento global de erros não capturados
+process.on('uncaughtException', (error) => {
+  logger.error('❌ Uncaught Exception:', error);
+  logger.error('Stack trace:', error.stack);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  process.exit(1);
+});
 
 // Iniciar servidor
 startServer();
