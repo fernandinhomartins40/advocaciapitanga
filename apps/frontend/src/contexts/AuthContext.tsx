@@ -30,7 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    loadUser();
+    // Só tentar carregar usuário se não estivermos na página de login
+    const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+    if (!isLoginPage) {
+      loadUser();
+    } else {
+      setIsLoading(false);
+    }
   }, []);
 
   const loadUser = async () => {
