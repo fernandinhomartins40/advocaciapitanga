@@ -214,6 +214,10 @@ jobs:
             echo "=== Executando migrations ==="
             docker exec advocacia-vps sh -c "cd /app && npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma" || echo "⚠️ Migrations falharam"
 
+            # Executar seed (popular banco de dados com usuários de teste)
+            echo "=== Executando seed do banco de dados ==="
+            docker exec advocacia-vps sh -c "cd /app && npx tsx packages/database/prisma/seed.ts" || echo "⚠️ Seed falhou (pode ser normal se já existem dados)"
+
             # ===== LOGS DE DIAGNÓSTICO =====
             echo "=== Logs da Aplicação (últimas 100 linhas) ==="
             docker logs advocacia-vps --tail=100

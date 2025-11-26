@@ -114,13 +114,13 @@ export default function LoginPage() {
               <div className="bg-gray-50 p-3 rounded">
                 <p><strong>Advogado:</strong></p>
                 <p>Email: admin@pitanga.com</p>
-                <p>Senha: admin123</p>
+                <p>Senha: Pitanga@2024!Admin</p>
               </div>
             ) : (
               <div className="bg-gray-50 p-3 rounded">
                 <p><strong>Cliente:</strong></p>
                 <p>Email: maria@email.com</p>
-                <p>Senha: cliente123</p>
+                <p>Senha: Pitanga@2024!Cliente</p>
               </div>
             )}
           </div>

@@ -14,15 +14,15 @@ async function main() {
   await prisma.advogado.deleteMany();
   await prisma.user.deleteMany();
 
-  // Hash da senha padrão
-  const senhaHash = await bcrypt.hash('admin123', 10);
-  const senhaCliente = await bcrypt.hash('cliente123', 10);
+  // Hash de senhas seguras
+  const senhaAdvogado = await bcrypt.hash('Pitanga@2024!Admin', 10);
+  const senhaCliente = await bcrypt.hash('Pitanga@2024!Cliente', 10);
 
   // Criar Advogado
   const advogado = await prisma.user.create({
     data: {
       email: 'admin@pitanga.com',
-      password: senhaHash,
+      password: senhaAdvogado,
       nome: 'Dr. João Silva',
       role: Role.ADVOGADO,
       advogado: {
@@ -31,6 +31,9 @@ async function main() {
           telefone: '(11) 98765-4321',
         },
       },
+    },
+    include: {
+      advogado: true,
     },
   });
 
@@ -51,6 +54,9 @@ async function main() {
         },
       },
     },
+    include: {
+      cliente: true,
+    },
   });
 
   const cliente2 = await prisma.user.create({
@@ -66,6 +72,9 @@ async function main() {
           endereco: 'Av. Paulista, 1000 - São Paulo/SP',
         },
       },
+    },
+    include: {
+      cliente: true,
     },
   });
 
@@ -146,13 +155,13 @@ async function main() {
   console.log('\n📋 Credenciais de acesso:');
   console.log('\nAdvogado:');
   console.log('  Email: admin@pitanga.com');
-  console.log('  Senha: admin123');
+  console.log('  Senha: Pitanga@2024!Admin');
   console.log('\nCliente 1:');
   console.log('  Email: maria@email.com');
-  console.log('  Senha: cliente123');
+  console.log('  Senha: Pitanga@2024!Cliente');
   console.log('\nCliente 2:');
   console.log('  Email: jose@email.com');
-  console.log('  Senha: cliente123\n');
+  console.log('  Senha: Pitanga@2024!Cliente\n');
 }
 
 main()
