@@ -163,8 +163,7 @@ export class ProjudiController {
         action: AuditAction.PROFILE_UPDATED,
         userId,
         oldValue: JSON.stringify(processo),
-        newValue: JSON.stringify(processoAtualizado),
-        metadata: JSON.stringify({ fonte: 'PROJUDI_SCRAPING' })
+        newValue: JSON.stringify(processoAtualizado)
       });
 
       res.json({
@@ -238,8 +237,7 @@ export class ProjudiController {
         action: AuditAction.PROFILE_UPDATED,
         userId,
         oldValue: JSON.stringify(processo),
-        newValue: JSON.stringify(processoAtualizado),
-        metadata: JSON.stringify({ fonte: 'PROJUDI_API_OFICIAL' })
+        newValue: JSON.stringify(processoAtualizado)
       });
 
       res.json({

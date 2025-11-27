@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { ProjudiController } from '../controllers/projudi.controller';
-import { authMiddleware } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middlewares/auth.middleware';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
