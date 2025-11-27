@@ -11,7 +11,14 @@ const Tabs = ({ defaultValue, value, onValueChange, children, className }: {
   const [internalActiveTab, setInternalActiveTab] = React.useState(defaultValue || '');
 
   const activeTab = value !== undefined ? value : internalActiveTab;
-  const setActiveTab = onValueChange !== undefined ? onValueChange : setInternalActiveTab;
+  const setActiveTab = React.useCallback((newValue: string) => {
+    console.log('🟢 Tabs setActiveTab called:', { current: activeTab, new: newValue });
+    if (onValueChange !== undefined) {
+      onValueChange(newValue);
+    } else {
+      setInternalActiveTab(newValue);
+    }
+  }, [activeTab, onValueChange]);
 
   return (
     <div className={className}>
@@ -36,26 +43,31 @@ const TabsList = ({ children, activeTab, setActiveTab, className }: any) => (
   </div>
 );
 
-const TabsTrigger = ({ value, children, activeTab, setActiveTab, className, ...props }: any) => (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setActiveTab(value);
-    }}
-    className={cn(
-      "px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer relative z-10",
-      activeTab === value
-        ? "border-primary-600 text-primary-600"
-        : "border-transparent text-gray-500 hover:text-gray-700",
-      className
-    )}
-    {...props}
-  >
-    {children}
-  </button>
-);
+const TabsTrigger = ({ value, children, activeTab, setActiveTab, className, ...props }: any) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('🔵 TabsTrigger clicked:', value);
+    setActiveTab(value);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      className={cn(
+        "px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer relative z-10",
+        activeTab === value
+          ? "border-primary-600 text-primary-600"
+          : "border-transparent text-gray-500 hover:text-gray-700",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+};
 
 const TabsContent = ({ value, children, activeTab }: any) => {
   if (value !== activeTab) return null;

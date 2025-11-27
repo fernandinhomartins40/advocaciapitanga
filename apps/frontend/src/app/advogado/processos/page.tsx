@@ -194,6 +194,7 @@ export default function ProcessosPage() {
   };
 
   const handleAddParte = (parte: ParteProcessualData) => {
+    console.log('✅ Adicionando/editando parte:', parte);
     if (parteEditIndex !== null) {
       // Editar parte existente
       const novasPartes = [...formData.partes];
