@@ -63,11 +63,22 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Instalar Nginx e Supervisor
-RUN apk add --no-cache nginx supervisor wget
+# Instalar Nginx, Supervisor e dependências do Chromium/Puppeteer
+RUN apk add --no-cache \
+    nginx \
+    supervisor \
+    wget \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Criar usuário não-root
 RUN addgroup --system --gid 1001 nodejs && \
@@ -113,7 +124,8 @@ RUN mkdir -p /app/uploads/documentos \
              /var/log/nginx \
              /var/lib/nginx/tmp \
              /run/nginx \
-             /var/log/supervisor
+             /var/log/supervisor \
+             /app/.cache/puppeteer
 
 # Configurar Nginx
 COPY nginx.vps.conf /etc/nginx/nginx.conf
@@ -133,7 +145,7 @@ directory=/app
 autostart=true
 autorestart=true
 user=appuser
-environment=NODE_ENV=production,PORT=3001
+environment=NODE_ENV=production,PORT=3001,PUPPETEER_CACHE_DIR=/app/.cache/puppeteer,HOME=/app
 stdout_logfile=/dev/stdout
 stdout_logfile_maxbytes=0
 stderr_logfile=/dev/stderr
@@ -168,6 +180,7 @@ EOF
 # Ajustar permissões
 RUN chown -R appuser:nodejs /app/uploads && \
     chown -R appuser:nodejs /app/apps/frontend/.next && \
+    chown -R appuser:nodejs /app/.cache && \
     chmod -R 755 /app/uploads && \
     chmod -R 755 /var/lib/nginx && \
     chmod -R 755 /var/log/nginx && \
