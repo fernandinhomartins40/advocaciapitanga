@@ -33,6 +33,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/packages/database/dist ./node_modules/database/dist
 COPY --from=builder /app/packages/database/package.json ./node_modules/database/
+COPY --from=builder /app/packages/database/node_modules/@prisma ./node_modules/database/node_modules/@prisma
 
 RUN mkdir -p uploads/documentos uploads/documentos-gerados
 
