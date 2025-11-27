@@ -109,12 +109,18 @@ export class ProjudiScraperService {
       // Iniciar browser headless
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
           '--disable-accelerated-2d-canvas',
-          '--disable-gpu'
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-dev-tools',
+          '--no-zygote',
+          '--single-process',
+          '--disable-crash-reporter'
         ]
       });
 
@@ -196,10 +202,18 @@ export class ProjudiScraperService {
     try {
       browser = await puppeteer.launch({
         headless: true,
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage'
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--disable-gpu',
+          '--disable-software-rasterizer',
+          '--disable-dev-tools',
+          '--no-zygote',
+          '--single-process',
+          '--disable-crash-reporter'
         ]
       });
 
