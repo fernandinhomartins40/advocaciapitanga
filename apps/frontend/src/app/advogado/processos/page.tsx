@@ -96,10 +96,24 @@ export default function ProcessosPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validações
-    if (!formData.numero || !formData.clienteId) {
-      toast({ title: 'Erro', description: 'Preencha os campos obrigatórios', variant: 'error' });
-      return;
+    // Validações dos campos obrigatórios
+    const camposObrigatorios = [
+      { campo: 'numero', nome: 'Número do Processo', tab: 'basico' },
+      { campo: 'clienteId', nome: 'Cliente', tab: 'basico' },
+      { campo: 'tipoAcao', nome: 'Tipo de Ação', tab: 'basico' },
+      { campo: 'areaDireito', nome: 'Área do Direito', tab: 'basico' },
+      { campo: 'justica', nome: 'Justiça', tab: 'localizacao' },
+      { campo: 'instancia', nome: 'Instância', tab: 'localizacao' },
+      { campo: 'uf', nome: 'UF', tab: 'localizacao' },
+      { campo: 'objetoAcao', nome: 'Objeto da Ação', tab: 'informacoes' },
+    ];
+
+    for (const { campo, nome, tab } of camposObrigatorios) {
+      if (!formData[campo as keyof ProcessoFormData]) {
+        toast({ title: 'Campo obrigatório', description: `Preencha o campo "${nome}" na aba correspondente`, variant: 'error' });
+        setCurrentTab(tab);
+        return;
+      }
     }
 
     try {
@@ -289,7 +303,6 @@ export default function ProcessosPage() {
                     value={formData.numero}
                     onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                     placeholder="0000000-00.0000.0.00.0000"
-                    required
                   />
                 </div>
 
@@ -299,7 +312,6 @@ export default function ProcessosPage() {
                     id="cliente"
                     value={formData.clienteId}
                     onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
-                    required
                   >
                     <option value="">Selecione um cliente</option>
                     {clientesData?.clientes?.map((cliente: any) => (
@@ -316,7 +328,6 @@ export default function ProcessosPage() {
                     id="tipoAcao"
                     value={formData.tipoAcao}
                     onChange={(e) => setFormData({ ...formData, tipoAcao: e.target.value })}
-                    required
                   >
                     <option value="">Selecione</option>
                     <option value="Ação Civil Pública">Ação Civil Pública</option>
@@ -335,7 +346,6 @@ export default function ProcessosPage() {
                     id="areaDireito"
                     value={formData.areaDireito}
                     onChange={(e) => setFormData({ ...formData, areaDireito: e.target.value })}
-                    required
                   >
                     <option value="">Selecione</option>
                     <option value="Cível">Cível</option>
@@ -359,7 +369,6 @@ export default function ProcessosPage() {
                       id="justica"
                       value={formData.justica}
                       onChange={(e) => setFormData({ ...formData, justica: e.target.value })}
-                      required
                     >
                       <option value="">Selecione</option>
                       <option value="ESTADUAL">Estadual</option>
@@ -376,7 +385,6 @@ export default function ProcessosPage() {
                       id="instancia"
                       value={formData.instancia}
                       onChange={(e) => setFormData({ ...formData, instancia: e.target.value })}
-                      required
                     >
                       <option value="">Selecione</option>
                       <option value="PRIMEIRA">1ª Instância</option>
@@ -422,7 +430,6 @@ export default function ProcessosPage() {
                       id="uf"
                       value={formData.uf}
                       onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
-                      required
                     >
                       <option value="">Selecione</option>
                       {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
@@ -467,7 +474,6 @@ export default function ProcessosPage() {
                     onChange={(e) => setFormData({ ...formData, objetoAcao: e.target.value })}
                     rows={4}
                     placeholder="Descreva o objeto da ação"
-                    required
                   />
                 </div>
 

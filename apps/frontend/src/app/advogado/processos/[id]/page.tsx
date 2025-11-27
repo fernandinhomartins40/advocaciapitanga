@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Save, Upload, Download, Trash2, Send } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Save, Upload, Download, Trash2, Send, Edit } from 'lucide-react';
 import { useProcesso, useUpdateProcesso } from '@/hooks/useProcessos';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate, formatCPF } from '@/lib/utils';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
+import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
+import { ListaPartes } from '@/components/processos/ListaPartes';
 
 export default function ProcessoDetalhesPage() {
   const params = useParams();
@@ -25,13 +28,59 @@ export default function ProcessoDetalhesPage() {
   const updateMutation = useUpdateProcesso();
   const { toast } = useToast();
 
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [currentTab, setCurrentTab] = useState('basico');
+
   const [formData, setFormData] = useState({
-    descricao: '',
+    tipoAcao: '',
+    areaDireito: '',
+    justica: '',
+    instancia: '',
+    comarca: '',
+    foro: '',
+    vara: '',
+    uf: '',
+    objetoAcao: '',
+    pedidoPrincipal: '',
+    valorCausa: '',
+    valorHonorarios: '',
+    dataDistribuicao: '',
+    proximoPrazo: '',
+    descricaoPrazo: '',
     status: '',
+    prioridade: '',
+    observacoes: '',
   });
 
   const [mensagem, setMensagem] = useState('');
   const [uploading, setUploading] = useState(false);
+
+  // Preencher formData quando processo for carregado
+  useEffect(() => {
+    if (processo) {
+      setFormData({
+        tipoAcao: processo.tipoAcao || '',
+        areaDireito: processo.areaDireito || '',
+        justica: processo.justica || '',
+        instancia: processo.instancia || '',
+        comarca: processo.comarca || '',
+        foro: processo.foro || '',
+        vara: processo.vara || '',
+        uf: processo.uf || '',
+        objetoAcao: processo.objetoAcao || '',
+        pedidoPrincipal: processo.pedidoPrincipal || '',
+        valorCausa: processo.valorCausa ? `R$ ${processo.valorCausa.toFixed(2).replace('.', ',')}` : '',
+        valorHonorarios: processo.valorHonorarios ? `R$ ${processo.valorHonorarios.toFixed(2).replace('.', ',')}` : '',
+        dataDistribuicao: processo.dataDistribuicao ? new Date(processo.dataDistribuicao).toISOString().split('T')[0] : '',
+        proximoPrazo: processo.proximoPrazo ? new Date(processo.proximoPrazo).toISOString().split('T')[0] : '',
+        descricaoPrazo: processo.descricaoPrazo || '',
+        status: processo.status || '',
+        prioridade: processo.prioridade || '',
+        observacoes: processo.observacoes || '',
+      });
+    }
+  }, [processo]);
 
   if (isLoading) {
     return (
@@ -45,19 +94,37 @@ export default function ProcessoDetalhesPage() {
     return <div>Processo não encontrado</div>;
   }
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+
     try {
+      const payload = {
+        ...formData,
+        valorCausa: formData.valorCausa ? parseFloat(formData.valorCausa.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+        valorHonorarios: formData.valorHonorarios ? parseFloat(formData.valorHonorarios.replace(/[^\d,]/g, '').replace(',', '.')) : null,
+        dataDistribuicao: formData.dataDistribuicao || null,
+        proximoPrazo: formData.proximoPrazo || null,
+      };
+
       await updateMutation.mutateAsync({
         id,
-        data: {
-          descricao: formData.descricao || processo.descricao,
-          status: formData.status || processo.status,
-        },
+        data: payload,
       });
-      toast({ title: 'Sucesso', description: 'Processo atualizado', variant: 'success' });
+      toast({ title: 'Sucesso', description: 'Processo atualizado com sucesso', variant: 'success' });
+      setIsEditOpen(false);
     } catch (error: any) {
-      toast({ title: 'Erro', description: 'Erro ao atualizar processo', variant: 'error' });
+      toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao atualizar processo', variant: 'error' });
     }
+  };
+
+  const formatCurrency = (value: string) => {
+    const num = value.replace(/\D/g, '');
+    if (!num) return '';
+    const formatted = (parseInt(num) / 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+    return `R$ ${formatted}`;
   };
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
