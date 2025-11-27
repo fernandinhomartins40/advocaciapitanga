@@ -120,7 +120,9 @@ export class ProjudiScraperService {
           '--disable-dev-tools',
           '--no-zygote',
           '--single-process',
-          '--disable-crash-reporter'
+          '--disable-crash-reporter',
+          '--crash-dumps-dir=/tmp',
+          '--enable-crashpad=false'
         ]
       });
 
@@ -213,7 +215,9 @@ export class ProjudiScraperService {
           '--disable-dev-tools',
           '--no-zygote',
           '--single-process',
-          '--disable-crash-reporter'
+          '--disable-crash-reporter',
+          '--crash-dumps-dir=/tmp',
+          '--enable-crashpad=false'
         ]
       });
 

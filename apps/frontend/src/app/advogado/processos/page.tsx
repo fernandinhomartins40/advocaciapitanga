@@ -373,7 +373,10 @@ export default function ProcessosPage() {
           </DialogHeader>
 
           <form onSubmit={handleCreate}>
-            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+            <Tabs value={currentTab} onValueChange={(newTab) => {
+              console.log('🔄 Navegando para aba:', newTab);
+              setCurrentTab(newTab);
+            }}>
               <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="basico" className="flex items-center" aria-label="Aba de dados básicos">
                   Básico
