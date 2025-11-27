@@ -51,6 +51,7 @@ export default function ProcessoDetalhesPage() {
     status: '',
     prioridade: '',
     observacoes: '',
+    descricao: '',
   });
 
   const [mensagem, setMensagem] = useState('');
@@ -78,6 +79,7 @@ export default function ProcessoDetalhesPage() {
         status: processo.status || '',
         prioridade: processo.prioridade || '',
         observacoes: processo.observacoes || '',
+        descricao: processo.descricao || '',
       });
     }
   }, [processo]);
