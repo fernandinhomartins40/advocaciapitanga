@@ -15,6 +15,7 @@ import documentoRoutes from './routes/documento.routes';
 import mensagemRoutes from './routes/mensagem.routes';
 import iaRoutes from './routes/ia.routes';
 import configuracaoIARoutes from './routes/configuracao-ia.routes';
+import projudiRoutes from './routes/projudi.routes';
 
 const app = express();
 
@@ -81,6 +82,7 @@ app.use('/api/documentos', documentoRoutes);
 app.use('/api/mensagens', mensagemRoutes);
 app.use('/api/ia', iaRoutes);
 app.use('/api/configuracao-ia', configuracaoIARoutes);
+app.use('/api/projudi', projudiRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {

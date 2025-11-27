@@ -98,10 +98,12 @@ model Processo {
   updatedAt DateTime @updatedAt
 
   // Relações
-  partes       ParteProcessual[]
-  documentos   Documento[]
-  mensagens    Mensagem[]
-  documentosIA DocumentoIA[]
+  partes            ParteProcessual[]
+  documentos        Documento[]
+  mensagens         Mensagem[]
+  documentosIA      DocumentoIA[]
+  consultasProjudi  ConsultaProjudi[]
+  descricao         String? @db.Text
 }
 
 model ParteProcessual {
@@ -284,4 +286,39 @@ model ConfiguracaoIA {
   rodape       String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model ConsultaProjudi {
+  id             String   @id @default(cuid())
+  processoId     String
+  processo       Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  metodo         MetodoConsulta
+  status         StatusConsulta
+  dadosExtraidos Json?
+  erroMensagem   String?
+
+  userId         String
+  ipAddress      String?
+
+  createdAt      DateTime @default(now())
+
+  @@index([processoId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([metodo])
+}
+
+enum MetodoConsulta {
+  API_OFICIAL
+  SCRAPING_ASSISTIDO
+}
+
+enum StatusConsulta {
+  SUCESSO
+  ERRO_CAPTCHA
+  ERRO_CONEXAO
+  ERRO_PROCESSO_NAO_ENCONTRADO
+  ERRO_TIMEOUT
+  ERRO_CREDENCIAIS
 }

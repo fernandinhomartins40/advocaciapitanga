@@ -81,3 +81,97 @@ export function useDashboardStats() {
     },
   });
 }
+
+// ====================
+// HOOKS PROJUDI
+// ====================
+
+/**
+ * Hook para verificar status da integração PROJUDI
+ */
+export function useProjudiStatus() {
+  return useQuery({
+    queryKey: ['projudi-status'],
+    queryFn: async () => {
+      const response = await api.get('/projudi/status');
+      return response.data;
+    },
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
+  });
+}
+
+/**
+ * Hook para iniciar consulta PROJUDI e obter CAPTCHA
+ */
+export function useIniciarCaptchaProjudi() {
+  return useMutation({
+    mutationFn: async (processoId: string) => {
+      const response = await api.post(`/projudi/processos/${processoId}/iniciar-captcha`);
+      return response.data;
+    },
+  });
+}
+
+/**
+ * Hook para consultar PROJUDI com CAPTCHA resolvido
+ */
+export function useConsultarComCaptcha() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      processoId,
+      sessionId,
+      captchaResposta
+    }: {
+      processoId: string;
+      sessionId: string;
+      captchaResposta: string;
+    }) => {
+      const response = await api.post(`/projudi/processos/${processoId}/consultar-captcha`, {
+        sessionId,
+        captchaResposta
+      });
+      return response.data;
+    },
+    onSuccess: (data, variables) => {
+      // Invalidar queries do processo atualizado
+      queryClient.invalidateQueries({ queryKey: ['processo', variables.processoId] });
+      queryClient.invalidateQueries({ queryKey: ['processos'] });
+    },
+  });
+}
+
+/**
+ * Hook para sincronizar via API oficial PROJUDI
+ */
+export function useSincronizarViaAPI() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (processoId: string) => {
+      const response = await api.post(`/projudi/processos/${processoId}/sincronizar-api`);
+      return response.data;
+    },
+    onSuccess: (data, processoId) => {
+      // Invalidar queries do processo atualizado
+      queryClient.invalidateQueries({ queryKey: ['processo', processoId] });
+      queryClient.invalidateQueries({ queryKey: ['processos'] });
+    },
+  });
+}
+
+/**
+ * Hook para verificar alterações no processo
+ */
+export function useVerificarAlteracoesProjudi(processoId: string) {
+  return useQuery({
+    queryKey: ['projudi-alteracoes', processoId],
+    queryFn: async () => {
+      const response = await api.get(`/projudi/processos/${processoId}/verificar-alteracoes`);
+      return response.data;
+    },
+    enabled: !!processoId,
+    refetchInterval: false, // Não refetch automático
+  });
+}
