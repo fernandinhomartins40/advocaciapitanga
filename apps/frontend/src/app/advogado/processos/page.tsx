@@ -254,9 +254,9 @@ export default function ProcessosPage() {
   // FASE 2.3: Componente indicador de aba
   const TabIndicator = ({ isValid }: { isValid: boolean }) => (
     isValid ? (
-      <Check className="h-4 w-4 text-green-600 ml-2" />
+      <Check className="h-4 w-4 text-green-600 ml-2 pointer-events-none" />
     ) : (
-      <AlertCircle className="h-4 w-4 text-red-500 ml-2" />
+      <AlertCircle className="h-4 w-4 text-red-500 ml-2 pointer-events-none" />
     )
   );
 

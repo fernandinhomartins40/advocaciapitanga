@@ -470,9 +470,9 @@ export default function ProcessoDetalhesPage() {
   // FASE 2.3: Indicador visual de progresso
   const TabIndicator = ({ isValid }: { isValid: boolean }) => (
     isValid ? (
-      <Check className="h-4 w-4 text-green-600 ml-2" />
+      <Check className="h-4 w-4 text-green-600 ml-2 pointer-events-none" />
     ) : (
-      <AlertCircle className="h-4 w-4 text-red-500 ml-2" />
+      <AlertCircle className="h-4 w-4 text-red-500 ml-2 pointer-events-none" />
     )
   );
 
