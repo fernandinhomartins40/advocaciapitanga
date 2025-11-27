@@ -130,4 +130,17 @@ export class ProcessoController {
       next(error);
     }
   }
+
+  // FASE 2.4: Atualizar partes do processo
+  async updatePartes(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { partes } = req.body;
+
+      const resultado = await processoService.updatePartes(id, partes);
+      res.json(resultado);
+    } catch (error: any) {
+      next(error);
+    }
+  }
 }

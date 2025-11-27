@@ -1,4 +1,5 @@
 import { prisma, StatusProcesso } from 'database';
+import { AuditService, AuditAction } from './audit.service';
 
 export class ProcessoService {
   async getAll(filters: {
@@ -234,6 +235,16 @@ export class ProcessoService {
       }
     });
 
+    // FASE 3.2: Registrar auditoria
+    await AuditService.createLog({
+      entityType: 'Processo',
+      entityId: id,
+      action: AuditAction.PROFILE_UPDATED, // Usar action mais apropriada
+      userId: updated.advogadoId,
+      oldValue: JSON.stringify(processo),
+      newValue: JSON.stringify(updated)
+    });
+
     return updated;
   }
 
@@ -310,5 +321,73 @@ export class ProcessoService {
         count: p._count
       }))
     };
+  }
+
+  // FASE 2.4: Atualizar partes do processo
+  async updatePartes(processoId: string, partes: any[]) {
+    const processo = await prisma.processo.findUnique({
+      where: { id: processoId },
+      include: {
+        partes: true
+      }
+    });
+
+    if (!processo) {
+      throw new Error('Processo não encontrado');
+    }
+
+    const partesAntigas = processo.partes;
+
+    // Remover partes existentes
+    await prisma.parteProcessual.deleteMany({
+      where: { processoId }
+    });
+
+    // Criar novas partes
+    if (partes && partes.length > 0) {
+      await prisma.parteProcessual.createMany({
+        data: partes.map((parte: any) => ({
+          processoId,
+          tipoParte: parte.tipoParte,
+          tipoPessoa: parte.tipoPessoa,
+          nomeCompleto: parte.nomeCompleto,
+          cpf: parte.cpf,
+          rg: parte.rg,
+          orgaoEmissor: parte.orgaoEmissor,
+          nacionalidade: parte.nacionalidade,
+          estadoCivil: parte.estadoCivil,
+          profissao: parte.profissao,
+          dataNascimento: parte.dataNascimento ? new Date(parte.dataNascimento) : null,
+          razaoSocial: parte.razaoSocial,
+          nomeFantasia: parte.nomeFantasia,
+          cnpj: parte.cnpj,
+          inscricaoEstadual: parte.inscricaoEstadual,
+          representanteLegal: parte.representanteLegal,
+          cargoRepresentante: parte.cargoRepresentante,
+          email: parte.email,
+          telefone: parte.telefone,
+          celular: parte.celular,
+          cep: parte.cep,
+          logradouro: parte.logradouro,
+          numero: parte.numero,
+          complemento: parte.complemento,
+          bairro: parte.bairro,
+          cidade: parte.cidade,
+          uf: parte.uf,
+        }))
+      });
+    }
+
+    // FASE 3.2: Registrar auditoria
+    await AuditService.createLog({
+      entityType: 'Processo',
+      entityId: processoId,
+      action: AuditAction.PROFILE_UPDATED,
+      userId: processo.advogadoId,
+      oldValue: JSON.stringify(partesAntigas),
+      newValue: JSON.stringify(partes)
+    });
+
+    return { message: 'Partes atualizadas com sucesso' };
   }
 }

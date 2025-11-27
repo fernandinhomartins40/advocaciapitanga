@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText } from 'lucide-react';
+import { Plus, FileText, Check, AlertCircle } from 'lucide-react';
 import { useProcessos, useCreateProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
@@ -87,11 +87,58 @@ export default function ProcessosPage() {
   const [isParteModalOpen, setIsParteModalOpen] = useState(false);
   const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
   const [currentTab, setCurrentTab] = useState('basico');
+  const [tabValidation, setTabValidation] = useState<Record<string, boolean>>({
+    basico: false,
+    localizacao: false,
+    partes: false,
+    informacoes: false,
+    controle: false,
+  });
 
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
   const createMutation = useCreateProcesso();
   const { toast } = useToast();
+
+  // FASE 1.4: Reset correto do formulário quando modal fechar
+  useEffect(() => {
+    if (!isCreateOpen) {
+      setFormData(INITIAL_FORM_DATA);
+      setCurrentTab('basico');
+      setParteEditIndex(null);
+    }
+  }, [isCreateOpen]);
+
+  // FASE 1.3: Validação em tempo real
+  useEffect(() => {
+    validateTabs();
+  }, [formData]);
+
+  const validateTabs = () => {
+    const validation: Record<string, boolean> = {
+      basico: !!(formData.numero && formData.clienteId && formData.tipoAcao && formData.areaDireito),
+      localizacao: !!(formData.justica && formData.instancia && formData.uf),
+      partes: true, // Validação de partes será feita separadamente
+      informacoes: !!formData.objetoAcao,
+      controle: true, // Todos os campos de controle são opcionais
+    };
+    setTabValidation(validation);
+  };
+
+  // FASE 2.2: Validação de partes
+  const validatePartes = () => {
+    if (!formData.partes || formData.partes.length === 0) return false;
+    const hasAutor = formData.partes.some(p => p.tipoParte === 'AUTOR');
+    const hasReu = formData.partes.some(p => p.tipoParte === 'REU');
+    return hasAutor && hasReu;
+  };
+
+  // FASE 2.3: Contador de abas completas
+  const getTabsCompleted = () => {
+    const partesValid = validatePartes();
+    const completed = Object.values(tabValidation).filter(Boolean).length + (partesValid ? 1 : 0);
+    return completed;
+  };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,6 +161,17 @@ export default function ProcessosPage() {
         setCurrentTab(tab);
         return;
       }
+    }
+
+    // FASE 2.2: Validação de partes
+    if (!validatePartes()) {
+      toast({
+        title: 'Partes incompletas',
+        description: 'É necessário ter pelo menos 1 Autor e 1 Réu no processo',
+        variant: 'error'
+      });
+      setCurrentTab('partes');
+      return;
     }
 
     try {
@@ -159,14 +217,31 @@ export default function ProcessosPage() {
     setFormData({ ...formData, partes: novasPartes });
   };
 
-  const formatCurrency = (value: string) => {
-    const num = value.replace(/\D/g, '');
-    if (!num) return '';
-    const formatted = (parseInt(num) / 100).toLocaleString('pt-BR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-    return `R$ ${formatted}`;
+  // FASE 3.1: Debounce para formatação de moeda
+  const debounce = <T extends (...args: any[]) => any>(func: T, wait: number) => {
+    let timeout: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  };
+
+  const formatCurrency = useCallback(
+    debounce((value: string) => {
+      const num = value.replace(/\D/g, '');
+      if (!num) return '';
+      const formatted = (parseInt(num) / 100).toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+      return `R$ ${formatted}`;
+    }, 300),
+    []
+  );
+
+  const handleCurrencyChange = (field: 'valorCausa' | 'valorHonorarios', value: string) => {
+    const formatted = formatCurrency(value);
+    setFormData({ ...formData, [field]: formatted });
   };
 
   const statusColors: Record<string, any> = {
@@ -175,6 +250,15 @@ export default function ProcessosPage() {
     CONCLUIDO: 'success',
     ARQUIVADO: 'default',
   };
+
+  // FASE 2.3: Componente indicador de aba
+  const TabIndicator = ({ isValid }: { isValid: boolean }) => (
+    isValid ? (
+      <Check className="h-4 w-4 text-green-600 ml-2" />
+    ) : (
+      <AlertCircle className="h-4 w-4 text-red-500 ml-2" />
+    )
+  );
 
   return (
     <div className="space-y-6">
@@ -282,16 +366,35 @@ export default function ProcessosPage() {
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Processo</DialogTitle>
+            {/* FASE 2.3: Badge de progresso */}
+            <p className="text-sm text-gray-500 mt-2">
+              Progresso: {getTabsCompleted()}/5 abas completas
+            </p>
           </DialogHeader>
 
           <form onSubmit={handleCreate}>
             <Tabs value={currentTab} onValueChange={setCurrentTab}>
               <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="basico">Básico</TabsTrigger>
-                <TabsTrigger value="localizacao">Localização</TabsTrigger>
-                <TabsTrigger value="partes">Partes</TabsTrigger>
-                <TabsTrigger value="informacoes">Informações</TabsTrigger>
-                <TabsTrigger value="controle">Controle</TabsTrigger>
+                <TabsTrigger value="basico" className="flex items-center" aria-label="Aba de dados básicos">
+                  Básico
+                  <TabIndicator isValid={tabValidation.basico} />
+                </TabsTrigger>
+                <TabsTrigger value="localizacao" className="flex items-center" aria-label="Aba de localização judicial">
+                  Localização
+                  <TabIndicator isValid={tabValidation.localizacao} />
+                </TabsTrigger>
+                <TabsTrigger value="partes" className="flex items-center" aria-label="Aba de partes processuais">
+                  Partes
+                  <TabIndicator isValid={validatePartes()} />
+                </TabsTrigger>
+                <TabsTrigger value="informacoes" className="flex items-center" aria-label="Aba de informações processuais">
+                  Informações
+                  <TabIndicator isValid={tabValidation.informacoes} />
+                </TabsTrigger>
+                <TabsTrigger value="controle" className="flex items-center" aria-label="Aba de controle e prazos">
+                  Controle
+                  <TabIndicator isValid={tabValidation.controle} />
+                </TabsTrigger>
               </TabsList>
 
               {/* Aba 1: Dados Básicos */}
@@ -303,6 +406,8 @@ export default function ProcessosPage() {
                     value={formData.numero}
                     onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
                     placeholder="0000000-00.0000.0.00.0000"
+                    required
+                    aria-required="true"
                   />
                 </div>
 
@@ -312,6 +417,8 @@ export default function ProcessosPage() {
                     id="cliente"
                     value={formData.clienteId}
                     onChange={(e) => setFormData({ ...formData, clienteId: e.target.value })}
+                    required
+                    aria-required="true"
                   >
                     <option value="">Selecione um cliente</option>
                     {clientesData?.clientes?.map((cliente: any) => (
@@ -328,6 +435,8 @@ export default function ProcessosPage() {
                     id="tipoAcao"
                     value={formData.tipoAcao}
                     onChange={(e) => setFormData({ ...formData, tipoAcao: e.target.value })}
+                    required
+                    aria-required="true"
                   >
                     <option value="">Selecione</option>
                     <option value="Ação Civil Pública">Ação Civil Pública</option>
@@ -346,6 +455,8 @@ export default function ProcessosPage() {
                     id="areaDireito"
                     value={formData.areaDireito}
                     onChange={(e) => setFormData({ ...formData, areaDireito: e.target.value })}
+                    required
+                    aria-required="true"
                   >
                     <option value="">Selecione</option>
                     <option value="Cível">Cível</option>
@@ -369,6 +480,8 @@ export default function ProcessosPage() {
                       id="justica"
                       value={formData.justica}
                       onChange={(e) => setFormData({ ...formData, justica: e.target.value })}
+                      required
+                      aria-required="true"
                     >
                       <option value="">Selecione</option>
                       <option value="ESTADUAL">Estadual</option>
@@ -385,6 +498,8 @@ export default function ProcessosPage() {
                       id="instancia"
                       value={formData.instancia}
                       onChange={(e) => setFormData({ ...formData, instancia: e.target.value })}
+                      required
+                      aria-required="true"
                     >
                       <option value="">Selecione</option>
                       <option value="PRIMEIRA">1ª Instância</option>
@@ -430,6 +545,8 @@ export default function ProcessosPage() {
                       id="uf"
                       value={formData.uf}
                       onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
+                      required
+                      aria-required="true"
                     >
                       <option value="">Selecione</option>
                       {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
@@ -443,7 +560,14 @@ export default function ProcessosPage() {
               {/* Aba 3: Partes Processuais */}
               <TabsContent value="partes" className="space-y-4 mt-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold">Partes do Processo</h3>
+                  <div>
+                    <h3 className="font-semibold">Partes do Processo</h3>
+                    {!validatePartes() && (
+                      <p className="text-sm text-red-600 mt-1">
+                        * É necessário ter pelo menos 1 Autor e 1 Réu
+                      </p>
+                    )}
+                  </div>
                   <Button
                     type="button"
                     variant="outline"
@@ -474,6 +598,8 @@ export default function ProcessosPage() {
                     onChange={(e) => setFormData({ ...formData, objetoAcao: e.target.value })}
                     rows={4}
                     placeholder="Descreva o objeto da ação"
+                    required
+                    aria-required="true"
                   />
                 </div>
 
@@ -494,7 +620,7 @@ export default function ProcessosPage() {
                     <Input
                       id="valorCausa"
                       value={formData.valorCausa}
-                      onChange={(e) => setFormData({ ...formData, valorCausa: formatCurrency(e.target.value) })}
+                      onChange={(e) => handleCurrencyChange('valorCausa', e.target.value)}
                       placeholder="R$ 0,00"
                     />
                   </div>
@@ -504,7 +630,7 @@ export default function ProcessosPage() {
                     <Input
                       id="valorHonorarios"
                       value={formData.valorHonorarios}
-                      onChange={(e) => setFormData({ ...formData, valorHonorarios: formatCurrency(e.target.value) })}
+                      onChange={(e) => handleCurrencyChange('valorHonorarios', e.target.value)}
                       placeholder="R$ 0,00"
                     />
                   </div>

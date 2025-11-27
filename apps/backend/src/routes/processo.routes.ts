@@ -22,6 +22,9 @@ router.post('/', authMiddleware, requireRole(['ADVOGADO']), createProcessoValida
   processoController.create(req as AuthRequest, res, next));
 router.put('/:id', authMiddleware, requireRole(['ADVOGADO']), updateProcessoValidator, validate, (req: Request, res: Response, next: NextFunction) =>
   processoController.update(req as AuthRequest, res, next));
+// FASE 2.4: Endpoint para atualizar partes do processo
+router.put('/:id/partes', authMiddleware, requireRole(['ADVOGADO']), (req: Request, res: Response, next: NextFunction) =>
+  processoController.updatePartes(req as AuthRequest, res, next));
 router.delete('/:id', authMiddleware, requireRole(['ADVOGADO']), (req: Request, res: Response, next: NextFunction) =>
   processoController.delete(req as AuthRequest, res, next));
 

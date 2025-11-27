@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,8 +11,9 @@ import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Save, Upload, Download, Trash2, Send, Edit } from 'lucide-react';
+import { ArrowLeft, Edit, Upload, Download, Trash2, Send, Plus, Check, AlertCircle } from 'lucide-react';
 import { useProcesso, useUpdateProcesso } from '@/hooks/useProcessos';
+import { useClientes } from '@/hooks/useClientes';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate, formatCPF } from '@/lib/utils';
 import Link from 'next/link';
@@ -20,19 +21,54 @@ import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
 import { ListaPartes } from '@/components/processos/ListaPartes';
+import { useQueryClient } from '@tanstack/react-query';
+
+interface ProcessoFormData {
+  tipoAcao: string;
+  areaDireito: string;
+  justica: string;
+  instancia: string;
+  comarca: string;
+  foro: string;
+  vara: string;
+  uf: string;
+  objetoAcao: string;
+  pedidoPrincipal: string;
+  valorCausa: string;
+  valorHonorarios: string;
+  dataDistribuicao: string;
+  proximoPrazo: string;
+  descricaoPrazo: string;
+  status: string;
+  prioridade: string;
+  observacoes: string;
+  descricao: string;
+  partes?: ParteProcessualData[];
+}
 
 export default function ProcessoDetalhesPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const { data: processo, isLoading } = useProcesso(id);
+  const { data: clientesData } = useClientes({ limit: 100 });
   const updateMutation = useUpdateProcesso();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const [isEditMode, setIsEditMode] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('basico');
+  const [isParteModalOpen, setIsParteModalOpen] = useState(false);
+  const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
+  const [tabValidation, setTabValidation] = useState<Record<string, boolean>>({
+    basico: false,
+    localizacao: false,
+    partes: false,
+    informacoes: false,
+    controle: false,
+  });
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProcessoFormData>({
     tipoAcao: '',
     areaDireito: '',
     justica: '',
@@ -52,15 +88,24 @@ export default function ProcessoDetalhesPage() {
     prioridade: '',
     observacoes: '',
     descricao: '',
+    partes: [],
   });
 
   const [mensagem, setMensagem] = useState('');
   const [uploading, setUploading] = useState(false);
 
+  // FASE 1.4: Reset correto do formulário quando modal fechar
+  useEffect(() => {
+    if (!isEditOpen) {
+      setCurrentTab('basico');
+      setParteEditIndex(null);
+    }
+  }, [isEditOpen]);
+
   // Preencher formData quando processo for carregado
   useEffect(() => {
     if (processo) {
-      setFormData({
+      const data: ProcessoFormData = {
         tipoAcao: processo.tipoAcao || '',
         areaDireito: processo.areaDireito || '',
         justica: processo.justica || '',
@@ -80,9 +125,40 @@ export default function ProcessoDetalhesPage() {
         prioridade: processo.prioridade || '',
         observacoes: processo.observacoes || '',
         descricao: processo.descricao || '',
-      });
+        partes: processo.partes || [],
+      };
+      setFormData(data);
     }
   }, [processo]);
+
+  // FASE 1.3: Validação em tempo real
+  useEffect(() => {
+    validateTabs();
+  }, [formData]);
+
+  const validateTabs = () => {
+    const validation: Record<string, boolean> = {
+      basico: !!(formData.tipoAcao && formData.areaDireito),
+      localizacao: !!(formData.justica && formData.instancia && formData.uf),
+      partes: true, // Validação de partes será feita separadamente
+      informacoes: !!formData.objetoAcao,
+      controle: true, // Todos os campos de controle são opcionais
+    };
+    setTabValidation(validation);
+  };
+
+  const validatePartes = () => {
+    if (!formData.partes || formData.partes.length === 0) return false;
+    const hasAutor = formData.partes.some(p => p.tipoParte === 'AUTOR');
+    const hasReu = formData.partes.some(p => p.tipoParte === 'REU');
+    return hasAutor && hasReu;
+  };
+
+  const getTabsCompleted = () => {
+    const partesValid = validatePartes();
+    const completed = Object.values(tabValidation).filter(Boolean).length + (partesValid ? 1 : 0);
+    return completed;
+  };
 
   if (isLoading) {
     return (
@@ -98,6 +174,35 @@ export default function ProcessoDetalhesPage() {
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validação de campos obrigatórios
+    const camposObrigatorios = [
+      { campo: 'tipoAcao', nome: 'Tipo de Ação', tab: 'basico' },
+      { campo: 'areaDireito', nome: 'Área do Direito', tab: 'basico' },
+      { campo: 'justica', nome: 'Justiça', tab: 'localizacao' },
+      { campo: 'instancia', nome: 'Instância', tab: 'localizacao' },
+      { campo: 'uf', nome: 'UF', tab: 'localizacao' },
+      { campo: 'objetoAcao', nome: 'Objeto da Ação', tab: 'informacoes' },
+    ];
+
+    for (const { campo, nome, tab } of camposObrigatorios) {
+      if (!formData[campo as keyof ProcessoFormData]) {
+        toast({ title: 'Campo obrigatório', description: `Preencha o campo "${nome}" na aba correspondente`, variant: 'error' });
+        setCurrentTab(tab);
+        return;
+      }
+    }
+
+    // FASE 2.2: Validação de partes
+    if (!validatePartes()) {
+      toast({
+        title: 'Partes incompletas',
+        description: 'É necessário ter pelo menos 1 Autor e 1 Réu no processo',
+        variant: 'error'
+      });
+      setCurrentTab('partes');
+      return;
+    }
 
     try {
       const payload = {
@@ -129,6 +234,7 @@ export default function ProcessoDetalhesPage() {
     return `R$ ${formatted}`;
   };
 
+  // FASE 2.1: Remover window.location.reload()
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -144,7 +250,8 @@ export default function ProcessoDetalhesPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       toast({ title: 'Sucesso', description: 'Documento enviado', variant: 'success' });
-      window.location.reload();
+      // FASE 2.1: Usar invalidateQueries ao invés de reload
+      queryClient.invalidateQueries({ queryKey: ['processo', id] });
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Erro ao enviar documento', variant: 'error' });
     } finally {
@@ -162,9 +269,45 @@ export default function ProcessoDetalhesPage() {
       });
       setMensagem('');
       toast({ title: 'Sucesso', description: 'Mensagem enviada', variant: 'success' });
-      window.location.reload();
+      // FASE 2.1: Usar invalidateQueries ao invés de reload
+      queryClient.invalidateQueries({ queryKey: ['processo', id] });
     } catch (error: any) {
       toast({ title: 'Erro', description: 'Erro ao enviar mensagem', variant: 'error' });
+    }
+  };
+
+  const handleAddParte = (parte: ParteProcessualData) => {
+    if (parteEditIndex !== null) {
+      const novasPartes = [...(formData.partes || [])];
+      novasPartes[parteEditIndex] = parte;
+      setFormData({ ...formData, partes: novasPartes });
+      setParteEditIndex(null);
+    } else {
+      setFormData({ ...formData, partes: [...(formData.partes || []), parte] });
+    }
+    setIsParteModalOpen(false);
+  };
+
+  const handleEditParte = (parte: ParteProcessualData, index: number) => {
+    setParteEditIndex(index);
+    setIsParteModalOpen(true);
+  };
+
+  const handleRemoveParte = (index: number) => {
+    const novasPartes = (formData.partes || []).filter((_, i) => i !== index);
+    setFormData({ ...formData, partes: novasPartes });
+  };
+
+  // FASE 2.4: Salvar partes separadamente
+  const handleSavePartes = async () => {
+    try {
+      await api.put(`/processos/${id}/partes`, {
+        partes: formData.partes,
+      });
+      toast({ title: 'Sucesso', description: 'Partes atualizadas com sucesso', variant: 'success' });
+      queryClient.invalidateQueries({ queryKey: ['processo', id] });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: 'Erro ao atualizar partes', variant: 'error' });
     }
   };
 
@@ -174,6 +317,15 @@ export default function ProcessoDetalhesPage() {
     CONCLUIDO: 'success',
     ARQUIVADO: 'default',
   };
+
+  // FASE 2.3: Indicador visual de progresso
+  const TabIndicator = ({ isValid }: { isValid: boolean }) => (
+    isValid ? (
+      <Check className="h-4 w-4 text-green-600 ml-2" />
+    ) : (
+      <AlertCircle className="h-4 w-4 text-red-500 ml-2" />
+    )
+  );
 
   return (
     <div className="space-y-6">
@@ -191,11 +343,19 @@ export default function ProcessoDetalhesPage() {
         <Badge variant={statusColors[processo.status]}>
           {processo.status.replace('_', ' ')}
         </Badge>
+        {/* FASE 1.1: Botão Editar Processo */}
+        <Button onClick={() => setIsEditOpen(true)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Editar Processo
+        </Button>
       </div>
 
       <Tabs defaultValue="info">
         <TabsList>
           <TabsTrigger value="info">Informações</TabsTrigger>
+          <TabsTrigger value="partes">
+            Partes ({processo.partes?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="documentos">
             Documentos ({processo.documentos?.length || 0})
           </TabsTrigger>
@@ -232,34 +392,108 @@ export default function ProcessoDetalhesPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  id="status"
-                  defaultValue={processo.status}
-                  onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                >
-                  <option value="EM_ANDAMENTO">Em Andamento</option>
-                  <option value="SUSPENSO">Suspenso</option>
-                  <option value="CONCLUIDO">Concluído</option>
-                  <option value="ARQUIVADO">Arquivado</option>
-                </Select>
+              {/* FASE 1.2: Campos read-only */}
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Tipo de Ação</Label>
+                  <Input value={processo.tipoAcao || '-'} disabled />
+                </div>
+                <div>
+                  <Label>Área do Direito</Label>
+                  <Input value={processo.areaDireito || '-'} disabled />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Justiça</Label>
+                  <Input value={processo.justica || '-'} disabled />
+                </div>
+                <div>
+                  <Label>Instância</Label>
+                  <Input value={processo.instancia || '-'} disabled />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <Label>Comarca</Label>
+                  <Input value={processo.comarca || '-'} disabled />
+                </div>
+                <div>
+                  <Label>Foro</Label>
+                  <Input value={processo.foro || '-'} disabled />
+                </div>
+                <div>
+                  <Label>Vara</Label>
+                  <Input value={processo.vara || '-'} disabled />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <Label>Status</Label>
+                  <Input value={processo.status.replace('_', ' ')} disabled />
+                </div>
+                <div>
+                  <Label>Prioridade</Label>
+                  <Input value={processo.prioridade?.replace('_', ' ') || '-'} disabled />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="descricao">Descrição</Label>
-                <Textarea
-                  id="descricao"
-                  defaultValue={processo.descricao}
-                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  rows={6}
-                />
+                <Label>Descrição</Label>
+                <Textarea value={processo.descricao || '-'} disabled rows={4} />
               </div>
 
-              <Button onClick={handleUpdate} disabled={updateMutation.isPending}>
-                <Save className="mr-2 h-4 w-4" />
-                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
-              </Button>
+              <div>
+                <Label>Objeto da Ação</Label>
+                <Textarea value={processo.objetoAcao || '-'} disabled rows={3} />
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* FASE 2.4: Nova aba de Partes com edição */}
+        <TabsContent value="partes">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Partes do Processo</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setParteEditIndex(null);
+                      setIsParteModalOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Parte
+                  </Button>
+                  <Button onClick={handleSavePartes}>
+                    Salvar Partes
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!validatePartes() && (
+                <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-yellow-800">Atenção!</p>
+                    <p className="text-sm text-yellow-700">
+                      É necessário ter pelo menos 1 Autor e 1 Réu cadastrado.
+                    </p>
+                  </div>
+                </div>
+              )}
+              <ListaPartes
+                partes={formData.partes || []}
+                onEdit={handleEditParte}
+                onRemove={handleRemoveParte}
+              />
             </CardContent>
           </Card>
         </TabsContent>
@@ -370,6 +604,363 @@ export default function ProcessoDetalhesPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* FASE 1.1: Modal de Edição Completa */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Processo - {processo.numero}</DialogTitle>
+            {/* FASE 2.3: Badge de progresso */}
+            <p className="text-sm text-gray-500 mt-2">
+              Progresso: {getTabsCompleted()}/5 abas completas
+            </p>
+          </DialogHeader>
+
+          <form onSubmit={handleUpdate}>
+            <Tabs value={currentTab} onValueChange={setCurrentTab}>
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="basico" className="flex items-center">
+                  Básico
+                  <TabIndicator isValid={tabValidation.basico} />
+                </TabsTrigger>
+                <TabsTrigger value="localizacao" className="flex items-center">
+                  Localização
+                  <TabIndicator isValid={tabValidation.localizacao} />
+                </TabsTrigger>
+                <TabsTrigger value="partes" className="flex items-center">
+                  Partes
+                  <TabIndicator isValid={validatePartes()} />
+                </TabsTrigger>
+                <TabsTrigger value="informacoes" className="flex items-center">
+                  Informações
+                  <TabIndicator isValid={tabValidation.informacoes} />
+                </TabsTrigger>
+                <TabsTrigger value="controle" className="flex items-center">
+                  Controle
+                  <TabIndicator isValid={tabValidation.controle} />
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Aba 1: Dados Básicos */}
+              <TabsContent value="basico" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="numero">Número do Processo</Label>
+                  <Input
+                    id="numero"
+                    value={processo.numero}
+                    disabled
+                    className="bg-gray-100"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">O número do processo não pode ser alterado</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoAcao">Tipo de Ação *</Label>
+                  <Select
+                    id="tipoAcao"
+                    value={formData.tipoAcao}
+                    onChange={(e) => setFormData({ ...formData, tipoAcao: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    <option value="Ação Civil Pública">Ação Civil Pública</option>
+                    <option value="Ação de Cobrança">Ação de Cobrança</option>
+                    <option value="Ação de Indenização">Ação de Indenização</option>
+                    <option value="Ação Trabalhista">Ação Trabalhista</option>
+                    <option value="Execução">Execução</option>
+                    <option value="Mandado de Segurança">Mandado de Segurança</option>
+                    <option value="Outros">Outros</option>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="areaDireito">Área do Direito *</Label>
+                  <Select
+                    id="areaDireito"
+                    value={formData.areaDireito}
+                    onChange={(e) => setFormData({ ...formData, areaDireito: e.target.value })}
+                    required
+                  >
+                    <option value="">Selecione</option>
+                    <option value="Cível">Cível</option>
+                    <option value="Trabalhista">Trabalhista</option>
+                    <option value="Penal">Penal</option>
+                    <option value="Tributário">Tributário</option>
+                    <option value="Família">Família</option>
+                    <option value="Consumidor">Consumidor</option>
+                    <option value="Administrativo">Administrativo</option>
+                    <option value="Previdenciário">Previdenciário</option>
+                  </Select>
+                </div>
+              </TabsContent>
+
+              {/* Aba 2: Localização Judicial */}
+              <TabsContent value="localizacao" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="justica">Justiça *</Label>
+                    <Select
+                      id="justica"
+                      value={formData.justica}
+                      onChange={(e) => setFormData({ ...formData, justica: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      <option value="ESTADUAL">Estadual</option>
+                      <option value="FEDERAL">Federal</option>
+                      <option value="TRABALHO">Trabalho</option>
+                      <option value="ELEITORAL">Eleitoral</option>
+                      <option value="MILITAR">Militar</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="instancia">Instância *</Label>
+                    <Select
+                      id="instancia"
+                      value={formData.instancia}
+                      onChange={(e) => setFormData({ ...formData, instancia: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      <option value="PRIMEIRA">1ª Instância</option>
+                      <option value="SEGUNDA">2ª Instância</option>
+                      <option value="SUPERIOR">Superior</option>
+                      <option value="SUPREMO">Supremo</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="comarca">Comarca</Label>
+                    <Input
+                      id="comarca"
+                      value={formData.comarca}
+                      onChange={(e) => setFormData({ ...formData, comarca: e.target.value })}
+                      placeholder="Nome da comarca"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="foro">Foro</Label>
+                    <Input
+                      id="foro"
+                      value={formData.foro}
+                      onChange={(e) => setFormData({ ...formData, foro: e.target.value })}
+                      placeholder="Nome do foro"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="vara">Vara</Label>
+                    <Input
+                      id="vara"
+                      value={formData.vara}
+                      onChange={(e) => setFormData({ ...formData, vara: e.target.value })}
+                      placeholder="Ex: 1ª Vara Cível"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="uf">UF *</Label>
+                    <Select
+                      id="uf"
+                      value={formData.uf}
+                      onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
+                      required
+                    >
+                      <option value="">Selecione</option>
+                      {['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'].map(uf => (
+                        <option key={uf} value={uf}>{uf}</option>
+                      ))}
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Aba 3: Partes Processuais */}
+              <TabsContent value="partes" className="space-y-4 mt-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-semibold">Partes do Processo</h3>
+                    {!validatePartes() && (
+                      <p className="text-sm text-red-600 mt-1">
+                        * É necessário ter pelo menos 1 Autor e 1 Réu
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setParteEditIndex(null);
+                      setIsParteModalOpen(true);
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Adicionar Parte
+                  </Button>
+                </div>
+
+                <ListaPartes
+                  partes={formData.partes || []}
+                  onEdit={handleEditParte}
+                  onRemove={handleRemoveParte}
+                />
+              </TabsContent>
+
+              {/* Aba 4: Informações Processuais */}
+              <TabsContent value="informacoes" className="space-y-4 mt-4">
+                <div>
+                  <Label htmlFor="objetoAcao">Objeto da Ação *</Label>
+                  <Textarea
+                    id="objetoAcao"
+                    value={formData.objetoAcao}
+                    onChange={(e) => setFormData({ ...formData, objetoAcao: e.target.value })}
+                    rows={4}
+                    placeholder="Descreva o objeto da ação"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="pedidoPrincipal">Pedido Principal</Label>
+                  <Textarea
+                    id="pedidoPrincipal"
+                    value={formData.pedidoPrincipal}
+                    onChange={(e) => setFormData({ ...formData, pedidoPrincipal: e.target.value })}
+                    rows={3}
+                    placeholder="Descreva o pedido principal"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="valorCausa">Valor da Causa</Label>
+                    <Input
+                      id="valorCausa"
+                      value={formData.valorCausa}
+                      onChange={(e) => setFormData({ ...formData, valorCausa: formatCurrency(e.target.value) })}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="valorHonorarios">Valor dos Honorários</Label>
+                    <Input
+                      id="valorHonorarios"
+                      value={formData.valorHonorarios}
+                      onChange={(e) => setFormData({ ...formData, valorHonorarios: formatCurrency(e.target.value) })}
+                      placeholder="R$ 0,00"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Aba 5: Controle e Prazos */}
+              <TabsContent value="controle" className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="dataDistribuicao">Data de Distribuição</Label>
+                    <Input
+                      id="dataDistribuicao"
+                      type="date"
+                      value={formData.dataDistribuicao}
+                      onChange={(e) => setFormData({ ...formData, dataDistribuicao: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="proximoPrazo">Próximo Prazo</Label>
+                    <Input
+                      id="proximoPrazo"
+                      type="date"
+                      value={formData.proximoPrazo}
+                      onChange={(e) => setFormData({ ...formData, proximoPrazo: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label htmlFor="descricaoPrazo">Descrição do Prazo</Label>
+                    <Input
+                      id="descricaoPrazo"
+                      value={formData.descricaoPrazo}
+                      onChange={(e) => setFormData({ ...formData, descricaoPrazo: e.target.value })}
+                      placeholder="Ex: Apresentar contestação"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="status">Status *</Label>
+                    <Select
+                      id="status"
+                      value={formData.status}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      required
+                    >
+                      <option value="EM_ANDAMENTO">Em Andamento</option>
+                      <option value="SUSPENSO">Suspenso</option>
+                      <option value="CONCLUIDO">Concluído</option>
+                      <option value="ARQUIVADO">Arquivado</option>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="prioridade">Prioridade</Label>
+                    <Select
+                      id="prioridade"
+                      value={formData.prioridade}
+                      onChange={(e) => setFormData({ ...formData, prioridade: e.target.value })}
+                    >
+                      <option value="NORMAL">Normal</option>
+                      <option value="URGENTE">Urgente</option>
+                      <option value="MUITO_URGENTE">Muito Urgente</option>
+                    </Select>
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label htmlFor="observacoes">Observações</Label>
+                    <Textarea
+                      id="observacoes"
+                      value={formData.observacoes}
+                      onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                      rows={3}
+                      placeholder="Observações gerais sobre o processo"
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <Label htmlFor="descricao">Descrição</Label>
+                    <Textarea
+                      id="descricao"
+                      value={formData.descricao}
+                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                      rows={4}
+                      placeholder="Descrição detalhada do processo"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Salvando...' : 'Salvar Alterações'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal Adicionar/Editar Parte */}
+      <ModalParteProcessual
+        open={isParteModalOpen}
+        onOpenChange={setIsParteModalOpen}
+        onSave={handleAddParte}
+        parteEdit={parteEditIndex !== null ? (formData.partes || [])[parteEditIndex] : undefined}
+      />
     </div>
   );
 }
