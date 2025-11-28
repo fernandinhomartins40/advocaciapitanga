@@ -119,11 +119,15 @@ export class ProjudiScraperService {
           '--disable-software-rasterizer',
           '--disable-dev-tools',
           '--no-zygote',
-          '--single-process',
-          '--disable-crash-reporter',
-          '--crash-dumps-dir=/tmp',
-          '--enable-crashpad=false'
-        ]
+          '--single-process'
+        ],
+        // Desabilitar crashpad completamente
+        env: {
+          ...process.env,
+          CHROME_CRASHPAD_PIPE_NAME: '',
+          CHROMIUM_FLAGS: '--disable-crash-reporter'
+        },
+        ignoreDefaultArgs: ['--enable-automation']
       });
 
       const page = await browser.newPage();
@@ -214,11 +218,15 @@ export class ProjudiScraperService {
           '--disable-software-rasterizer',
           '--disable-dev-tools',
           '--no-zygote',
-          '--single-process',
-          '--disable-crash-reporter',
-          '--crash-dumps-dir=/tmp',
-          '--enable-crashpad=false'
-        ]
+          '--single-process'
+        ],
+        // Desabilitar crashpad completamente
+        env: {
+          ...process.env,
+          CHROME_CRASHPAD_PIPE_NAME: '',
+          CHROMIUM_FLAGS: '--disable-crash-reporter'
+        },
+        ignoreDefaultArgs: ['--enable-automation']
       });
 
       const page = await browser.newPage();
