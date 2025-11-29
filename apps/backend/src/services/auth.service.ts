@@ -62,9 +62,9 @@ export class AuthService {
         ...(data.role === 'CLIENTE' && {
           cliente: {
             create: {
+              tipoPessoa: 'FISICA',
               cpf: data.cpf!,
               telefone: data.telefone,
-              endereco: data.endereco,
             }
           }
         }),

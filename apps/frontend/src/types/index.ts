@@ -10,9 +10,38 @@ export interface User {
 
 export interface Cliente {
   id: string;
-  cpf: string;
+  tipoPessoa: 'FISICA' | 'JURIDICA';
+
+  // Pessoa Física
+  cpf?: string;
+  rg?: string;
+  orgaoEmissor?: string;
+  nacionalidade?: string;
+  estadoCivil?: 'SOLTEIRO' | 'CASADO' | 'DIVORCIADO' | 'VIUVO' | 'UNIAO_ESTAVEL';
+  profissao?: string;
+  dataNascimento?: string;
+
+  // Pessoa Jurídica
+  cnpj?: string;
+  razaoSocial?: string;
+  nomeFantasia?: string;
+  inscricaoEstadual?: string;
+  representanteLegal?: string;
+  cargoRepresentante?: string;
+
+  // Contato
   telefone?: string;
-  endereco?: string;
+  celular?: string;
+
+  // Endereço
+  cep?: string;
+  logradouro?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  uf?: string;
+
   user: {
     id: string;
     email: string;

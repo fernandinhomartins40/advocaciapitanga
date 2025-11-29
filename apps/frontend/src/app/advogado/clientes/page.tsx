@@ -5,27 +5,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente } from '@/hooks/useClientes';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { formatCPF, formatPhone } from '@/lib/utils';
+import { formatCPF, formatCNPJ, formatPhone } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
+import { ModalCliente, ClienteData } from '@/components/clientes/ModalCliente';
 
 export default function ClientesPage() {
   const [search, setSearch] = useState('');
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
-  const [selectedCliente, setSelectedCliente] = useState<any>(null);
-  const [formData, setFormData] = useState({
-    nome: '',
-    email: '',
-    cpf: '',
-    telefone: '',
-    endereco: '',
-  });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCliente, setSelectedCliente] = useState<ClienteData | undefined>(undefined);
+  const [isEdit, setIsEdit] = useState(false);
 
   const { data, isLoading } = useClientes({ search });
   const createMutation = useCreateCliente();
@@ -33,45 +24,62 @@ export default function ClientesPage() {
   const deleteMutation = useDeleteCliente();
   const { toast } = useToast();
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      await createMutation.mutateAsync(formData);
-      toast({ title: 'Sucesso', description: 'Cliente criado com sucesso', variant: 'success' });
-      setIsCreateOpen(false);
-      setFormData({ nome: '', email: '', cpf: '', telefone: '', endereco: '' });
-    } catch (error: any) {
-      toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao criar cliente', variant: 'error' });
-    }
+  const handleOpenCreate = () => {
+    setSelectedCliente(undefined);
+    setIsEdit(false);
+    setIsModalOpen(true);
   };
 
-  const handleEdit = (cliente: any) => {
-    setSelectedCliente(cliente);
-    setFormData({
+  const handleOpenEdit = (cliente: any) => {
+    const clienteData: ClienteData = {
+      id: cliente.id,
+      tipoPessoa: cliente.tipoPessoa,
       nome: cliente.user.nome,
       email: cliente.user.email,
       cpf: cliente.cpf,
-      telefone: cliente.telefone || '',
-      endereco: cliente.endereco || '',
-    });
-    setIsEditOpen(true);
+      rg: cliente.rg,
+      orgaoEmissor: cliente.orgaoEmissor,
+      nacionalidade: cliente.nacionalidade,
+      estadoCivil: cliente.estadoCivil,
+      profissao: cliente.profissao,
+      dataNascimento: cliente.dataNascimento ? new Date(cliente.dataNascimento).toISOString().split('T')[0] : undefined,
+      cnpj: cliente.cnpj,
+      razaoSocial: cliente.razaoSocial,
+      nomeFantasia: cliente.nomeFantasia,
+      inscricaoEstadual: cliente.inscricaoEstadual,
+      representanteLegal: cliente.representanteLegal,
+      cargoRepresentante: cliente.cargoRepresentante,
+      telefone: cliente.telefone,
+      celular: cliente.celular,
+      cep: cliente.cep,
+      logradouro: cliente.logradouro,
+      numero: cliente.numero,
+      complemento: cliente.complemento,
+      bairro: cliente.bairro,
+      cidade: cliente.cidade,
+      uf: cliente.uf,
+    };
+    setSelectedCliente(clienteData);
+    setIsEdit(true);
+    setIsModalOpen(true);
   };
 
-  const handleUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSaveCliente = async (clienteData: ClienteData) => {
     try {
-      await updateMutation.mutateAsync({
-        id: selectedCliente.id,
-        data: {
-          nome: formData.nome,
-          telefone: formData.telefone,
-          endereco: formData.endereco,
-        },
-      });
-      toast({ title: 'Sucesso', description: 'Cliente atualizado com sucesso', variant: 'success' });
-      setIsEditOpen(false);
+      if (isEdit && selectedCliente?.id) {
+        await updateMutation.mutateAsync({
+          id: selectedCliente.id,
+          data: clienteData,
+        });
+        toast({ title: 'Sucesso', description: 'Cliente atualizado com sucesso', variant: 'success' });
+      } else {
+        await createMutation.mutateAsync(clienteData);
+        toast({ title: 'Sucesso', description: 'Cliente criado com sucesso', variant: 'success' });
+      }
+      setIsModalOpen(false);
+      setSelectedCliente(undefined);
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao atualizar cliente', variant: 'error' });
+      toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao salvar cliente', variant: 'error' });
     }
   };
 
@@ -93,7 +101,7 @@ export default function ClientesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <p className="text-gray-500">Gerencie seus clientes</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
+        <Button onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
           Novo Cliente
         </Button>
@@ -126,26 +134,39 @@ export default function ClientesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Tipo</TableHead>
                   <TableHead>Nome</TableHead>
-                  <TableHead>CPF</TableHead>
+                  <TableHead>CPF/CNPJ</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Telefone</TableHead>
+                  <TableHead>Telefone/Celular</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.clientes.map((cliente: any) => (
                   <TableRow key={cliente.id}>
+                    <TableCell>
+                      <span className={`px-2 py-1 rounded text-xs ${cliente.tipoPessoa === 'FISICA' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}`}>
+                        {cliente.tipoPessoa === 'FISICA' ? 'PF' : 'PJ'}
+                      </span>
+                    </TableCell>
                     <TableCell className="font-medium">{cliente.user.nome}</TableCell>
-                    <TableCell>{formatCPF(cliente.cpf)}</TableCell>
+                    <TableCell>
+                      {cliente.tipoPessoa === 'FISICA'
+                        ? (cliente.cpf ? formatCPF(cliente.cpf) : '-')
+                        : (cliente.cnpj ? formatCNPJ(cliente.cnpj) : '-')
+                      }
+                    </TableCell>
                     <TableCell>{cliente.user.email}</TableCell>
-                    <TableCell>{cliente.telefone ? formatPhone(cliente.telefone) : '-'}</TableCell>
+                    <TableCell>
+                      {cliente.celular ? formatPhone(cliente.celular) : (cliente.telefone ? formatPhone(cliente.telefone) : '-')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleEdit(cliente)}
+                          onClick={() => handleOpenEdit(cliente)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -168,122 +189,14 @@ export default function ClientesPage() {
         </CardContent>
       </Card>
 
-      {/* Modal Criar */}
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Novo Cliente</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div>
-              <Label htmlFor="nome">Nome Completo *</Label>
-              <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="cpf">CPF *</Label>
-              <Input
-                id="cpf"
-                value={formData.cpf}
-                onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-                placeholder="000.000.000-00"
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="telefone">Telefone</Label>
-              <Input
-                id="telefone"
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-            <div>
-              <Label htmlFor="endereco">Endereço</Label>
-              <Textarea
-                id="endereco"
-                value={formData.endereco}
-                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsCreateOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? 'Criando...' : 'Criar Cliente'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Modal Editar */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Cliente</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdate} className="space-y-4">
-            <div>
-              <Label htmlFor="edit-nome">Nome Completo *</Label>
-              <Input
-                id="edit-nome"
-                value={formData.nome}
-                onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label>Email (não editável)</Label>
-              <Input value={formData.email} disabled />
-            </div>
-            <div>
-              <Label>CPF (não editável)</Label>
-              <Input value={formatCPF(formData.cpf)} disabled />
-            </div>
-            <div>
-              <Label htmlFor="edit-telefone">Telefone</Label>
-              <Input
-                id="edit-telefone"
-                value={formData.telefone}
-                onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-endereco">Endereço</Label>
-              <Textarea
-                id="edit-endereco"
-                value={formData.endereco}
-                onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? 'Salvando...' : 'Salvar'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Modal Cliente */}
+      <ModalCliente
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        onSave={handleSaveCliente}
+        clienteEdit={selectedCliente}
+        isEdit={isEdit}
+      />
     </div>
   );
 }
