@@ -18,13 +18,13 @@ async function main() {
   const senhaAdvogado = await bcrypt.hash('Pitanga@2024!Admin', 10);
   const senhaCliente = await bcrypt.hash('Pitanga@2024!Cliente', 10);
 
-  // Criar Advogado
+  // Criar Advogado Admin (Dono do Escritório)
   const advogado = await prisma.user.create({
     data: {
       email: 'admin@pitanga.com',
       password: senhaAdvogado,
       nome: 'Dr. João Silva',
-      role: Role.ADVOGADO,
+      role: Role.ADMIN_ESCRITORIO,
       advogado: {
         create: {
           oab: 'SP123456',
@@ -37,7 +37,24 @@ async function main() {
     },
   });
 
-  console.log('✅ Advogado criado:', advogado.email);
+  console.log('✅ Advogado Admin criado:', advogado.email);
+
+  // Criar Escritório para o Admin
+  const escritorio = await prisma.escritorio.create({
+    data: {
+      nome: 'Escritório Pitanga & Advocacia',
+      adminId: advogado.advogado!.id,
+      ativo: true,
+    },
+  });
+
+  // Vincular advogado ao escritório
+  await prisma.advogado.update({
+    where: { id: advogado.advogado!.id },
+    data: { escritorioId: escritorio.id },
+  });
+
+  console.log('✅ Escritório criado:', escritorio.nome);
 
   // Criar Clientes
   const cliente1 = await prisma.user.create({
@@ -48,9 +65,15 @@ async function main() {
       role: Role.CLIENTE,
       cliente: {
         create: {
+          tipoPessoa: 'FISICA',
           cpf: '123.456.789-00',
           telefone: '(11) 91234-5678',
-          endereco: 'Rua das Flores, 123 - São Paulo/SP',
+          logradouro: 'Rua das Flores',
+          numero: '123',
+          bairro: 'Centro',
+          cidade: 'São Paulo',
+          uf: 'SP',
+          cep: '01234-567',
         },
       },
     },
@@ -67,9 +90,15 @@ async function main() {
       role: Role.CLIENTE,
       cliente: {
         create: {
+          tipoPessoa: 'FISICA',
           cpf: '987.654.321-00',
           telefone: '(11) 92345-6789',
-          endereco: 'Av. Paulista, 1000 - São Paulo/SP',
+          logradouro: 'Av. Paulista',
+          numero: '1000',
+          bairro: 'Bela Vista',
+          cidade: 'São Paulo',
+          uf: 'SP',
+          cep: '01310-100',
         },
       },
     },
