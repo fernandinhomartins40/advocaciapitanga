@@ -28,7 +28,12 @@
       "Bash(git rm:*)",
       "Bash(npx prisma:*)",
       "Bash(dir:*)",
-      "Bash(dir /b:*)"
+      "Bash(dir /b:*)",
+      "Bash(npm run build:docker:*)",
+      "Bash(npm run build:docker:vps:*)",
+      "Bash(docker build:*)",
+      "Bash(timeout /t 60 /nobreak)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

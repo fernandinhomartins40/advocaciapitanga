@@ -75,17 +75,44 @@ jobs:
             # Diretório da aplicação
             APP_DIR="/root/advocaciapitanga"
 
-            # Parar containers existentes (SEM -v para preservar volumes)
-            echo "Parando containers existentes..."
+            # ===== PROTEÇÃO DE VOLUMES - VERIFICAÇÃO CRÍTICA =====
+            echo "=== Verificando volumes Docker antes de qualquer operação ==="
+
+            # Verificar se volumes de dados existem
+            POSTGRES_VOLUME=$(docker volume ls -q | grep "postgres_data" || echo "")
+            UPLOADS_VOLUME=$(docker volume ls -q | grep "uploads_data" || echo "")
+
+            if [ -n "$POSTGRES_VOLUME" ]; then
+              echo "✅ Volume postgres_data encontrado: $POSTGRES_VOLUME"
+              VOLUME_SIZE=$(docker volume inspect "$POSTGRES_VOLUME" 2>/dev/null | grep Mountpoint || echo "")
+              echo "   Localização: $VOLUME_SIZE"
+            else
+              echo "ℹ️ Volume postgres_data não existe (será criado no primeiro deploy)"
+            fi
+
+            if [ -n "$UPLOADS_VOLUME" ]; then
+              echo "✅ Volume uploads_data encontrado: $UPLOADS_VOLUME"
+            else
+              echo "ℹ️ Volume uploads_data não existe (será criado no primeiro deploy)"
+            fi
+
+            # Parar containers existentes (NUNCA usar -v que remove volumes!)
+            echo ""
+            echo "=== Parando containers (preservando volumes) ==="
             cd $APP_DIR
             docker-compose -f docker-compose.vps.yml down || true
 
-            # Verificar e garantir que volumes críticos existam
-            echo "=== Verificando volumes Docker ==="
-            if ! docker volume ls | grep -q "advocaciapitanga.*postgres_data"; then
-              echo "⚠️ Volume postgres_data não existe, será criado no próximo docker-compose up"
+            # Verificação de segurança: garantir que volumes NÃO foram removidos
+            echo ""
+            echo "=== Verificação de segurança pós-parada ==="
+            POSTGRES_VOLUME_AFTER=$(docker volume ls -q | grep "postgres_data" || echo "")
+
+            if [ -n "$POSTGRES_VOLUME" ] && [ -z "$POSTGRES_VOLUME_AFTER" ]; then
+              echo "❌ ERRO CRÍTICO: Volume postgres_data foi removido inadvertidamente!"
+              echo "Este é um erro grave que pode causar perda de dados."
+              exit 1
             else
-              echo "✓ Volume postgres_data encontrado"
+              echo "✅ Volumes preservados com sucesso"
             fi
 
             echo "Verificando código sincronizado..."
@@ -130,10 +157,35 @@ jobs:
             # Adicionar BUILD_TIMESTAMP ao .env
             echo "BUILD_TIMESTAMP=$(date +%s)" >> .env
 
-            # Limpar containers e imagens antigas (PRESERVAR volumes)
-            echo "Limpando recursos antigos..."
+            # ===== LIMPEZA SEGURA (SEM TOCAR EM VOLUMES) =====
+            echo "=== Limpando recursos antigos (containers e imagens apenas) ==="
+
+            # Verificar volumes antes da limpeza
+            VOLUMES_BEFORE=$(docker volume ls -q | grep -E "postgres_data|uploads_data" | wc -l)
+            echo "📊 Volumes de dados antes da limpeza: $VOLUMES_BEFORE"
+
+            # Limpar APENAS containers parados (NUNCA usar -v que remove volumes)
+            echo "Removendo containers parados..."
             docker container prune -f || true
+
+            # Limpar APENAS imagens não utilizadas (volumes não são afetados)
+            echo "Removendo imagens não utilizadas..."
             docker image prune -af || true
+
+            # IMPORTANTE: NUNCA executar docker volume prune em produção!
+            # Isso removeria volumes órfãos que podem conter dados importantes
+
+            # Verificar volumes após limpeza
+            VOLUMES_AFTER=$(docker volume ls -q | grep -E "postgres_data|uploads_data" | wc -l)
+            echo "📊 Volumes de dados após limpeza: $VOLUMES_AFTER"
+
+            if [ "$VOLUMES_BEFORE" -ne "$VOLUMES_AFTER" ]; then
+              echo "❌ ERRO CRÍTICO: Volumes foram removidos durante limpeza!"
+              echo "Antes: $VOLUMES_BEFORE | Depois: $VOLUMES_AFTER"
+              exit 1
+            else
+              echo "✅ Limpeza concluída com segurança, volumes preservados"
+            fi
 
             # Garantir BUILD_TIMESTAMP como variável de ambiente
             export BUILD_TIMESTAMP=$(date +%s)
@@ -210,10 +262,73 @@ jobs:
             echo "Aguardando aplicação inicializar (20s)..."
             sleep 20
 
-            # Executar migrations ou db push
+            # ===== BACKUP AUTOMÁTICO ANTES DE MIGRATIONS =====
+            echo "=== Criando backup de segurança antes de migrations ==="
+            if docker ps | grep -q advocacia-postgres; then
+              # Verificar se banco tem dados
+              TABLE_COUNT=$(docker exec advocacia-postgres psql -U advocacia -d advocacia_pitanga -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE';" 2>/dev/null | tr -d '[:space:]' || echo "0")
+
+              if [ -n "$TABLE_COUNT" ] && [ "$TABLE_COUNT" -gt "0" ] 2>/dev/null; then
+                echo "📊 Banco tem $TABLE_COUNT tabela(s), criando backup de segurança..."
+
+                # Criar diretório de backups
+                mkdir -p ${APP_DIR}/backups
+
+                # Criar backup
+                BACKUP_FILE="${APP_DIR}/backups/pre_deploy_$(date +%Y%m%d_%H%M%S).sql"
+                docker exec advocacia-postgres pg_dump -U advocacia -d advocacia_pitanga --clean --if-exists > "$BACKUP_FILE"
+
+                if [ -s "$BACKUP_FILE" ]; then
+                  BACKUP_SIZE=$(du -h "$BACKUP_FILE" | cut -f1)
+                  echo "✅ Backup criado: $BACKUP_FILE ($BACKUP_SIZE)"
+
+                  # MELHORIA 1: Validar integridade do backup
+                  echo ""
+                  echo "🔍 Validando integridade do backup..."
+                  if grep -q "CREATE TABLE\|INSERT INTO\|COPY" "$BACKUP_FILE"; then
+                    echo "✅ Backup contém estrutura SQL válida"
+
+                    # Verificar se backup está completo
+                    if tail -n 1 "$BACKUP_FILE" | grep -q "PostgreSQL database dump complete"; then
+                      echo "✅ Backup completo e íntegro"
+                    else
+                      echo "⚠️ AVISO: Backup pode estar incompleto"
+                    fi
+
+                    # Verificar tamanho mínimo
+                    BACKUP_SIZE_BYTES=$(stat -c%s "$BACKUP_FILE" 2>/dev/null || echo "0")
+                    if [ "$BACKUP_SIZE_BYTES" -gt 1024 ]; then
+                      echo "✅ Tamanho do backup adequado: $BACKUP_SIZE"
+                    else
+                      echo "❌ ERRO: Backup muito pequeno, abortando deploy"
+                      exit 1
+                    fi
+                  else
+                    echo "❌ ERRO: Backup não contém SQL válido, abortando deploy"
+                    exit 1
+                  fi
+
+                  ln -sf "$BACKUP_FILE" "${APP_DIR}/backups/latest.sql"
+
+                  # MELHORIA 2: Enviar backup para local remoto (se configurado)
+                  if [ -n "${AWS_S3_BUCKET:-}" ] || [ -n "${REMOTE_BACKUP_HOST:-}" ]; then
+                    echo ""
+                    echo "📤 Enviando backup para local remoto..."
+                    bash ${APP_DIR}/scripts/backup-remote.sh "$BACKUP_FILE" || echo "⚠️ AVISO: Backup remoto falhou, mas continuando..."
+                  fi
+                else
+                  echo "❌ ERRO: Backup vazio ou falhou, abortando deploy"
+                  exit 1
+                fi
+              else
+                echo "ℹ️ Banco vazio, backup não necessário"
+              fi
+            fi
+
+            # ===== SINCRONIZAÇÃO DO SCHEMA (APENAS MIGRATIONS) =====
             echo "=== Sincronizando schema do banco de dados ==="
 
-            # Tentar primeiro com migrate deploy (se existirem migrations)
+            # SEMPRE usar migrate deploy (NUNCA db push em produção)
             if docker exec advocacia-vps sh -c "cd /app && ls packages/database/prisma/migrations 2>/dev/null" | grep -q "migration"; then
               echo "📦 Migrations encontradas, executando migrate deploy..."
 
@@ -221,20 +336,57 @@ jobs:
                 echo "✅ Migrations aplicadas com sucesso"
               else
                 echo "❌ ERRO: Migrate deploy falhou!"
+
+                # MELHORIA 3: Notificar falha
+                bash ${APP_DIR}/scripts/notify.sh \
+                  "Deploy Falhou - Migrations" \
+                  "Erro ao aplicar migrations. Iniciando rollback automático..." \
+                  "error" || true
+
+                echo "🔄 Tentando restaurar backup..."
+
+                if [ -f "${APP_DIR}/backups/latest.sql" ]; then
+                  if docker exec -i advocacia-postgres psql -U advocacia -d advocacia_pitanga < "${APP_DIR}/backups/latest.sql"; then
+                    echo "✅ Backup restaurado, rollback completo"
+
+                    # Notificar sucesso do rollback
+                    bash ${APP_DIR}/scripts/notify.sh \
+                      "Rollback Concluído" \
+                      "Backup restaurado com sucesso após falha nas migrations" \
+                      "warning" || true
+                  else
+                    echo "❌ ERRO CRÍTICO: Falha ao restaurar backup!"
+
+                    # Notificar falha crítica
+                    bash ${APP_DIR}/scripts/notify.sh \
+                      "ERRO CRÍTICO - Deploy Falhou" \
+                      "Migrations falharam E backup não pôde ser restaurado. INTERVENÇÃO MANUAL NECESSÁRIA!" \
+                      "error" || true
+                  fi
+                else
+                  echo "❌ ERRO: Backup não encontrado para restauração!"
+
+                  # Notificar falta de backup
+                  bash ${APP_DIR}/scripts/notify.sh \
+                    "ERRO CRÍTICO - Sem Backup" \
+                    "Migrations falharam e nenhum backup foi encontrado. INTERVENÇÃO MANUAL NECESSÁRIA!" \
+                    "error" || true
+                fi
+
                 docker logs advocacia-vps --tail=50
                 exit 1
               fi
             else
-              echo "⚠️ Nenhuma migration encontrada, usando db push..."
-
-              # Usar db push para criar/atualizar schema diretamente
-              if docker exec advocacia-vps sh -c "cd /app && npx prisma db push --schema=./packages/database/prisma/schema.prisma --accept-data-loss --skip-generate"; then
-                echo "✅ Schema sincronizado com sucesso via db push"
-              else
-                echo "❌ ERRO: DB push falhou!"
-                docker logs advocacia-vps --tail=50
-                exit 1
-              fi
+              echo "⚠️ AVISO: Nenhuma migration encontrada!"
+              echo "❌ ERRO: Deploy em produção REQUER migrations versionadas"
+              echo ""
+              echo "Para criar migrations, execute localmente:"
+              echo "  cd packages/database"
+              echo "  npx prisma migrate dev --name nome_da_migration"
+              echo "  git add prisma/migrations"
+              echo "  git commit -m 'feat: add migration'"
+              echo ""
+              exit 1
             fi
 
             # Verificar se tabelas foram criadas usando o psql
@@ -429,6 +581,12 @@ jobs:
                 echo ""
                 echo "⚠️ IMPORTANTE: Configure SSL com certbot:"
                 echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br"
+
+                # MELHORIA 3: Notificar sucesso do deploy
+                bash ${APP_DIR}/scripts/notify.sh \
+                  "Deploy Concluído com Sucesso ✅" \
+                  "Advocacia Pitanga foi atualizado e está rodando em https://advocaciapitanga.com.br" \
+                  "success" || true
 
                 exit 0
               fi

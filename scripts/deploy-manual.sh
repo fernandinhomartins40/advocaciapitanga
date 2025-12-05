@@ -61,7 +61,24 @@ set -e
 APP_DIR="/root/advocaciapitanga"
 cd $APP_DIR
 
-echo "Parando containers..."
+# Criar backup antes do deploy
+echo "=== Criando backup de segurança ==="
+if docker ps | grep -q advocacia-postgres; then
+  mkdir -p ${APP_DIR}/backups
+  BACKUP_FILE="${APP_DIR}/backups/manual_deploy_$(date +%Y%m%d_%H%M%S).sql"
+  docker exec advocacia-postgres pg_dump -U advocacia -d advocacia_pitanga --clean --if-exists > "$BACKUP_FILE"
+
+  if [ -s "$BACKUP_FILE" ]; then
+    echo "✅ Backup criado: $BACKUP_FILE"
+    ln -sf "$BACKUP_FILE" "${APP_DIR}/backups/latest.sql"
+  fi
+fi
+
+# Verificar volumes
+echo "=== Verificando volumes ==="
+docker volume ls | grep -E "postgres_data|uploads_data" || echo "Nenhum volume encontrado"
+
+echo "Parando containers (preservando volumes)..."
 docker-compose -f docker-compose.vps.yml down || true
 
 echo "Removendo imagens antigas..."
@@ -78,6 +95,10 @@ sleep 30
 
 echo "Verificando status..."
 docker-compose -f docker-compose.vps.yml ps
+
+# Executar migrations
+echo "=== Executando migrations ==="
+docker exec advocacia-vps sh -c "cd /app && npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma"
 
 echo ""
 echo "=== Testando health check ==="
