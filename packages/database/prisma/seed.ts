@@ -6,7 +6,23 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Iniciando seed do banco de dados...');
 
-  // Limpar dados existentes
+  // Verificar se já existe admin
+  const adminExists = await prisma.user.findFirst({
+    where: {
+      email: 'admin@pitanga.com',
+      role: Role.ADMIN_ESCRITORIO,
+    },
+  });
+
+  if (adminExists) {
+    console.log('⚠️ Usuário admin já existe. Pulando seed para não apagar dados.');
+    console.log('📋 Use as credenciais existentes ou delete manualmente o usuário admin para recriar.');
+    return;
+  }
+
+  console.log('✅ Banco vazio, criando dados iniciais...');
+
+  // Limpar dados existentes (apenas se não houver admin)
   await prisma.mensagem.deleteMany();
   await prisma.documento.deleteMany();
   await prisma.processo.deleteMany();

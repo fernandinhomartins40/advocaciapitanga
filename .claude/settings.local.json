@@ -36,7 +36,8 @@
       "Bash(chmod:*)",
       "Bash(npx ts-node:*)",
       "Bash(npx tsx:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(scp:*)"
     ],
     "deny": [],
     "ask": []

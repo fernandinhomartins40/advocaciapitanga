@@ -51,3 +51,7 @@ The table `(not available)` does not exist in the current database.
 2025-11-27T00:44:54.480Z [[32minfo[39m]: 🚀 Backend rodando na porta 3001
 2025-11-27T00:44:54.480Z [[32minfo[39m]: 📝 Ambiente: development
 2025-11-27T00:44:54.481Z [[32minfo[39m]: 🔗 API disponível em: http://localhost:3001/api
+2025-12-05T21:39:24.704Z [[32minfo[39m]: 🔄 Tentativa 1/10 de conectar ao banco de dados...
+2025-12-05T21:39:24.853Z [[32minfo[39m]: ✅ Banco de dados pronto!
+2025-12-05T21:39:24.854Z [[32minfo[39m]: 🔍 Verificando inicialização do banco de dados...
+2025-12-05T21:39:24.872Z [[33mwarn[39m]: ⚠️ AVISO: Banco de dados não contém usuário administrador padrão!
