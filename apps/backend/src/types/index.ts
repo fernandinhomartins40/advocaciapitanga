@@ -1,4 +1,5 @@
 import { Request } from 'express';
+import { MembroEscritorio } from '@prisma/client';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -6,6 +7,8 @@ export interface AuthRequest extends Request {
     email: string;
     role: string;
   };
+  permissions?: MembroEscritorio;
+  escritorioId?: string;
 }
 
 export interface ErrorResponse {

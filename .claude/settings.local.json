@@ -33,7 +33,10 @@
       "Bash(npm run build:docker:vps:*)",
       "Bash(docker build:*)",
       "Bash(timeout /t 60 /nobreak)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(npx ts-node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(node:*)"
     ],
     "deny": [],
     "ask": []

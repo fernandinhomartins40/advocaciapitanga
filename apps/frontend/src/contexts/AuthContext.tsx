@@ -4,11 +4,25 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
 
+interface MembroEscritorio {
+  gerenciarUsuarios: boolean;
+  gerenciarTodosProcessos: boolean;
+  gerenciarProcessosProprios: boolean;
+  visualizarOutrosProcessos: boolean;
+  gerenciarClientes: boolean;
+  visualizarClientes: boolean;
+  gerenciarIA: boolean;
+  configurarSistema: boolean;
+  visualizarRelatorios: boolean;
+  exportarDados: boolean;
+}
+
 interface User {
   id: string;
   email: string;
   nome: string;
-  role: 'ADVOGADO' | 'CLIENTE';
+  role: 'ADMIN_ESCRITORIO' | 'ADVOGADO' | 'ASSISTENTE' | 'ESTAGIARIO' | 'CLIENTE';
+  membroEscritorio?: MembroEscritorio;
 }
 
 interface AuthContextType {
@@ -18,6 +32,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   isAdvogado: boolean;
   isCliente: boolean;
+  isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Redirecionar baseado no role (apenas no cliente)
       if (mounted) {
-        if (user.role === 'ADVOGADO') {
+        if (user.role === 'ADMIN_ESCRITORIO' || user.role === 'ADVOGADO' || user.role === 'ASSISTENTE' || user.role === 'ESTAGIARIO') {
           router.push('/advogado/dashboard');
         } else {
           router.push('/cliente/meus-processos');
@@ -91,8 +106,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     login,
     logout,
-    isAdvogado: user?.role === 'ADVOGADO',
+    isAdvogado: user?.role === 'ADVOGADO' || user?.role === 'ADMIN_ESCRITORIO' || user?.role === 'ASSISTENTE' || user?.role === 'ESTAGIARIO',
     isCliente: user?.role === 'CLIENTE',
+    isAdmin: user?.role === 'ADMIN_ESCRITORIO',
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

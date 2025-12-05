@@ -1,14 +1,8 @@
 import { prisma } from 'database';
 import { Request } from 'express';
+import { AuditAction } from '@prisma/client';
 
-export enum AuditAction {
-  EMAIL_UPDATED = 'EMAIL_UPDATED',
-  PASSWORD_UPDATED = 'PASSWORD_UPDATED',
-  PROFILE_UPDATED = 'PROFILE_UPDATED',
-  LOGIN = 'LOGIN',
-  LOGOUT = 'LOGOUT',
-  FAILED_LOGIN = 'FAILED_LOGIN',
-}
+export { AuditAction };
 
 interface CreateAuditLogParams {
   userId: string;

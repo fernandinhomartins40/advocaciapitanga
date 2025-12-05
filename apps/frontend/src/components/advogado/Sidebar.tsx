@@ -2,22 +2,31 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Scale, LayoutDashboard, Users, FileText, FolderOpen, Brain, User, LogOut } from 'lucide-react';
+import { Scale, LayoutDashboard, Users, FileText, FolderOpen, Brain, User, LogOut, UsersIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
-const menuItems = [
+const allMenuItems = [
   { href: '/advogado/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { href: '/advogado/clientes', icon: Users, label: 'Clientes' },
   { href: '/advogado/processos', icon: FileText, label: 'Processos' },
   { href: '/advogado/documentos', icon: FolderOpen, label: 'Documentos' },
   { href: '/advogado/ia-juridica', icon: Brain, label: 'IA Jurídica' },
+  { href: '/advogado/equipe', icon: UsersIcon, label: 'Equipe', adminOnly: true },
   { href: '/advogado/perfil', icon: User, label: 'Perfil' },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { logout, user } = useAuth();
+  const { logout, user, isAdmin } = useAuth();
+
+  // Filtrar itens do menu baseado nas permissões
+  const menuItems = allMenuItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="flex h-screen w-64 flex-col bg-primary-900 text-white">

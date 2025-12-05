@@ -2,10 +2,12 @@ export interface User {
   id: string;
   email: string;
   nome: string;
-  role: 'ADVOGADO' | 'CLIENTE';
+  role: 'ADMIN_ESCRITORIO' | 'ADVOGADO' | 'ASSISTENTE' | 'ESTAGIARIO' | 'CLIENTE';
+  ativo: boolean;
   createdAt: string;
   cliente?: Cliente;
   advogado?: Advogado;
+  membroEscritorio?: MembroEscritorio;
 }
 
 export interface Cliente {
@@ -53,11 +55,113 @@ export interface Advogado {
   id: string;
   oab: string;
   telefone?: string;
+  escritorioId?: string;
   user: {
     id: string;
     email: string;
     nome: string;
   };
+}
+
+export interface Escritorio {
+  id: string;
+  nome: string;
+  cnpj?: string;
+  adminId: string;
+  ativo: boolean;
+  createdAt: string;
+  admin?: Advogado;
+  membros?: MembroEscritorio[];
+}
+
+export interface MembroEscritorio {
+  id: string;
+  escritorioId: string;
+  userId: string;
+  user?: User;
+  escritorio?: Escritorio;
+
+  // Permissões
+  gerenciarUsuarios: boolean;
+  gerenciarTodosProcessos: boolean;
+  gerenciarProcessosProprios: boolean;
+  visualizarOutrosProcessos: boolean;
+  gerenciarClientes: boolean;
+  visualizarClientes: boolean;
+  gerenciarIA: boolean;
+  configurarSistema: boolean;
+  visualizarRelatorios: boolean;
+  exportarDados: boolean;
+
+  ativo: boolean;
+  dataConvite: string;
+  dataAceitacao?: string;
+  convidadoPor?: string;
+  createdAt: string;
+}
+
+export interface Permissoes {
+  gerenciarUsuarios: boolean;
+  gerenciarTodosProcessos: boolean;
+  gerenciarProcessosProprios: boolean;
+  visualizarOutrosProcessos: boolean;
+  gerenciarClientes: boolean;
+  visualizarClientes: boolean;
+  gerenciarIA: boolean;
+  configurarSistema: boolean;
+  visualizarRelatorios: boolean;
+  exportarDados: boolean;
+}
+
+export const PERFIS_PERMISSOES: Record<string, Partial<Permissoes>> = {
+  ADMIN_ESCRITORIO: {
+    gerenciarUsuarios: true,
+    gerenciarTodosProcessos: true,
+    gerenciarProcessosProprios: true,
+    visualizarOutrosProcessos: true,
+    gerenciarClientes: true,
+    visualizarClientes: true,
+    gerenciarIA: true,
+    configurarSistema: true,
+    visualizarRelatorios: true,
+    exportarDados: true,
+  },
+  ADVOGADO: {
+    gerenciarUsuarios: false,
+    gerenciarTodosProcessos: false,
+    gerenciarProcessosProprios: true,
+    visualizarOutrosProcessos: true,
+    gerenciarClientes: true,
+    visualizarClientes: true,
+    gerenciarIA: true,
+    configurarSistema: false,
+    visualizarRelatorios: false,
+    exportarDados: false,
+  },
+  ASSISTENTE: {
+    gerenciarUsuarios: false,
+    gerenciarTodosProcessos: false,
+    gerenciarProcessosProprios: false,
+    visualizarOutrosProcessos: true,
+    gerenciarClientes: false,
+    visualizarClientes: true,
+    gerenciarIA: false,
+    configurarSistema: false,
+    visualizarRelatorios: false,
+    exportarDados: false,
+  },
+  ESTAGIARIO: {
+    gerenciarUsuarios: false,
+    gerenciarTodosProcessos: false,
+    gerenciarProcessosProprios: false,
+    visualizarOutrosProcessos: false,
+    gerenciarClientes: false,
+    visualizarClientes: true,
+    gerenciarIA: false,
+    configurarSistema: false,
+    visualizarRelatorios: false,
+    exportarDados: false,
+  },
 }
 
 export type StatusProcesso = 'EM_ANDAMENTO' | 'SUSPENSO' | 'CONCLUIDO' | 'ARQUIVADO';

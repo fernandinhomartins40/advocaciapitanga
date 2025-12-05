@@ -16,16 +16,21 @@ model User {
   role         Role     @default(CLIENTE)
   nome         String
   refreshToken String?
+  ativo        Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cliente   Cliente?
-  advogado  Advogado?
-  auditLogs AuditLog[]
+  cliente          Cliente?
+  advogado         Advogado?
+  auditLogs        AuditLog[]
+  membroEscritorio MembroEscritorio?
 }
 
 enum Role {
+  ADMIN_ESCRITORIO
   ADVOGADO
+  ASSISTENTE
+  ESTAGIARIO
   CLIENTE
 }
 
@@ -75,17 +80,67 @@ model Cliente {
 }
 
 model Advogado {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oab          String   @unique
+  telefone     String?
+  escritorioId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  processos           Processo[]
+  documentosIA        DocumentoIA[]
+  configuracaoIA      ConfiguracaoIA?
+  escritoriosAdmin    Escritorio[]       @relation("EscritorioAdmin")
+  escritorioVinculado Escritorio?        @relation("EscritorioVinculo", fields: [escritorioId], references: [id], onDelete: SetNull)
+}
+
+model Escritorio {
   id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  oab       String   @unique
-  telefone  String?
+  nome      String
+  cnpj      String?  @unique
+  adminId   String
+  admin     Advogado @relation("EscritorioAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+  ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  processos      Processo[]
-  documentosIA   DocumentoIA[]
-  configuracaoIA ConfiguracaoIA?
+  membros    MembroEscritorio[]
+  advogados  Advogado[]         @relation("EscritorioVinculo")
+
+  @@index([adminId])
+}
+
+model MembroEscritorio {
+  id             String    @id @default(cuid())
+  escritorioId   String
+  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  userId         String    @unique
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Permissões individuais
+  gerenciarUsuarios          Boolean @default(false)
+  gerenciarTodosProcessos    Boolean @default(false)
+  gerenciarProcessosProprios Boolean @default(true)
+  visualizarOutrosProcessos  Boolean @default(false)
+  gerenciarClientes          Boolean @default(false)
+  visualizarClientes         Boolean @default(true)
+  gerenciarIA                Boolean @default(false)
+  configurarSistema          Boolean @default(false)
+  visualizarRelatorios       Boolean @default(false)
+  exportarDados              Boolean @default(false)
+
+  ativo          Boolean   @default(true)
+  dataConvite    DateTime  @default(now())
+  dataAceitacao  DateTime?
+  convidadoPor   String?
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([escritorioId])
+  @@index([userId])
 }
 
 model Processo {
@@ -281,6 +336,15 @@ enum AuditAction {
   LOGIN
   LOGOUT
   FAILED_LOGIN
+  USUARIO_CRIADO
+  USUARIO_EDITADO
+  USUARIO_DESATIVADO
+  USUARIO_ATIVADO
+  PERMISSAO_ALTERADA
+  ACESSO_NEGADO
+  ESCRITORIO_CRIADO
+  MEMBRO_ADICIONADO
+  MEMBRO_REMOVIDO
 }
 
 model DocumentoIA {
