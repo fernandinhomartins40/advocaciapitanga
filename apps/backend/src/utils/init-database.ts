@@ -12,7 +12,7 @@ export async function checkDatabaseInitialization(): Promise<void> {
     // Verificar se existe pelo menos um usuário administrador
     const adminCount = await prisma.user.count({
       where: {
-        role: 'ADVOGADO',
+        role: 'ADMIN_ESCRITORIO',
         email: 'admin@pitanga.com',
       },
     });
