@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
+import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, Download, FileText, Copy, History, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Select } from '@/components/ui/select';
+import { SelectNative as Select } from '@/components/ui/select-native';
 import { Label } from '@/components/ui/label';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
