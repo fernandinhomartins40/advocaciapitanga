@@ -14,31 +14,50 @@ async function main() {
     },
   });
 
-  if (adminExists) {
-    console.log('⚠️ Usuário admin já existe. Pulando seed para não apagar dados.');
-    console.log('📋 Use as credenciais existentes ou delete manualmente o usuário admin para recriar.');
+  // Verificar se biblioteca de modelos já existe
+  const templatesCount = await prisma.documentTemplate.count();
+  const foldersCount = await prisma.documentFolder.count();
+
+  if (adminExists && templatesCount > 0 && foldersCount > 0) {
+    console.log('⚠️ Dados já existem. Pulando seed para não duplicar dados.');
+    console.log('📋 Use as credenciais existentes ou delete manualmente os dados para recriar.');
     return;
   }
 
-  console.log('✅ Banco vazio, criando dados iniciais...');
+  if (adminExists) {
+    console.log('✅ Admin já existe. Verificando biblioteca de documentos...');
+  } else {
+    console.log('✅ Banco vazio, criando dados iniciais...');
+  }
 
-  // Limpar dados existentes (apenas se não houver admin)
-  await prisma.documentHistory.deleteMany();
-  await prisma.documento.deleteMany();
-  await prisma.documentTemplate.deleteMany();
-  await prisma.documentFolder.deleteMany();
-  await prisma.mensagem.deleteMany();
-  await prisma.processo.deleteMany();
-  await prisma.cliente.deleteMany();
-  await prisma.advogado.deleteMany();
-  await prisma.user.deleteMany();
+  // Variáveis que serão usadas em todo o seed
+  let advogado: any;
+  let escritorio: any;
+  let cliente1: any;
+  let cliente2: any;
+  let processo1: any;
+  let processo2: any;
+  let processo3: any;
 
-  // Hash de senhas seguras
-  const senhaAdvogado = await bcrypt.hash('Pitanga@2024!Admin', 10);
-  const senhaCliente = await bcrypt.hash('Pitanga@2024!Cliente', 10);
+  // Se admin não existe, criar todos os dados de usuários e processos
+  if (!adminExists) {
+    console.log('🗑️ Limpando dados existentes...');
+    await prisma.documentHistory.deleteMany();
+    await prisma.documento.deleteMany();
+    await prisma.documentTemplate.deleteMany();
+    await prisma.documentFolder.deleteMany();
+    await prisma.mensagem.deleteMany();
+    await prisma.processo.deleteMany();
+    await prisma.cliente.deleteMany();
+    await prisma.advogado.deleteMany();
+    await prisma.user.deleteMany();
 
-  // Criar Advogado Admin (Dono do Escritório)
-  const advogado = await prisma.user.create({
+    // Hash de senhas seguras
+    const senhaAdvogado = await bcrypt.hash('Pitanga@2024!Admin', 10);
+    const senhaCliente = await bcrypt.hash('Pitanga@2024!Cliente', 10);
+
+    // Criar Advogado Admin (Dono do Escritório)
+    advogado = await prisma.user.create({
     data: {
       email: 'admin@pitanga.com',
       password: senhaAdvogado,
@@ -149,52 +168,113 @@ async function main() {
     },
   });
 
-  const processo3 = await prisma.processo.create({
-    data: {
-      numero: '5555555-55.2024.8.26.0300',
-      descricao: 'Ação de divórcio consensual com partilha de bens',
-      status: StatusProcesso.CONCLUIDO,
-      clienteId: cliente1.cliente!.id,
-      advogadoId: advogado.advogado!.id,
-    },
-  });
+    processo3 = await prisma.processo.create({
+      data: {
+        numero: '5555555-55.2024.8.26.0300',
+        descricao: 'Ação de divórcio consensual com partilha de bens',
+        status: StatusProcesso.CONCLUIDO,
+        clienteId: cliente1.cliente!.id,
+        advogadoId: advogado.advogado!.id,
+      },
+    });
 
-  console.log('✅ Processos criados');
+    console.log('✅ Processos criados');
 
-  // Biblioteca de Documentos
-  const pastaModelos = await prisma.documentFolder.create({
-    data: { nome: 'Modelos Padrão' },
-  });
+    // Criar Mensagens de exemplo
+    await prisma.mensagem.create({
+      data: {
+        conteudo: 'Olá, gostaria de saber o andamento do meu processo.',
+        processoId: processo1.id,
+        remetente: 'Cliente',
+      },
+    });
 
-  const pastaCiveis = await prisma.documentFolder.create({
-    data: { nome: 'Cível', parentId: pastaModelos.id },
-  });
+    await prisma.mensagem.create({
+      data: {
+        conteudo:
+          'Olá Maria, o processo está em andamento. Estamos aguardando a resposta da outra parte. Assim que houver novidades, entrarei em contato.',
+        processoId: processo1.id,
+        remetente: 'Advogado',
+        lida: true,
+      },
+    });
 
-  const pastaTrabalhistas = await prisma.documentFolder.create({
-    data: { nome: 'Trabalhista', parentId: pastaModelos.id },
-  });
+    await prisma.mensagem.create({
+      data: {
+        conteudo: 'Perfeito, obrigada pela atenção!',
+        processoId: processo1.id,
+        remetente: 'Cliente',
+        lida: true,
+      },
+    });
 
-  const pastaFamilia = await prisma.documentFolder.create({
-    data: { nome: 'Família e Sucessões', parentId: pastaModelos.id },
-  });
+    await prisma.mensagem.create({
+      data: {
+        conteudo: 'Dr. João, preciso de uma cópia do contrato. Pode me enviar?',
+        processoId: processo2.id,
+        remetente: 'Cliente',
+      },
+    });
 
-  const pastaConsumidor = await prisma.documentFolder.create({
-    data: { nome: 'Direito do Consumidor', parentId: pastaModelos.id },
-  });
+    console.log('✅ Mensagens criadas');
 
-  const pastaContratos = await prisma.documentFolder.create({
-    data: { nome: 'Contratos', parentId: pastaModelos.id },
-  });
+    console.log('\n🎉 Dados de usuários e processos criados com sucesso!');
+    console.log('\n📋 Credenciais de acesso:');
+    console.log('\nAdvogado:');
+    console.log('  Email: admin@pitanga.com');
+    console.log('  Senha: Pitanga@2024!Admin');
+    console.log('\nCliente 1:');
+    console.log('  Email: maria@email.com');
+    console.log('  Senha: Pitanga@2024!Cliente');
+    console.log('\nCliente 2:');
+    console.log('  Email: jose@email.com');
+    console.log('  Senha: Pitanga@2024!Cliente\n');
+  }
 
-  const pastaPrevidenciario = await prisma.documentFolder.create({
-    data: { nome: 'Previdenciário', parentId: pastaModelos.id },
-  });
+  // Biblioteca de Documentos - SEMPRE verifica e cria se não existir
+  if (templatesCount === 0 || foldersCount === 0) {
+    console.log('📚 Criando biblioteca de modelos de documentos...');
 
-  const pastaRecursos = await prisma.documentFolder.create({
-    data: { nome: 'Recursos', parentId: pastaModelos.id },
-  });
+    // Limpar apenas templates e folders se estiverem incompletos
+    if (templatesCount > 0 || foldersCount > 0) {
+      console.log('🗑️ Limpando biblioteca incompleta...');
+      await prisma.documentTemplate.deleteMany();
+      await prisma.documentFolder.deleteMany();
+    }
 
-  await prisma.documentTemplate.createMany({
+    const pastaModelos = await prisma.documentFolder.create({
+      data: { nome: 'Modelos Padrão' },
+    });
+
+    const pastaCiveis = await prisma.documentFolder.create({
+      data: { nome: 'Cível', parentId: pastaModelos.id },
+    });
+
+    const pastaTrabalhistas = await prisma.documentFolder.create({
+      data: { nome: 'Trabalhista', parentId: pastaModelos.id },
+    });
+
+    const pastaFamilia = await prisma.documentFolder.create({
+      data: { nome: 'Família e Sucessões', parentId: pastaModelos.id },
+    });
+
+    const pastaConsumidor = await prisma.documentFolder.create({
+      data: { nome: 'Direito do Consumidor', parentId: pastaModelos.id },
+    });
+
+    const pastaContratos = await prisma.documentFolder.create({
+      data: { nome: 'Contratos', parentId: pastaModelos.id },
+    });
+
+    const pastaPrevidenciario = await prisma.documentFolder.create({
+      data: { nome: 'Previdenciário', parentId: pastaModelos.id },
+    });
+
+    const pastaRecursos = await prisma.documentFolder.create({
+      data: { nome: 'Recursos', parentId: pastaModelos.id },
+    });
+
+    await prisma.documentTemplate.createMany({
     data: [
       {
         nome: 'Petição Inicial - Indenização por Danos Morais',
@@ -1306,60 +1386,15 @@ Local e data.
 OAB/{{ advogado_oab }}`,
         folderId: pastaCiveis.id,
       },
-    ],
-  });
+      ],
+    });
 
-  console.log('✅ Biblioteca de modelos criada (30+ modelos profissionais)');
-
-  // Criar Mensagens de exemplo
-  await prisma.mensagem.create({
-    data: {
-      conteudo: 'Olá, gostaria de saber o andamento do meu processo.',
-      processoId: processo1.id,
-      remetente: 'Cliente',
-    },
-  });
-
-  await prisma.mensagem.create({
-    data: {
-      conteudo:
-        'Olá Maria, o processo está em andamento. Estamos aguardando a resposta da outra parte. Assim que houver novidades, entrarei em contato.',
-      processoId: processo1.id,
-      remetente: 'Advogado',
-      lida: true,
-    },
-  });
-
-  await prisma.mensagem.create({
-    data: {
-      conteudo: 'Perfeito, obrigada pela atenção!',
-      processoId: processo1.id,
-      remetente: 'Cliente',
-      lida: true,
-    },
-  });
-
-  await prisma.mensagem.create({
-    data: {
-      conteudo: 'Dr. João, preciso de uma cópia do contrato. Pode me enviar?',
-      processoId: processo2.id,
-      remetente: 'Cliente',
-    },
-  });
-
-  console.log('✅ Mensagens criadas');
+    console.log('✅ Biblioteca de modelos criada (30+ modelos profissionais)');
+  } else {
+    console.log('✅ Biblioteca de modelos já existe, pulando criação.');
+  }
 
   console.log('\n🎉 Seed concluído com sucesso!');
-  console.log('\n📋 Credenciais de acesso:');
-  console.log('\nAdvogado:');
-  console.log('  Email: admin@pitanga.com');
-  console.log('  Senha: Pitanga@2024!Admin');
-  console.log('\nCliente 1:');
-  console.log('  Email: maria@email.com');
-  console.log('  Senha: Pitanga@2024!Cliente');
-  console.log('\nCliente 2:');
-  console.log('  Email: jose@email.com');
-  console.log('  Senha: Pitanga@2024!Cliente\n');
 }
 
 main()
