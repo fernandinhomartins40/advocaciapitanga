@@ -306,8 +306,8 @@ export default function DocumentosPage() {
                             {doc.processo?.numero} • {formatDate(doc.createdAt)}
                           </div>
                           <div className="text-xs text-gray-500 flex items-center gap-2">
-                            <Badge variant="secondary">{doc.status}</Badge>
-                            {doc.template && <Badge variant="outline">Modelo: {doc.template.nome}</Badge>}
+                            <Badge variant="info">{doc.status}</Badge>
+                            {doc.template && <Badge variant="info">Modelo: {doc.template.nome}</Badge>}
                           </div>
                         </div>
                         <div className="flex gap-2">
