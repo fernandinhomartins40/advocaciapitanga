@@ -102,7 +102,24 @@ export class EscritorioController {
         return;
       }
 
-      const { nome, email, role, oab, telefone, permissoes } = req.body;
+      const { nome, email, role, oab, telefone, permissoes, password } = req.body;
+
+      const senhaInformada = typeof password === 'string' ? password : undefined;
+
+      // Validações de senha (quando fornecida)
+      if (senhaInformada) {
+        const senhaValida =
+          senhaInformada.length >= 8 &&
+          /[A-Z]/.test(senhaInformada) &&
+          /[!@#$%^&*(),.?":{}|<>]/.test(senhaInformada);
+
+        if (!senhaValida) {
+          res.status(400).json({
+            error: 'Senha inválida. Use pelo menos 8 caracteres, 1 letra maiúscula e 1 caractere especial.',
+          });
+          return;
+        }
+      }
 
       // Validações
       if (!nome || !email || !role) {
@@ -129,6 +146,7 @@ export class EscritorioController {
         telefone,
         permissoes,
         convidadoPor: req.user.userId,
+        password: senhaInformada,
       });
 
       await AuditService.createLog({

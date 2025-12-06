@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/components/ui/toast';
 import { PERFIS_PERMISSOES, Permissoes } from '@/types';
 import api from '@/lib/api';
+import { PasswordInput } from '@/components/ui/password-input';
 
 interface ConviteMembroDialogProps {
   open: boolean;
@@ -41,9 +42,30 @@ export function ConviteMembroDialog({ open, onOpenChange, onSuccess }: ConviteMe
     role: 'ADVOGADO' as 'ADVOGADO' | 'ASSISTENTE' | 'ESTAGIARIO',
     oab: '',
     telefone: '',
+    password: '',
+    confirmPassword: '',
   });
 
   const [permissoes, setPermissoes] = useState<Partial<Permissoes>>(PERFIS_PERMISSOES.ADVOGADO);
+
+  const passwordStrength = useMemo(() => {
+    const pwd = formData.password;
+    if (!pwd) return { label: 'Vazia', color: 'text-gray-400', score: 0 };
+
+    const checks = [
+      pwd.length >= 8,
+      /[A-Z]/.test(pwd),
+      /[a-z]/.test(pwd),
+      /\d/.test(pwd),
+      /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+    ];
+
+    const score = checks.filter(Boolean).length;
+
+    if (score >= 4) return { label: 'Forte', color: 'text-green-600', score };
+    if (score === 3) return { label: 'Média', color: 'text-yellow-600', score };
+    return { label: 'Fraca', color: 'text-red-600', score };
+  }, [formData.password]);
 
   const handleRoleChange = (role: 'ADVOGADO' | 'ASSISTENTE' | 'ESTAGIARIO') => {
     setFormData({ ...formData, role });
@@ -69,16 +91,51 @@ export function ConviteMembroDialog({ open, onOpenChange, onSuccess }: ConviteMe
       return;
     }
 
+    if (!formData.password || !formData.confirmPassword) {
+      toast({ title: 'Erro', description: 'Preencha e confirme a senha do novo usuário', variant: 'error' });
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      toast({ title: 'Erro', description: 'As senhas não coincidem', variant: 'error' });
+      return;
+    }
+
+    const senhaValida =
+      formData.password.length >= 8 &&
+      /[A-Z]/.test(formData.password) &&
+      /[!@#$%^&*(),.?":{}|<>]/.test(formData.password);
+
+    if (!senhaValida) {
+      toast({
+        title: 'Erro',
+        description: 'Senha inválida. Use 8+ caracteres, 1 letra maiúscula e 1 caractere especial.',
+        variant: 'error',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await api.post('/escritorio/membros', {
-        ...formData,
+      const payload = {
+        nome: formData.nome,
+        email: formData.email,
+        role: formData.role,
+        oab: formData.oab,
+        telefone: formData.telefone,
+        password: formData.password,
         permissoes: tipoPermissao === 'personalizado' ? permissoes : undefined,
-      });
+      };
+
+      const response = await api.post('/escritorio/membros', payload);
+
+      const senhaInfo = response.data?.senhaTemporaria
+        ? `Senha temporária: ${response.data.senhaTemporaria}`
+        : 'Senha definida pelo administrador.';
 
       toast({
         title: 'Sucesso',
-        description: `Membro adicionado! Senha temporária: ${response.data.senhaTemporaria}`,
+        description: `Membro adicionado! ${senhaInfo}`,
         variant: 'success',
       });
 
@@ -89,6 +146,8 @@ export function ConviteMembroDialog({ open, onOpenChange, onSuccess }: ConviteMe
         role: 'ADVOGADO',
         oab: '',
         telefone: '',
+        password: '',
+        confirmPassword: '',
       });
       setPermissoes(PERFIS_PERMISSOES.ADVOGADO);
       setTipoPermissao('predefinido');
@@ -179,6 +238,36 @@ export function ConviteMembroDialog({ open, onOpenChange, onSuccess }: ConviteMe
                 placeholder="(00) 00000-0000"
               />
             </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="password">Senha do novo usuário *</Label>
+                <PasswordInput
+                  id="password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  placeholder="Pelo menos 8 caracteres"
+                  required
+                />
+                <p className={`text-xs mt-1 ${passwordStrength.color}`}>
+                  Força da senha: {passwordStrength.label}
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Confirmar senha *</Label>
+                <PasswordInput
+                  id="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                  placeholder="Repita a senha"
+                  required
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-gray-500">
+              Requisitos: mínimo 8 caracteres, ao menos 1 letra maiúscula e 1 caractere especial.
+            </p>
           </div>
 
           {/* Permissões */}

@@ -167,6 +167,7 @@ export class EscritorioService {
       exportarDados?: boolean;
     };
     convidadoPor: string;
+    password?: string;
   }) {
     // Verificar se email já existe
     const existingUser = await prisma.user.findUnique({
@@ -188,9 +189,9 @@ export class EscritorioService {
       }
     }
 
-    // Gerar senha temporária
-    const senhaTemporaria = this.gerarSenhaTemporaria();
-    const hashedPassword = await hashPassword(senhaTemporaria);
+    // Usar senha informada ou gerar temporária
+    const senhaEmUso = data.password && data.password.length > 0 ? data.password : this.gerarSenhaTemporaria();
+    const hashedPassword = await hashPassword(senhaEmUso);
 
     // Criar usuário
     const user = await prisma.user.create({
@@ -249,7 +250,7 @@ export class EscritorioService {
 
     return {
       membro,
-      senhaTemporaria, // Remover em produção (apenas para desenvolvimento)
+      senhaTemporaria: data.password ? undefined : senhaEmUso, // Apenas retorna temporária quando gerada
     };
   }
 
