@@ -24,6 +24,7 @@ model User {
   advogado         Advogado?
   auditLogs        AuditLog[]
   membroEscritorio MembroEscritorio?
+  documentosHistorico DocumentHistory[]
 }
 
 enum Role {
