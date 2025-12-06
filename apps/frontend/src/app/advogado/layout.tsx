@@ -7,14 +7,14 @@ import { Sidebar } from '@/components/advogado/Sidebar';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export default function AdvogadoLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isAdvogado } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && (!user || user.role !== 'ADVOGADO')) {
+    if (!isLoading && (!user || !isAdvogado)) {
       router.push('/login?type=advogado');
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, isAdvogado, router]);
 
   if (isLoading) {
     return (
@@ -24,7 +24,7 @@ export default function AdvogadoLayout({ children }: { children: React.ReactNode
     );
   }
 
-  if (!user || user.role !== 'ADVOGADO') {
+  if (!user || !isAdvogado) {
     return null;
   }
 
