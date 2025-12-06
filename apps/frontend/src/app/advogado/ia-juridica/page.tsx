@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -8,11 +8,20 @@ import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, Download, FileText, Copy, History, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { RichTextEditor } from '@/components/shared/RichTextEditor';
 import SelectCliente from '@/components/advogado/SelectCliente';
 import SelectProcesso from '@/components/advogado/SelectProcesso';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
+import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
+
+type Modelo = {
+  id: string;
+  nome: string;
+  descricao?: string;
+  conteudo: string;
+};
 
 export default function IAJuridicaPage() {
   const [tipoPeca, setTipoPeca] = useState('Petição Inicial');
@@ -28,7 +37,16 @@ export default function IAJuridicaPage() {
   const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
   const [processoSelecionado, setProcessoSelecionado] = useState<any>(null);
   const [formatoExportar, setFormatoExportar] = useState('pdf');
+  const [modeloBaseId, setModeloBaseId] = useState('');
   const { toast } = useToast();
+
+  const { data: modelos } = useQuery({
+    queryKey: ['documentos', 'modelos'],
+    queryFn: async () => {
+      const response = await api.get('/documentos/modelos');
+      return response.data as Modelo[];
+    },
+  });
 
   const tiposPeca = [
     'Petição Inicial',
@@ -40,6 +58,15 @@ export default function IAJuridicaPage() {
     'Parecer',
     'Outro',
   ];
+
+  useEffect(() => {
+    if (modeloBaseId && modelos) {
+      const modeloSelecionado = modelos.find(m => m.id === modeloBaseId);
+      if (modeloSelecionado) {
+        setContexto(modeloSelecionado.conteudo);
+      }
+    }
+  }, [modeloBaseId, modelos]);
 
   const handleGenerate = async () => {
     if (!contexto.trim()) {
@@ -56,7 +83,8 @@ export default function IAJuridicaPage() {
         pedidos,
         partes: partes.split('\n').filter(p => p.trim()),
         clienteId: clienteId || undefined,
-        processoId: processoId || undefined
+        processoId: processoId || undefined,
+        templateId: modeloBaseId || undefined
       });
       setConteudoGerado(response.data.conteudo);
       toast({ title: 'Sucesso', description: 'Peça gerada com sucesso!', variant: 'success' });
@@ -101,9 +129,30 @@ export default function IAJuridicaPage() {
     }
   };
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(conteudoGerado);
-    toast({ title: 'Copiado', description: 'Texto copiado para área de transferência', variant: 'success' });
+  const handleCopy = async () => {
+    try {
+      // Criar um elemento temporário para extrair o texto sem HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = conteudoGerado;
+      const textoPlano = temp.textContent || temp.innerText || '';
+
+      // Copiar tanto HTML quanto texto plano
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html': new Blob([conteudoGerado], { type: 'text/html' }),
+          'text/plain': new Blob([textoPlano], { type: 'text/plain' }),
+        }),
+      ]);
+
+      toast({ title: 'Copiado', description: 'Documento copiado com formatação', variant: 'success' });
+    } catch (error) {
+      // Fallback para texto simples se clipboard API não suportar HTML
+      const temp = document.createElement('div');
+      temp.innerHTML = conteudoGerado;
+      const textoPlano = temp.textContent || temp.innerText || '';
+      await navigator.clipboard.writeText(textoPlano);
+      toast({ title: 'Copiado', description: 'Texto copiado para área de transferência', variant: 'success' });
+    }
   };
 
   return (
@@ -152,6 +201,25 @@ export default function IAJuridicaPage() {
                   </option>
                 ))}
               </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="modelo">Modelo Base (Opcional)</Label>
+              <Select
+                id="modelo"
+                value={modeloBaseId}
+                onChange={(e) => setModeloBaseId(e.target.value)}
+              >
+                <option value="">Nenhum - Gerar do zero</option>
+                {modelos?.map((modelo) => (
+                  <option key={modelo.id} value={modelo.id}>
+                    {modelo.nome}
+                  </option>
+                ))}
+              </Select>
+              <p className="text-xs text-gray-500 mt-1">
+                Selecione um modelo da biblioteca para usar como base
+              </p>
             </div>
 
             <SelectCliente
@@ -292,12 +360,11 @@ export default function IAJuridicaPage() {
                 )}
               </div>
             )}
-            <Textarea
-              value={conteudoGerado}
-              onChange={(e) => setConteudoGerado(e.target.value)}
-              placeholder="O conteúdo gerado pela IA aparecerá aqui. Você poderá editar o texto livremente antes de exportar."
-              rows={25}
-              className="font-mono text-sm"
+            <RichTextEditor
+              content={conteudoGerado}
+              onChange={(html) => setConteudoGerado(html)}
+              placeholder="O conteúdo gerado pela IA aparecerá aqui. Você poderá editar e formatar o texto antes de exportar."
+              minHeight="600px"
             />
           </CardContent>
         </Card>

@@ -12,6 +12,8 @@ router.post('/pastas', authMiddleware, documentoController.criarPasta.bind(docum
 router.get('/modelos', authMiddleware, documentoController.listarModelos.bind(documentoController));
 router.post('/modelos', authMiddleware, documentoController.criarModelo.bind(documentoController));
 router.put('/modelos/:id', authMiddleware, documentoController.atualizarModelo.bind(documentoController));
+router.post('/modelos/:id/duplicar', authMiddleware, documentoController.duplicarModelo.bind(documentoController));
+router.delete('/modelos/:id', authMiddleware, documentoController.deletarModelo.bind(documentoController));
 router.post('/modelos/:id/gerar', authMiddleware, documentoController.gerarDeModelo.bind(documentoController));
 router.get('/:id/download', authMiddleware, documentoController.download.bind(documentoController));
 router.get('/:id/historico', authMiddleware, documentoController.historico.bind(documentoController));

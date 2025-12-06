@@ -63,6 +63,7 @@ export class IAService {
     partes?: string[];
     dadosCliente?: any;
     dadosProcesso?: any;
+    templateBase?: string;
   }, advogadoId: string): Promise<string> {
     try {
       const openai = await this.getOpenAIClient(advogadoId);
@@ -91,7 +92,47 @@ export class IAService {
         }
       }
 
-      const userPrompt = `
+      let userPrompt = '';
+
+      // Se há template base, usar como referência
+      if (data.templateBase) {
+        userPrompt = `
+        Elabore ${data.tipoPeca.toLowerCase()} usando o seguinte MODELO BASE como referência estrutural:
+
+        === MODELO BASE ===
+        ${data.templateBase}
+        === FIM DO MODELO BASE ===
+
+        Adapte e complete o modelo acima com base nas seguintes informações específicas:
+
+        CONTEXTO:
+        ${data.contexto}
+
+        ${dadosAdicionais}
+
+        ${data.partes && data.partes.length > 0 ? `
+        PARTES ENVOLVIDAS:
+        ${data.partes.join('\n')}
+        ` : ''}
+
+        ${data.fundamentosLegais ? `
+        FUNDAMENTOS LEGAIS:
+        ${data.fundamentosLegais}
+        ` : ''}
+
+        ${data.pedidos ? `
+        PEDIDOS:
+        ${data.pedidos}
+        ` : ''}
+
+        IMPORTANTE:
+        - Mantenha a estrutura e o estilo do modelo base
+        - Substitua as variáveis {{ }} pelos dados reais fornecidos
+        - Adapte o conteúdo ao caso específico
+        - Mantenha a formatação profissional e técnica
+      `;
+      } else {
+        userPrompt = `
         Elabore ${data.tipoPeca.toLowerCase()} com base nas seguintes informações:
 
         CONTEXTO:
@@ -117,6 +158,7 @@ export class IAService {
         Por favor, elabore o documento de forma profissional, técnica e completa.
         Use formatação adequada com parágrafos, seções e numeração quando apropriado.
       `;
+      }
 
       const completion = await openai.chat.completions.create({
         model: modelo,

@@ -15,7 +15,7 @@ const rtfService = new RTFService();
 export class IAController {
   async gerarPeca(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { tipoPeca, contexto, fundamentosLegais, pedidos, partes, clienteId, processoId } = req.body;
+      const { tipoPeca, contexto, fundamentosLegais, pedidos, partes, clienteId, processoId, templateId } = req.body;
       const userId = req.user!.userId;
 
       if (!tipoPeca || !contexto) {
@@ -31,6 +31,14 @@ export class IAController {
 
       if (!advogado) {
         return res.status(403).json({ error: 'Apenas advogados podem gerar peças' });
+      }
+
+      // Buscar template se fornecido
+      let templateBase = null;
+      if (templateId) {
+        templateBase = await prisma.documentTemplate.findUnique({
+          where: { id: templateId }
+        });
       }
 
       // Buscar dados do cliente e processo se fornecidos
@@ -77,7 +85,8 @@ export class IAController {
         pedidos,
         partes,
         dadosCliente,
-        dadosProcesso
+        dadosProcesso,
+        templateBase: templateBase?.conteudo
       }, advogado.id);
 
       // Salvar no banco de dados

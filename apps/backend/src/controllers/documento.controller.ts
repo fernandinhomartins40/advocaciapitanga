@@ -538,6 +538,55 @@ export class DocumentoController {
       next(error);
     }
   }
+
+  async duplicarModelo(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      const modeloOriginal = await prisma.documentTemplate.findUnique({
+        where: { id }
+      });
+
+      if (!modeloOriginal) {
+        return res.status(404).json({ error: 'Modelo não encontrado' });
+      }
+
+      const modeloDuplicado = await prisma.documentTemplate.create({
+        data: {
+          nome: `${modeloOriginal.nome} (Cópia)`,
+          descricao: modeloOriginal.descricao,
+          conteudo: modeloOriginal.conteudo,
+          folderId: modeloOriginal.folderId,
+        },
+      });
+
+      res.status(201).json(modeloDuplicado);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  async deletarModelo(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+
+      const modelo = await prisma.documentTemplate.findUnique({
+        where: { id }
+      });
+
+      if (!modelo) {
+        return res.status(404).json({ error: 'Modelo não encontrado' });
+      }
+
+      await prisma.documentTemplate.delete({
+        where: { id }
+      });
+
+      res.json({ message: 'Modelo excluído com sucesso' });
+    } catch (error: any) {
+      next(error);
+    }
+  }
 }
 
 

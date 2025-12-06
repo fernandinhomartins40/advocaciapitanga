@@ -1,38 +1,25 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { formatDate } from '@/lib/utils';
 import api from '@/lib/api';
-import { Download, FileText, Folder, Layers, Wand2, CheckCircle2, Clock3 } from 'lucide-react';
-
-type Documento = {
-  id: string;
-  titulo: string;
-  tipo: string;
-  tamanho: number;
-  createdAt: string;
-  status: 'DRAFT' | 'EM_REVISAO' | 'FINALIZADO' | 'ANEXADO';
-  conteudo?: string;
-  processo?: { numero: string };
-  template?: { nome: string };
-  folder?: { id: string; nome: string };
-};
-
-type DocumentoHistorico = {
-  id: string;
-  acao: string;
-  status: string;
-  detalhe?: string;
-  createdAt: string;
-  user: { nome: string; email: string };
-};
+import { useToast } from '@/components/ui/toast';
+import {
+  FileText,
+  Folder,
+  FolderPlus,
+  FilePlus,
+  Save,
+  Copy,
+  Trash2,
+  Info
+} from 'lucide-react';
 
 type Pasta = {
   id: string;
@@ -46,128 +33,184 @@ type Modelo = {
   descricao?: string;
   conteudo: string;
   folderId?: string;
-};
-
-type Processo = {
-  id: string;
-  numero: string;
-  descricao?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export default function DocumentosPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const [selectedPasta, setSelectedPasta] = useState<string | undefined>();
   const [selectedModelo, setSelectedModelo] = useState<Modelo | null>(null);
-  const [selectedProcesso, setSelectedProcesso] = useState<string>('');
   const [editorContent, setEditorContent] = useState('');
-  const [documentoAtual, setDocumentoAtual] = useState<Documento | null>(null);
-  const [tituloDocumento, setTituloDocumento] = useState('');
-  const [descricaoDocumento, setDescricaoDocumento] = useState('');
+  const [tituloModelo, setTituloModelo] = useState('');
+  const [descricaoModelo, setDescricaoModelo] = useState('');
+  const [modoEdicao, setModoEdicao] = useState<'novo' | 'editar' | null>(null);
+  const [novaPastaNome, setNovaPastaNome] = useState('');
+  const [mostrarNovaPasta, setMostrarNovaPasta] = useState(false);
 
   const { data: biblioteca, isLoading } = useQuery({
     queryKey: ['documentos', 'biblioteca'],
     queryFn: async () => {
       const response = await api.get('/documentos', { params: { includeTemplates: true } });
-      return response.data as { documentos: Documento[]; templates: Modelo[]; folders: Pasta[] };
+      return response.data as { templates: Modelo[]; folders: Pasta[] };
     },
   });
 
-  const { data: processos } = useQuery({
-    queryKey: ['processos'],
-    queryFn: async () => {
-      const response = await api.get('/processos');
-      return response.data?.processos || [];
-    },
-  });
-
-  const historicoQuery = useQuery({
-    queryKey: ['documentos', documentoAtual?.id, 'historico'],
-    queryFn: async () => {
-      if (!documentoAtual?.id) return [];
-      const response = await api.get(`/documentos/${documentoAtual.id}/historico`);
-      return response.data as DocumentoHistorico[];
-    },
-    enabled: !!documentoAtual?.id,
-  });
+  const modelosFiltrados = useMemo(() => {
+    if (!biblioteca?.templates) return [];
+    if (!selectedPasta) return biblioteca.templates;
+    return biblioteca.templates.filter((modelo) => modelo.folderId === selectedPasta);
+  }, [biblioteca?.templates, selectedPasta]);
 
   useEffect(() => {
-    if (selectedModelo) {
-      setTituloDocumento(selectedModelo.nome);
+    if (selectedModelo && modoEdicao === 'editar') {
+      setTituloModelo(selectedModelo.nome);
+      setDescricaoModelo(selectedModelo.descricao || '');
       setEditorContent(selectedModelo.conteudo);
     }
-  }, [selectedModelo]);
+  }, [selectedModelo, modoEdicao]);
 
-  useEffect(() => {
-    if (documentoAtual) {
-      setTituloDocumento(documentoAtual.titulo);
-      setEditorContent(documentoAtual.conteudo || '');
-    }
-  }, [documentoAtual]);
+  const criarPastaMutation = useMutation({
+    mutationFn: async (nome: string) => {
+      const response = await api.post('/documentos/pastas', { nome });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
+      setNovaPastaNome('');
+      setMostrarNovaPasta(false);
+      toast({ title: 'Sucesso', description: 'Pasta criada com sucesso!', variant: 'success' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao criar pasta', variant: 'error' });
+    },
+  });
 
-  const documentosFiltrados = useMemo(() => {
-    if (!biblioteca?.documentos) return [];
-    if (!selectedPasta) return biblioteca.documentos;
-    return biblioteca.documentos.filter((doc) => doc.folder?.id === selectedPasta);
-  }, [biblioteca?.documentos, selectedPasta]);
-
-  const handleDownload = async (id: string, titulo: string) => {
-    try {
-      const response = await api.get(`/documentos/${id}/download`, {
-        responseType: 'blob',
+  const salvarModeloMutation = useMutation({
+    mutationFn: async (dados: { nome: string; descricao?: string; conteudo: string; folderId?: string }) => {
+      if (modoEdicao === 'editar' && selectedModelo) {
+        const response = await api.put(`/documentos/modelos/${selectedModelo.id}`, dados);
+        return response.data;
+      } else {
+        const response = await api.post('/documentos/modelos', dados);
+        return response.data;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
+      limparEditor();
+      toast({
+        title: 'Sucesso',
+        description: modoEdicao === 'editar' ? 'Modelo atualizado!' : 'Modelo criado!',
+        variant: 'success'
       });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = titulo;
-      link.click();
-    } catch (error) {
-      console.error('Erro ao baixar documento:', error);
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao salvar modelo', variant: 'error' });
+    },
+  });
+
+  const duplicarModeloMutation = useMutation({
+    mutationFn: async (modeloId: string) => {
+      const response = await api.post(`/documentos/modelos/${modeloId}/duplicar`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
+      toast({ title: 'Sucesso', description: 'Modelo duplicado com sucesso!', variant: 'success' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao duplicar modelo', variant: 'error' });
+    },
+  });
+
+  const deletarModeloMutation = useMutation({
+    mutationFn: async (modeloId: string) => {
+      await api.delete(`/documentos/modelos/${modeloId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
+      if (selectedModelo) {
+        limparEditor();
+      }
+      toast({ title: 'Sucesso', description: 'Modelo excluído com sucesso!', variant: 'success' });
+    },
+    onError: () => {
+      toast({ title: 'Erro', description: 'Erro ao deletar modelo', variant: 'error' });
+    },
+  });
+
+  const handleCriarNovaPasta = () => {
+    if (novaPastaNome.trim()) {
+      criarPastaMutation.mutate(novaPastaNome.trim());
     }
   };
 
-  const handleGerar = async () => {
-    if (!selectedModelo || !selectedProcesso) return;
-    const payload = {
-      processoId: selectedProcesso,
-      folderId: selectedPasta,
-      titulo: tituloDocumento,
-      descricao: descricaoDocumento,
-    };
-    const response = await api.post(`/documentos/modelos/${selectedModelo.id}/gerar`, payload);
-    setDocumentoAtual(response.data);
-    setEditorContent(response.data.conteudo || '');
-    queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
+  const handleNovoModelo = () => {
+    limparEditor();
+    setModoEdicao('novo');
   };
 
-  const handleSalvarConteudo = async () => {
-    if (!documentoAtual) return;
-    await api.put(`/documentos/${documentoAtual.id}`, {
+  const handleEditarModelo = (modelo: Modelo) => {
+    setSelectedModelo(modelo);
+    setModoEdicao('editar');
+  };
+
+  const handleSalvarModelo = () => {
+    if (!tituloModelo.trim() || !editorContent.trim()) {
+      toast({ title: 'Atenção', description: 'Preencha título e conteúdo', variant: 'error' });
+      return;
+    }
+
+    salvarModeloMutation.mutate({
+      nome: tituloModelo,
+      descricao: descricaoModelo,
       conteudo: editorContent,
-      titulo: tituloDocumento || documentoAtual.titulo,
-      descricao: descricaoDocumento,
-      folderId: selectedPasta,
+      folderId: selectedPasta || undefined,
     });
-    queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
   };
 
-  const handleStatus = async (status: Documento['status']) => {
-    if (!documentoAtual) return;
-    const response = await api.patch(`/documentos/${documentoAtual.id}/status`, { status });
-    setDocumentoAtual(response.data);
-    queryClient.invalidateQueries({ queryKey: ['documentos', 'biblioteca'] });
-    historicoQuery.refetch();
+  const handleDuplicarModelo = (modeloId: string) => {
+    duplicarModeloMutation.mutate(modeloId);
   };
+
+  const handleDeletarModelo = (modeloId: string) => {
+    if (confirm('Tem certeza que deseja excluir este modelo?')) {
+      deletarModeloMutation.mutate(modeloId);
+    }
+  };
+
+  const limparEditor = () => {
+    setTituloModelo('');
+    setDescricaoModelo('');
+    setEditorContent('');
+    setSelectedModelo(null);
+    setModoEdicao(null);
+  };
+
+  const variaveisDisponiveis = [
+    { chave: 'processo_numero', descricao: 'Número do processo' },
+    { chave: 'descricao_processo', descricao: 'Descrição do processo' },
+    { chave: 'cliente_nome', descricao: 'Nome do cliente' },
+    { chave: 'cliente_cpf', descricao: 'CPF do cliente' },
+    { chave: 'cliente_endereco', descricao: 'Endereço completo do cliente' },
+    { chave: 'advogado_nome', descricao: 'Nome do advogado' },
+    { chave: 'advogado_oab', descricao: 'Número OAB do advogado' },
+    { chave: 'reu_nome', descricao: 'Nome do réu/reclamado' },
+    { chave: 'narrativa_fatos', descricao: 'Narrativa detalhada dos fatos' },
+    { chave: 'valor_causa', descricao: 'Valor da causa em R$' },
+    { chave: 'preliminares', descricao: 'Preliminares processuais' },
+    { chave: 'merito', descricao: 'Mérito da questão' },
+    { chave: 'honorarios', descricao: 'Valor dos honorários' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Biblioteca de Documentos</h1>
-          <p className="text-gray-500">Modelos, organização por pastas e geração automática com IA Jurídica.</p>
-        </div>
-        <Badge variant="info" className="flex items-center gap-1">
-          <Layers className="h-4 w-4" /> Novo
-        </Badge>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Biblioteca de Documentos</h1>
+        <p className="text-gray-500">Crie e gerencie modelos de documentos jurídicos reutilizáveis</p>
       </div>
 
       {isLoading ? (
@@ -176,13 +219,52 @@ export default function DocumentosPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Sidebar Pastas / Modelos */}
           <div className="lg:col-span-1 space-y-4">
+            {/* Pastas */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Folder className="h-5 w-5 text-primary-600" /> Pastas
+                <CardTitle className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Folder className="h-5 w-5 text-primary-600" /> Pastas
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setMostrarNovaPasta(!mostrarNovaPasta)}
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
+                {mostrarNovaPasta && (
+                  <div className="mb-3 space-y-2">
+                    <Input
+                      placeholder="Nome da pasta"
+                      value={novaPastaNome}
+                      onChange={(e) => setNovaPastaNome(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleCriarNovaPasta()}
+                    />
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleCriarNovaPasta}
+                        disabled={criarPastaMutation.isPending}
+                      >
+                        Criar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setMostrarNovaPasta(false);
+                          setNovaPastaNome('');
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                )}
                 <Button
                   variant={!selectedPasta ? 'default' : 'ghost'}
                   className="w-full justify-start"
@@ -203,25 +285,71 @@ export default function DocumentosPage() {
               </CardContent>
             </Card>
 
+            {/* Modelos */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary-600" /> Modelos Jurídicos
+                <CardTitle className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-primary-600" /> Modelos
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleNovoModelo}
+                  >
+                    <FilePlus className="h-4 w-4" />
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 max-h-[420px] overflow-y-auto">
-                {biblioteca?.templates?.map((modelo) => (
-                  <button
-                    key={modelo.id}
-                    onClick={() => setSelectedModelo(modelo)}
-                    className={`w-full text-left border rounded-md p-3 hover:border-primary-300 ${
-                      selectedModelo?.id === modelo.id ? 'border-primary-500 bg-primary-50' : 'border-gray-200'
-                    }`}
-                  >
-                    <div className="font-semibold">{modelo.nome}</div>
-                    <p className="text-sm text-gray-500">{modelo.descricao}</p>
-                  </button>
-                ))}
+                {modelosFiltrados?.length ? (
+                  modelosFiltrados.map((modelo) => (
+                    <div
+                      key={modelo.id}
+                      className={`border rounded-md p-3 hover:border-primary-300 ${
+                        selectedModelo?.id === modelo.id && modoEdicao === 'editar'
+                          ? 'border-primary-500 bg-primary-50'
+                          : 'border-gray-200'
+                      }`}
+                    >
+                      <div
+                        className="cursor-pointer"
+                        onClick={() => handleEditarModelo(modelo)}
+                      >
+                        <div className="font-semibold">{modelo.nome}</div>
+                        <p className="text-sm text-gray-500">{modelo.descricao}</p>
+                      </div>
+                      <div className="flex gap-1 mt-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDuplicarModelo(modelo.id);
+                          }}
+                          title="Duplicar modelo"
+                        >
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeletarModelo(modelo.id);
+                          }}
+                          title="Excluir modelo"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Nenhum modelo nesta pasta
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -231,129 +359,103 @@ export default function DocumentosPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Wand2 className="h-5 w-5 text-primary-600" /> Editor avançado
+                  <FileText className="h-5 w-5 text-primary-600" />
+                  Editor de Modelo
+                  {modoEdicao === 'novo' && <Badge variant="success">Novo</Badge>}
+                  {modoEdicao === 'editar' && <Badge variant="info">Editando</Badge>}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm text-gray-600">Processo</label>
+                    <label className="text-sm font-medium text-gray-700">Título do Modelo *</label>
+                    <Input
+                      value={tituloModelo}
+                      onChange={(e) => setTituloModelo(e.target.value)}
+                      placeholder="Ex: Petição Inicial - Ação Trabalhista"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Pasta</label>
                     <select
                       className="w-full border rounded-md h-10 px-3"
-                      value={selectedProcesso}
-                      onChange={(e) => setSelectedProcesso(e.target.value)}
+                      value={selectedPasta || ''}
+                      onChange={(e) => setSelectedPasta(e.target.value || undefined)}
                     >
-                      <option value="">Selecione um processo</option>
-                      {processos?.map((proc: Processo) => (
-                        <option key={proc.id} value={proc.id}>
-                          {proc.numero}
+                      <option value="">Sem pasta</option>
+                      {biblioteca?.folders?.map((pasta) => (
+                        <option key={pasta.id} value={pasta.id}>
+                          {pasta.nome}
                         </option>
                       ))}
                     </select>
                   </div>
-                  <div>
-                    <label className="text-sm text-gray-600">Título</label>
-                    <Input value={tituloDocumento} onChange={(e) => setTituloDocumento(e.target.value)} />
-                  </div>
                 </div>
+
                 <div>
-                  <label className="text-sm text-gray-600">Descrição</label>
-                  <Textarea value={descricaoDocumento} onChange={(e) => setDescricaoDocumento(e.target.value)} />
+                  <label className="text-sm font-medium text-gray-700">Descrição</label>
+                  <Textarea
+                    value={descricaoModelo}
+                    onChange={(e) => setDescricaoModelo(e.target.value)}
+                    placeholder="Breve descrição sobre este modelo"
+                    rows={2}
+                  />
                 </div>
+
                 <div>
-                  <label className="text-sm text-gray-600">Conteúdo</label>
+                  <label className="text-sm font-medium text-gray-700">Conteúdo do Modelo *</label>
                   <Textarea
                     value={editorContent}
                     onChange={(e) => setEditorContent(e.target.value)}
-                    className="min-h-[300px] font-mono"
+                    placeholder="Digite o conteúdo do modelo. Use {{ variavel }} para campos dinâmicos."
+                    className="min-h-[400px] font-mono text-sm"
                   />
                 </div>
+
                 <div className="flex flex-wrap gap-3">
-                  <Button onClick={handleGerar} disabled={!selectedModelo || !selectedProcesso}>
-                    <Wand2 className="h-4 w-4 mr-2" /> Gerar com IA Jurídica
-                  </Button>
-                  <Button variant="outline" onClick={handleSalvarConteudo} disabled={!documentoAtual}>
-                    Salvar rascunho
-                  </Button>
                   <Button
-                    variant="outline"
-                    onClick={() => handleStatus('ANEXADO')}
-                    disabled={!documentoAtual}
+                    onClick={handleSalvarModelo}
+                    disabled={salvarModeloMutation.isPending}
                   >
-                    <CheckCircle2 className="h-4 w-4 mr-2" /> Marcar como anexado ao processo
+                    <Save className="h-4 w-4 mr-2" />
+                    {modoEdicao === 'editar' ? 'Atualizar Modelo' : 'Salvar Modelo'}
                   </Button>
+
+                  {modoEdicao && (
+                    <Button variant="outline" onClick={limparEditor}>
+                      Cancelar
+                    </Button>
+                  )}
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-primary-600" /> Documentos do processo
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[360px] overflow-y-auto">
-                  {documentosFiltrados?.length ? (
-                    documentosFiltrados.map((doc) => (
-                      <div
-                        key={doc.id}
-                        className="border rounded-md p-3 hover:border-primary-300 flex justify-between items-center"
-                      >
-                        <div>
-                          <div className="font-semibold">{doc.titulo}</div>
-                          <div className="text-xs text-gray-500">
-                            {doc.processo?.numero} • {formatDate(doc.createdAt)}
-                          </div>
-                          <div className="text-xs text-gray-500 flex items-center gap-2">
-                            <Badge variant="info">{doc.status}</Badge>
-                            {doc.template && <Badge variant="info">Modelo: {doc.template.nome}</Badge>}
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => setDocumentoAtual(doc)}>
-                            Abrir
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleDownload(doc.id, doc.titulo)}>
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Nenhum documento ainda.</p>
-                  )}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock3 className="h-5 w-5 text-primary-600" /> Histórico
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 max-h-[360px] overflow-y-auto">
-                  {historicoQuery.isLoading ? (
-                    <LoadingSpinner />
-                  ) : historicoQuery.data?.length ? (
-                    historicoQuery.data.map((item) => (
-                      <div key={item.id} className="border rounded-md p-3">
-                        <div className="flex justify-between">
-                          <span className="font-semibold">{item.acao}</span>
-                          <span className="text-xs text-gray-500">{formatDate(item.createdAt)}</span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {item.user?.nome} ({item.user?.email}) • Status: {item.status}
-                        </div>
-                        {item.detalhe && <p className="text-sm mt-1">{item.detalhe}</p>}
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-sm text-gray-500">Selecione um documento para ver histórico.</p>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* Variáveis Disponíveis */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="h-5 w-5 text-primary-600" /> Variáveis Disponíveis
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-600 mb-3">
+                  Use estas variáveis em seus modelos. Elas serão substituídas automaticamente quando o modelo for usado na IA Jurídica:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {variaveisDisponiveis.map((variavel) => (
+                    <div
+                      key={variavel.chave}
+                      className="flex items-start gap-2 p-2 bg-gray-50 rounded border"
+                    >
+                      <code className="text-xs bg-white px-2 py-1 rounded border font-mono text-primary-600">
+                        {'{{ ' + variavel.chave + ' }}'}
+                      </code>
+                      <span className="text-xs text-gray-600">{variavel.descricao}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
