@@ -165,7 +165,7 @@ export default function DocumentosPage() {
           <h1 className="text-3xl font-bold text-gray-900">Biblioteca de Documentos</h1>
           <p className="text-gray-500">Modelos, organização por pastas e geração automática com IA Jurídica.</p>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1">
+        <Badge variant="info" className="flex items-center gap-1">
           <Layers className="h-4 w-4" /> Novo
         </Badge>
       </div>
