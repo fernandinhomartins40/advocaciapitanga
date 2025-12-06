@@ -12,20 +12,20 @@ const processoController = new ProcessoController();
 // Rotas acessíveis tanto por advogados quanto clientes (com filtros aplicados)
 router.get('/', authMiddleware, (req: Request, res: Response, next: NextFunction) =>
   processoController.getAll(req as AuthRequest, res, next));
-router.get('/dashboard/stats', authMiddleware, requireRole(['ADVOGADO']), (req: Request, res: Response, next: NextFunction) =>
+router.get('/dashboard/stats', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), (req: Request, res: Response, next: NextFunction) =>
   processoController.getDashboardStats(req as AuthRequest, res, next));
 router.get('/:id', authMiddleware, (req: Request, res: Response, next: NextFunction) =>
   processoController.getById(req as AuthRequest, res, next));
 
 // Rotas apenas para advogados
-router.post('/', authMiddleware, requireRole(['ADVOGADO']), createProcessoValidator, validate, (req: Request, res: Response, next: NextFunction) =>
+router.post('/', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), createProcessoValidator, validate, (req: Request, res: Response, next: NextFunction) =>
   processoController.create(req as AuthRequest, res, next));
-router.put('/:id', authMiddleware, requireRole(['ADVOGADO']), updateProcessoValidator, validate, (req: Request, res: Response, next: NextFunction) =>
+router.put('/:id', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updateProcessoValidator, validate, (req: Request, res: Response, next: NextFunction) =>
   processoController.update(req as AuthRequest, res, next));
 // FASE 2.4: Endpoint para atualizar partes do processo
-router.put('/:id/partes', authMiddleware, requireRole(['ADVOGADO']), (req: Request, res: Response, next: NextFunction) =>
+router.put('/:id/partes', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), (req: Request, res: Response, next: NextFunction) =>
   processoController.updatePartes(req as AuthRequest, res, next));
-router.delete('/:id', authMiddleware, requireRole(['ADVOGADO']), (req: Request, res: Response, next: NextFunction) =>
+router.delete('/:id', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), (req: Request, res: Response, next: NextFunction) =>
   processoController.delete(req as AuthRequest, res, next));
 
 export default router;

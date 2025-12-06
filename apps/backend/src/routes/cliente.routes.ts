@@ -9,11 +9,11 @@ const router = Router();
 const clienteController = new ClienteController();
 
 // Rotas para advogados (CRUD completo)
-router.get('/', authMiddleware, requireRole(['ADVOGADO']), clienteController.getAll.bind(clienteController));
-router.get('/:id', authMiddleware, requireRole(['ADVOGADO']), clienteController.getById.bind(clienteController));
-router.post('/', authMiddleware, requireRole(['ADVOGADO']), createClienteValidator, validate, clienteController.create.bind(clienteController));
-router.put('/:id', authMiddleware, requireRole(['ADVOGADO']), updateClienteValidator, validate, clienteController.update.bind(clienteController));
-router.delete('/:id', authMiddleware, requireRole(['ADVOGADO']), clienteController.delete.bind(clienteController));
+router.get('/', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), clienteController.getAll.bind(clienteController));
+router.get('/:id', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), clienteController.getById.bind(clienteController));
+router.post('/', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), createClienteValidator, validate, clienteController.create.bind(clienteController));
+router.put('/:id', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updateClienteValidator, validate, clienteController.update.bind(clienteController));
+router.delete('/:id', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), clienteController.delete.bind(clienteController));
 
 // Rotas para cliente acessar seu próprio perfil
 router.get('/perfil/me', authMiddleware, requireRole(['CLIENTE']), clienteController.getProfile.bind(clienteController));

@@ -9,9 +9,9 @@ const router = Router();
 const advogadoController = new AdvogadoController();
 
 // Rotas de perfil do advogado
-router.get('/perfil', authMiddleware, requireRole(['ADVOGADO']), advogadoController.getProfile.bind(advogadoController));
-router.put('/perfil', authMiddleware, requireRole(['ADVOGADO']), updateProfileValidator, validate, advogadoController.updateProfile.bind(advogadoController));
-router.put('/perfil/senha', authMiddleware, requireRole(['ADVOGADO']), updatePasswordValidator, validate, advogadoController.updatePassword.bind(advogadoController));
-router.put('/perfil/email', authMiddleware, requireRole(['ADVOGADO']), updateEmailValidator, validate, advogadoController.updateEmail.bind(advogadoController));
+router.get('/perfil', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), advogadoController.getProfile.bind(advogadoController));
+router.put('/perfil', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updateProfileValidator, validate, advogadoController.updateProfile.bind(advogadoController));
+router.put('/perfil/senha', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updatePasswordValidator, validate, advogadoController.updatePassword.bind(advogadoController));
+router.put('/perfil/email', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updateEmailValidator, validate, advogadoController.updateEmail.bind(advogadoController));
 
 export default router;
