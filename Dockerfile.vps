@@ -87,6 +87,10 @@ RUN addgroup --system --gid 1001 nodejs && \
 # Copiar node_modules de produção
 COPY --from=deps /tmp/prod_node_modules ./node_modules
 
+# Copiar Prisma CLI (para migrate/seed em runtime) e binaries
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.bin ./node_modules/.bin
+
 # Copiar Prisma Client gerado
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
@@ -177,6 +181,22 @@ stderr_logfile_maxbytes=0
 priority=3
 EOF
 
+# Script de entrada: aplica migrations, seed e inicia supervisor
+RUN mkdir -p /app/scripts && \
+    cat > /app/scripts/entrypoint.sh << 'EOF_ENTRY'
+#!/bin/sh
+set -e
+
+echo "Applying migrations..."
+npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma
+
+echo "Running seed (idempotent)..."
+npx prisma db seed --schema=./packages/database/prisma/schema.prisma || echo "Seed already applied or failed"
+
+echo "Starting Supervisor."
+exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+EOF_ENTRY && \
+    chmod +x /app/scripts/entrypoint.sh
 # Ajustar permissões
 RUN chown -R appuser:nodejs /app/uploads && \
     chown -R appuser:nodejs /app/apps/frontend/.next && \
@@ -194,4 +214,8 @@ RUN mkdir -p /usr/share/nginx/html && \
 EXPOSE 80
 
 # Iniciar Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/app/scripts/entrypoint.sh"]
+
+
+
+
