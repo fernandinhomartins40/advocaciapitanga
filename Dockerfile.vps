@@ -183,7 +183,8 @@ EOF
 
 # Script de entrada: aplica migrations, seed e inicia supervisor
 RUN mkdir -p /app/scripts && \
-    cat > /app/scripts/entrypoint.sh << 'EOF_ENTRY'
+    cat > /app/scripts/entrypoint.sh << 'EOF_ENTRY' && \
+    chmod +x /app/scripts/entrypoint.sh
 #!/bin/sh
 set -e
 
@@ -195,8 +196,7 @@ npx prisma db seed --schema=./packages/database/prisma/schema.prisma || echo "Se
 
 echo "Starting Supervisor."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
-EOF_ENTRY && \
-    chmod +x /app/scripts/entrypoint.sh
+EOF_ENTRY
 # Ajustar permissões
 RUN chown -R appuser:nodejs /app/uploads && \
     chown -R appuser:nodejs /app/apps/frontend/.next && \
