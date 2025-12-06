@@ -23,8 +23,11 @@ async function main() {
   console.log('✅ Banco vazio, criando dados iniciais...');
 
   // Limpar dados existentes (apenas se não houver admin)
-  await prisma.mensagem.deleteMany();
+  await prisma.documentHistory.deleteMany();
   await prisma.documento.deleteMany();
+  await prisma.documentTemplate.deleteMany();
+  await prisma.documentFolder.deleteMany();
+  await prisma.mensagem.deleteMany();
   await prisma.processo.deleteMany();
   await prisma.cliente.deleteMany();
   await prisma.advogado.deleteMany();
@@ -157,6 +160,93 @@ async function main() {
   });
 
   console.log('✅ Processos criados');
+
+  // Biblioteca de Documentos
+  const pastaModelos = await prisma.documentFolder.create({
+    data: { nome: 'Modelos Padrão' },
+  });
+
+  const pastaCiveis = await prisma.documentFolder.create({
+    data: { nome: 'Cível', parentId: pastaModelos.id },
+  });
+
+  const pastaTrabalhistas = await prisma.documentFolder.create({
+    data: { nome: 'Trabalhista', parentId: pastaModelos.id },
+  });
+
+  await prisma.documentTemplate.createMany({
+    data: [
+      {
+        nome: 'Petição Inicial - Indenização por Danos Morais',
+        descricao: 'Modelo base para ações indenizatórias.',
+        conteudo: `<h1>Petição Inicial</h1>
+<p><strong>Autor:</strong> {{cliente_nome}} - CPF {{cliente_cpf}}</p>
+<p><strong>Réu:</strong> {{reu_nome}}</p>
+<p><strong>Processo:</strong> {{processo_numero}}</p>
+<p>Trata-se de ação de indenização por danos morais em razão de {{descricao_processo}}.</p>
+<h2>Dos Fatos</h2>
+<p>{{narrativa_fatos}}</p>
+<h2>Dos Pedidos</h2>
+<ul>
+  <li>Indenização por danos morais no valor de R$ {{valor_causa}};</li>
+  <li>Custas e honorários;</li>
+  <li>Demais pedidos cabíveis.</li>
+</ul>`,
+        folderId: pastaCiveis.id,
+      },
+      {
+        nome: 'Contestação - Responsabilidade Civil',
+        descricao: 'Modelo de contestação com argumentos preliminares e mérito.',
+        conteudo: `<h1>Contestação</h1>
+<p><strong>Réu:</strong> {{cliente_nome}}</p>
+<p><strong>Processo:</strong> {{processo_numero}}</p>
+<h2>Preliminares</h2>
+<p>{{preliminares}}</p>
+<h2>Mérito</h2>
+<p>{{merito}}</p>
+<h2>Pedidos</h2>
+<p>Pede o total indeferimento dos pedidos iniciais.</p>`,
+        folderId: pastaCiveis.id,
+      },
+      {
+        nome: 'Procuração ad judicia',
+        descricao: 'Procuração padrão para representação em juízo.',
+        conteudo: `<h1>Procuração</h1>
+<p>Outorgante: {{cliente_nome}}, CPF {{cliente_cpf}}, residente à {{cliente_endereco}}.</p>
+<p>Outorgado: {{advogado_nome}}, OAB {{advogado_oab}}.</p>
+<p>Concede poderes para o foro em geral, com a cláusula ad judicia.</p>`,
+        folderId: pastaModelos.id,
+      },
+      {
+        nome: 'Petição Inicial - Reclamação Trabalhista',
+        descricao: 'Modelo de reclamação trabalhista com pedidos clássicos.',
+        conteudo: `<h1>Reclamação Trabalhista</h1>
+<p><strong>Reclamante:</strong> {{cliente_nome}} - CPF {{cliente_cpf}}</p>
+<p><strong>Reclamada:</strong> {{reu_nome}}</p>
+<p>Trata-se de pleito de verbas rescisórias e diferenças salariais.</p>
+<h2>Pedidos</h2>
+<ul>
+  <li>Aviso prévio;</li>
+  <li>Férias proporcionais + 1/3;</li>
+  <li>FGTS + 40%;</li>
+  <li>Multa do art. 477/CLT;</li>
+</ul>`,
+        folderId: pastaTrabalhistas.id,
+      },
+      {
+        nome: 'Contrato de Honorários',
+        descricao: 'Contrato simples para formalizar prestação de serviços advocatícios.',
+        conteudo: `<h1>Contrato de Honorários</h1>
+<p>Contratante: {{cliente_nome}}</p>
+<p>Contratado: {{advogado_nome}}, OAB {{advogado_oab}}</p>
+<p>Objeto: {{descricao_processo}}</p>
+<p>Honorários: {{honorarios}}</p>`,
+        folderId: pastaModelos.id,
+      },
+    ],
+  });
+
+  console.log('ƒo. Biblioteca de modelos criada');
 
   // Criar Mensagens de exemplo
   await prisma.mensagem.create({

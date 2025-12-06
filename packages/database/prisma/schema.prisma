@@ -190,6 +190,7 @@ model Processo {
   documentosIA      DocumentoIA[]
   consultasProjudi  ConsultaProjudi[]
   descricao         String? @db.Text
+  documentosHistorico DocumentHistory[]
 }
 
 model ParteProcessual {
@@ -293,12 +294,81 @@ enum EstadoCivil {
 model Documento {
   id         String   @id @default(cuid())
   titulo     String
-  caminho    String
+  caminho    String?
   tipo       String
   tamanho    Int
   processoId String
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
+
+  // Biblioteca de documentos
+  folderId    String?
+  folder      DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  templateId  String?
+  template    DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  status      DocumentStatus @default(DRAFT)
+  conteudo    String?   @db.Text
+  descricao   String?
+  historico   DocumentHistory[]
+}
+
+model DocumentFolder {
+  id        String   @id @default(cuid())
+  nome      String
+  parentId  String?
+  parent    DocumentFolder? @relation("FolderChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  children  DocumentFolder[] @relation("FolderChildren")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  templates DocumentTemplate[]
+  documentos Documento[]
+}
+
+model DocumentTemplate {
+  id          String   @id @default(cuid())
+  nome        String
+  descricao   String?
+  conteudo    String   @db.Text
+  folderId    String?
+  folder      DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  documentos Documento[]
+}
+
+model DocumentHistory {
+  id          String          @id @default(cuid())
+  documentoId String
+  documento   Documento       @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  processoId  String
+  processo    Processo        @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  acao        DocumentAction
+  status      DocumentStatus
+  detalhe     String?         @db.Text
+  createdAt   DateTime        @default(now())
+
+  @@index([documentoId])
+  @@index([processoId])
+  @@index([userId])
+}
+
+enum DocumentStatus {
+  DRAFT
+  EM_REVISAO
+  FINALIZADO
+  ANEXADO
+}
+
+enum DocumentAction {
+  CRIACAO
+  GERACAO_IA
+  EDICAO
+  STATUS_ATUALIZADO
+  ANEXADO
 }
 
 model Mensagem {
