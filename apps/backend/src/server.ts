@@ -4,6 +4,7 @@ dotenv.config();
 import app from './app';
 import { logger } from './utils/logger';
 import { ensureDatabaseReady } from './utils/init-database';
+import { backupScheduler } from './services/backup-scheduler.service';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -14,6 +15,14 @@ async function startServer() {
   try {
     // Garantir que o banco de dados está pronto e inicializado
     await ensureDatabaseReady();
+
+    // Iniciar o scheduler de backups automáticos
+    if (process.env.BACKUP_ENABLED !== 'false') {
+      backupScheduler.start();
+      logger.info('📦 Sistema de backup automático iniciado');
+    } else {
+      logger.info('📦 Sistema de backup automático desabilitado');
+    }
 
     // Iniciar servidor escutando em todas as interfaces (0.0.0.0)
     const server = app.listen(PORT, '0.0.0.0', () => {
@@ -35,6 +44,7 @@ async function startServer() {
     // Graceful shutdown
     process.on('SIGTERM', () => {
       logger.info('SIGTERM recebido, encerrando servidor gracefully...');
+      backupScheduler.stop();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);
@@ -43,6 +53,7 @@ async function startServer() {
 
     process.on('SIGINT', () => {
       logger.info('SIGINT recebido, encerrando servidor gracefully...');
+      backupScheduler.stop();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);

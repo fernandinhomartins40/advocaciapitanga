@@ -63,10 +63,11 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Instalar Nginx, Supervisor e dependências do Chromium/Puppeteer
+# Instalar Nginx, Supervisor, PostgreSQL client (pg_dump) e dependências do Chromium/Puppeteer
 RUN apk add --no-cache \
     nginx \
     supervisor \
+    postgresql-client \
     wget \
     chromium \
     nss \
@@ -122,9 +123,10 @@ COPY --from=builder /app/apps/frontend/public ./apps/frontend/public
 # Copiar apenas o Prisma schema compilado (não os arquivos TypeScript)
 COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
 
-# Criar diretórios necessários
+# Criar diretórios necessários (incluindo backups)
 RUN mkdir -p /app/uploads/documentos \
              /app/uploads/documentos-gerados \
+             /app/backups \
              /var/log/nginx \
              /var/lib/nginx/tmp \
              /run/nginx \
@@ -197,11 +199,13 @@ npx prisma db seed --schema=./packages/database/prisma/schema.prisma || echo "Se
 echo "Starting Supervisor."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF_ENTRY
-# Ajustar permissões
+# Ajustar permissões (incluindo backups)
 RUN chown -R appuser:nodejs /app/uploads && \
+    chown -R appuser:nodejs /app/backups && \
     chown -R appuser:nodejs /app/apps/frontend/.next && \
     chown -R appuser:nodejs /app/.cache && \
     chmod -R 755 /app/uploads && \
+    chmod -R 755 /app/backups && \
     chmod -R 755 /var/lib/nginx && \
     chmod -R 755 /var/log/nginx && \
     chmod -R 755 /run/nginx
