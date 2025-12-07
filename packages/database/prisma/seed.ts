@@ -14,13 +14,16 @@ async function main() {
     },
   });
 
-  // Verificar se biblioteca de modelos já existe
+  // Verificar se biblioteca de modelos já existe (completa)
   const templatesCount = await prisma.documentTemplate.count();
   const foldersCount = await prisma.documentFolder.count();
 
-  if (adminExists && templatesCount > 0 && foldersCount > 0) {
+  // Consideramos biblioteca completa com 30+ templates e 8 folders
+  const bibliotecaCompleta = templatesCount >= 30 && foldersCount >= 8;
+
+  if (adminExists && bibliotecaCompleta) {
     console.log('⚠️ Dados já existem. Pulando seed para não duplicar dados.');
-    console.log('📋 Use as credenciais existentes ou delete manualmente os dados para recriar.');
+    console.log(`📋 Admin existe | Templates: ${templatesCount} | Folders: ${foldersCount}`);
     return;
   }
 
@@ -231,13 +234,13 @@ async function main() {
     console.log('  Senha: Pitanga@2024!Cliente\n');
   }
 
-  // Biblioteca de Documentos - SEMPRE verifica e cria se não existir
-  if (templatesCount === 0 || foldersCount === 0) {
-    console.log('📚 Criando biblioteca de modelos de documentos...');
+  // Biblioteca de Documentos - SEMPRE verifica e cria se não estiver completa
+  if (!bibliotecaCompleta) {
+    console.log(`📚 Criando biblioteca de modelos de documentos... (atual: ${templatesCount} templates, ${foldersCount} folders)`);
 
-    // Limpar apenas templates e folders se estiverem incompletos
+    // Limpar templates e folders existentes para recriar completo
     if (templatesCount > 0 || foldersCount > 0) {
-      console.log('🗑️ Limpando biblioteca incompleta...');
+      console.log('🗑️ Limpando biblioteca incompleta para recriar...');
       await prisma.documentTemplate.deleteMany();
       await prisma.documentFolder.deleteMany();
     }
