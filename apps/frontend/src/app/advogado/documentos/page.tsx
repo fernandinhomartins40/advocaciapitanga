@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { RichTextEditor } from '@/components/shared/RichTextEditor';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -403,12 +404,12 @@ export default function DocumentosPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Conteúdo do Modelo *</label>
-                  <Textarea
-                    value={editorContent}
-                    onChange={(e) => setEditorContent(e.target.value)}
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Conteúdo do Modelo *</label>
+                  <RichTextEditor
+                    content={editorContent}
+                    onChange={(html) => setEditorContent(html)}
                     placeholder="Digite o conteúdo do modelo. Use {{ variavel }} para campos dinâmicos."
-                    className="min-h-[400px] font-mono text-sm"
+                    minHeight="500px"
                   />
                 </div>
 
