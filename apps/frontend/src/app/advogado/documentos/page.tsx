@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { AdvancedRichTextEditor } from '@/components/shared/AdvancedRichTextEditor';
+import SelectCliente from '@/components/advogado/SelectCliente';
+import SelectProcesso from '@/components/advogado/SelectProcesso';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -19,7 +21,10 @@ import {
   Save,
   Copy,
   Trash2,
-  Info
+  Info,
+  Settings,
+  FileEdit,
+  Download
 } from 'lucide-react';
 
 type Pasta = {
@@ -42,6 +47,10 @@ export default function DocumentosPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Tab control
+  const [activeTab, setActiveTab] = useState<'templates' | 'documents'>('templates');
+
+  // Template Management States
   const [selectedPasta, setSelectedPasta] = useState<string | undefined>();
   const [selectedModelo, setSelectedModelo] = useState<Modelo | null>(null);
   const [editorContent, setEditorContent] = useState('');
@@ -51,6 +60,15 @@ export default function DocumentosPage() {
   const [novaPastaNome, setNovaPastaNome] = useState('');
   const [mostrarNovaPasta, setMostrarNovaPasta] = useState(false);
   const [variavelInserida, setVariavelInserida] = useState<string | null>(null);
+
+  // Document Creation States
+  const [modeloSelecionado, setModeloSelecionado] = useState<Modelo | null>(null);
+  const [clienteId, setClienteId] = useState('');
+  const [processoId, setProcessoId] = useState('');
+  const [documentoConteudo, setDocumentoConteudo] = useState('');
+  const [tituloDocumento, setTituloDocumento] = useState('');
+  const [clienteSelecionado, setClienteSelecionado] = useState<any>(null);
+  const [processoSelecionado, setProcessoSelecionado] = useState<any>(null);
 
   const { data: biblioteca, isLoading } = useQuery({
     queryKey: ['documentos', 'biblioteca'],
@@ -220,6 +238,88 @@ export default function DocumentosPage() {
     });
   };
 
+  // Document Creation Functions
+  const handleSelecionarModelo = (modelo: Modelo) => {
+    setModeloSelecionado(modelo);
+    setTituloDocumento(modelo.nome);
+    setDocumentoConteudo(modelo.conteudo);
+  };
+
+  const substituirVariaveis = (conteudo: string): string => {
+    let resultado = conteudo;
+
+    // Substituir variáveis do cliente
+    if (clienteSelecionado) {
+      resultado = resultado.replace(/\{\{\s*cliente_nome\s*\}\}/g, clienteSelecionado.user.nome || '');
+      resultado = resultado.replace(/\{\{\s*cliente_cpf\s*\}\}/g, clienteSelecionado.cpf || '');
+      resultado = resultado.replace(
+        /\{\{\s*cliente_endereco\s*\}\}/g,
+        `${clienteSelecionado.endereco || ''}, ${clienteSelecionado.cidade || ''} - ${clienteSelecionado.estado || ''}`
+      );
+    }
+
+    // Substituir variáveis do processo
+    if (processoSelecionado) {
+      resultado = resultado.replace(/\{\{\s*processo_numero\s*\}\}/g, processoSelecionado.numero || '');
+      resultado = resultado.replace(/\{\{\s*descricao_processo\s*\}\}/g, processoSelecionado.descricao || '');
+      resultado = resultado.replace(/\{\{\s*valor_causa\s*\}\}/g, processoSelecionado.valor || '');
+    }
+
+    // Variáveis que ainda não estão disponíveis ficam vazias ou com placeholder
+    resultado = resultado.replace(/\{\{\s*advogado_nome\s*\}\}/g, '[Advogado]');
+    resultado = resultado.replace(/\{\{\s*advogado_oab\s*\}\}/g, '[OAB]');
+    resultado = resultado.replace(/\{\{\s*reu_nome\s*\}\}/g, '[Réu]');
+    resultado = resultado.replace(/\{\{\s*narrativa_fatos\s*\}\}/g, '[Narrativa dos fatos]');
+    resultado = resultado.replace(/\{\{\s*preliminares\s*\}\}/g, '[Preliminares]');
+    resultado = resultado.replace(/\{\{\s*merito\s*\}\}/g, '[Mérito]');
+    resultado = resultado.replace(/\{\{\s*honorarios\s*\}\}/g, '[Honorários]');
+
+    return resultado;
+  };
+
+  const handleGerarDocumento = () => {
+    if (!modeloSelecionado) {
+      toast({ title: 'Atenção', description: 'Selecione um modelo', variant: 'error' });
+      return;
+    }
+
+    const conteudoComVariaveisSubstituidas = substituirVariaveis(modeloSelecionado.conteudo);
+    setDocumentoConteudo(conteudoComVariaveisSubstituidas);
+
+    toast({
+      title: 'Documento gerado',
+      description: 'Variáveis substituídas com sucesso! Você pode editar o documento antes de exportar.',
+      variant: 'success',
+    });
+  };
+
+  const handleExportarDocumento = async (formato: 'pdf' | 'docx') => {
+    if (!documentoConteudo) {
+      toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
+      return;
+    }
+
+    try {
+      const endpoint = `/ia/exportar-${formato}`;
+      const response = await api.post(
+        endpoint,
+        { conteudo: documentoConteudo, titulo: tituloDocumento },
+        { responseType: 'blob' }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${tituloDocumento}.${formato}`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
+    } catch (error) {
+      toast({ title: 'Erro', description: 'Erro ao exportar documento', variant: 'error' });
+    }
+  };
+
   const variaveisDisponiveis = [
     { chave: 'processo_numero', descricao: 'Número do processo' },
     { chave: 'descricao_processo', descricao: 'Descrição do processo' },
@@ -240,13 +340,48 @@ export default function DocumentosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Biblioteca de Documentos</h1>
-        <p className="text-gray-500">Crie e gerencie modelos de documentos jurídicos reutilizáveis</p>
+        <p className="text-gray-500">Gerencie modelos e crie documentos personalizados</p>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('templates')}
+            className={`
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+              ${activeTab === 'templates'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }
+            `}
+          >
+            <Settings className="h-4 w-4" />
+            Gerenciar Modelos
+          </button>
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`
+              whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2
+              ${activeTab === 'documents'
+                ? 'border-primary-500 text-primary-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }
+            `}
+          >
+            <FileEdit className="h-4 w-4" />
+            Criar Documento
+          </button>
+        </nav>
       </div>
 
       {isLoading ? (
         <LoadingSpinner />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <>
+          {/* Template Management Tab */}
+          {activeTab === 'templates' && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
           {/* Sidebar Pastas / Modelos */}
           <div className="lg:col-span-1 space-y-4">
             {/* Pastas */}
@@ -507,6 +642,193 @@ export default function DocumentosPage() {
             </Card>
           </div>
         </div>
+          )}
+
+          {/* Document Creation Tab */}
+          {activeTab === 'documents' && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              {/* Sidebar - Seleção de Modelo */}
+              <div className="lg:col-span-1 space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary-600" /> Selecionar Modelo
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm text-gray-600 mb-3">
+                      Escolha um modelo da biblioteca para criar um documento personalizado
+                    </p>
+
+                    {/* Filtro por pasta */}
+                    <div className="mb-3">
+                      <label className="text-xs font-medium text-gray-700 mb-1 block">Filtrar por pasta</label>
+                      <select
+                        className="w-full border rounded-md h-9 px-3 text-sm"
+                        value={selectedPasta || ''}
+                        onChange={(e) => setSelectedPasta(e.target.value || undefined)}
+                      >
+                        <option value="">Todas as pastas</option>
+                        {biblioteca?.folders?.map((pasta) => (
+                          <option key={pasta.id} value={pasta.id}>
+                            {pasta.nome}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="max-h-[500px] overflow-y-auto space-y-2">
+                      {modelosFiltrados?.length ? (
+                        modelosFiltrados.map((modelo) => (
+                          <div
+                            key={modelo.id}
+                            onClick={() => handleSelecionarModelo(modelo)}
+                            className={`border rounded-md p-3 cursor-pointer transition-all ${
+                              modeloSelecionado?.id === modelo.id
+                                ? 'border-primary-500 bg-primary-50'
+                                : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="font-semibold text-sm">{modelo.nome}</div>
+                            <p className="text-xs text-gray-500 mt-1">{modelo.descricao}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          Nenhum modelo disponível
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Content - Configuração e Editor */}
+              <div className="lg:col-span-3 space-y-4">
+                {/* Configuração do Documento */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileEdit className="h-5 w-5 text-primary-600" />
+                      Configurar Documento
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Título do Documento</label>
+                        <Input
+                          value={tituloDocumento}
+                          onChange={(e) => setTituloDocumento(e.target.value)}
+                          placeholder="Nome do documento"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Modelo Base</label>
+                        <Input
+                          value={modeloSelecionado?.nome || ''}
+                          disabled
+                          placeholder="Selecione um modelo ao lado"
+                          className="bg-gray-50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <SelectCliente
+                        value={clienteId}
+                        onChange={(id, cliente) => {
+                          setClienteId(id);
+                          setClienteSelecionado(cliente);
+                        }}
+                      />
+                      <SelectProcesso
+                        value={processoId}
+                        clienteId={clienteId}
+                        onChange={(id, processo) => {
+                          setProcessoId(id);
+                          setProcessoSelecionado(processo);
+                        }}
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        onClick={handleGerarDocumento}
+                        disabled={!modeloSelecionado}
+                      >
+                        <FileText className="h-4 w-4 mr-2" />
+                        Gerar Documento
+                      </Button>
+
+                      {documentoConteudo && (
+                        <>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleExportarDocumento('pdf')}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar PDF
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => handleExportarDocumento('docx')}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar DOCX
+                          </Button>
+                        </>
+                      )}
+                    </div>
+
+                    {clienteSelecionado && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-md text-sm">
+                        <p className="font-semibold text-blue-900">Cliente: {clienteSelecionado.user.nome}</p>
+                        {processoSelecionado && (
+                          <p className="text-blue-700">Processo: {processoSelecionado.numero}</p>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Editor do Documento */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-primary-600" />
+                      Documento
+                      {documentoConteudo && <Badge variant="success">Gerado</Badge>}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {modeloSelecionado ? (
+                      <>
+                        <p className="text-sm text-gray-600 mb-3">
+                          {documentoConteudo
+                            ? 'Edite o documento gerado conforme necessário antes de exportar.'
+                            : 'Clique em "Gerar Documento" para preencher o modelo com os dados do cliente e processo.'}
+                        </p>
+                        <AdvancedRichTextEditor
+                          content={documentoConteudo}
+                          onChange={(html) => setDocumentoConteudo(html)}
+                          placeholder="O documento gerado aparecerá aqui..."
+                          minHeight="500px"
+                          editable={!!documentoConteudo}
+                        />
+                      </>
+                    ) : (
+                      <div className="text-center py-12 text-gray-500">
+                        <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                        <p>Selecione um modelo ao lado para começar</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
