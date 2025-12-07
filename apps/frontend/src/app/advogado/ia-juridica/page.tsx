@@ -8,7 +8,7 @@ import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Brain, Download, FileText, Copy, History, Settings } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { RichTextEditor } from '@/components/shared/RichTextEditor';
+import { AdvancedRichTextEditor } from '@/components/shared/AdvancedRichTextEditor';
 import SelectCliente from '@/components/advogado/SelectCliente';
 import SelectProcesso from '@/components/advogado/SelectProcesso';
 import api from '@/lib/api';
@@ -360,7 +360,7 @@ export default function IAJuridicaPage() {
                 )}
               </div>
             )}
-            <RichTextEditor
+            <AdvancedRichTextEditor
               content={conteudoGerado}
               onChange={(html) => setConteudoGerado(html)}
               placeholder="O conteúdo gerado pela IA aparecerá aqui. Você poderá editar e formatar o texto antes de exportar."

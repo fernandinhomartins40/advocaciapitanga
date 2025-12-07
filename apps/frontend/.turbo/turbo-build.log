@@ -4,20 +4,21 @@
 
  ⚠ You are using a non-standard "NODE_ENV" value in your environment. This creates inconsistencies in the project and is strongly advised against. Read more: https://nextjs.org/docs/messages/non-standard-node-env
    ▲ Next.js 14.0.0
+   - Environments: .env.local
 
    Creating an optimized production build ...
  ✓ Compiled successfully
    Linting and checking validity of types ...
  ⨯ ESLint must be installed in order to run during builds: pnpm install --save-dev eslint
    Collecting page data ...
-   Generating static pages (0/16) ...
+   Generating static pages (0/19) ...
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -29,8 +30,8 @@ TypeError: Cannot read properties of null (reading 'useContext')
 Error occurred prerendering page "/_not-found". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -39,12 +40,12 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -53,11 +54,11 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
 
-Error occurred prerendering page "/cliente/perfil". Read more: https://nextjs.org/docs/messages/prerender-error
+Error occurred prerendering page "/advogado/configuracoes/ia". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -66,12 +67,12 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -80,11 +81,11 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
 
-Error occurred prerendering page "/cliente/meus-processos". Read more: https://nextjs.org/docs/messages/prerender-error
+Error occurred prerendering page "/advogado/ia-juridica/historico". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -93,12 +94,12 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -107,11 +108,11 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
 
-Error occurred prerendering page "/cliente/documentos". Read more: https://nextjs.org/docs/messages/prerender-error
+Error occurred prerendering page "/advogado/perfil". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -120,12 +121,12 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -137,8 +138,8 @@ TypeError: Cannot read properties of null (reading 'useContext')
 Error occurred prerendering page "/advogado/dashboard". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -146,13 +147,14 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
+   Generating static pages (4/19) 
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -161,11 +163,11 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
 
-Error occurred prerendering page "/cliente/mensagens". Read more: https://nextjs.org/docs/messages/prerender-error
+Error occurred prerendering page "/advogado/clientes". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -174,12 +176,12 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
  ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -188,11 +190,11 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
 
-Error occurred prerendering page "/advogado/documentos". Read more: https://nextjs.org/docs/messages/prerender-error
+Error occurred prerendering page "/advogado/ia-juridica". Read more: https://nextjs.org/docs/messages/prerender-error
 TypeError: Cannot read properties of null (reading 'useContext')
     at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
+    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:26050)
+    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\9679.js:11:15599)
     at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
     at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
@@ -200,12 +202,10 @@ TypeError: Cannot read properties of null (reading 'useContext')
     at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
     at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
     at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-   Generating static pages (4/16) 
-   Generating static pages (8/16) 
 Error: <Html> should not be imported outside of pages/_document.
 Read more: https://nextjs.org/docs/messages/no-document-import-in-page
     at ei (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\pages.runtime.prod.js:16:4358)
-    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\722.js:6:1327)
+    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\8722.js:6:1327)
     at renderWithHooks (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5658:16)
     at renderIndeterminateComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5732:15)
     at renderElement (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5957:7)
@@ -219,7 +219,7 @@ Error occurred prerendering page "/500". Read more: https://nextjs.org/docs/mess
 Error: <Html> should not be imported outside of pages/_document.
 Read more: https://nextjs.org/docs/messages/no-document-import-in-page
     at ei (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\pages.runtime.prod.js:16:4358)
-    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\722.js:6:1327)
+    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\8722.js:6:1327)
     at renderWithHooks (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5658:16)
     at renderIndeterminateComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5732:15)
     at renderElement (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5957:7)
@@ -231,7 +231,7 @@ Read more: https://nextjs.org/docs/messages/no-document-import-in-page
 Error: <Html> should not be imported outside of pages/_document.
 Read more: https://nextjs.org/docs/messages/no-document-import-in-page
     at ei (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\pages.runtime.prod.js:16:4358)
-    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\722.js:6:1327)
+    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\8722.js:6:1327)
     at renderWithHooks (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5658:16)
     at renderIndeterminateComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5732:15)
     at renderElement (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5957:7)
@@ -245,7 +245,7 @@ Error occurred prerendering page "/404". Read more: https://nextjs.org/docs/mess
 Error: <Html> should not be imported outside of pages/_document.
 Read more: https://nextjs.org/docs/messages/no-document-import-in-page
     at ei (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\pages.runtime.prod.js:16:4358)
-    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\722.js:6:1327)
+    at Html (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\8722.js:6:1327)
     at renderWithHooks (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5658:16)
     at renderIndeterminateComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5732:15)
     at renderElement (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5957:7)
@@ -254,219 +254,4 @@ Read more: https://nextjs.org/docs/messages/no-document-import-in-page
     at finishClassComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5688:3)
     at renderClassComponent (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5696:3)
     at renderElement (c:\Projetos Cursor\advocaciapitanga\node_modules\react-dom\cjs\react-dom-server.browser.development.js:5954:7)
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/advogado/processos". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/advogado/perfil". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/advogado/ia-juridica". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/register". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/advogado/clientes". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-   Generating static pages (12/16) 
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
- ⨯ TypeError: Cannot read properties of null (reading 'useContext')
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
-
-Error occurred prerendering page "/login". Read more: https://nextjs.org/docs/messages/prerender-error
-TypeError: Cannot read properties of null (reading 'useContext')
-    at t.useContext (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.prod.js:60:6302)
-    at usePathname (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:26050)
-    at ErrorBoundary (c:\Projetos Cursor\advocaciapitanga\apps\frontend\.next\server\chunks\679.js:11:15599)
-    at o7 (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:6505)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:11284
-    at ap (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13038)
-    at e (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:45795)
-    at ah (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:47773)
-    at ac (c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:7923)
-    at c:\Projetos Cursor\advocaciapitanga\node_modules\next\dist\compiled\next-server\app-page.runtime.dev.js:35:13014
- ✓ Generating static pages (16/16) 
-
-> Export encountered errors on following paths:
-	/_error: /404
-	/_error: /500
-	/_not-found
-	/advogado/clientes/page: /advogado/clientes
-	/advogado/dashboard/page: /advogado/dashboard
-	/advogado/documentos/page: /advogado/documentos
-	/advogado/ia-juridica/page: /advogado/ia-juridica
-	/advogado/perfil/page: /advogado/perfil
-	/advogado/processos/page: /advogado/processos
-	/cliente/documentos/page: /cliente/documentos
-	/cliente/mensagens/page: /cliente/mensagens
-	/cliente/meus-processos/page: /cliente/meus-processos
-	/cliente/perfil/page: /cliente/perfil
-	/login/page: /login
-	/page: /
-	/register/page: /register
-npm error Lifecycle script `build` failed with error:
-npm error code 1
-npm error path c:\Projetos Cursor\advocaciapitanga\apps\frontend
-npm error workspace frontend@0.1.0
-npm error location c:\Projetos Cursor\advocaciapitanga\apps\frontend
-npm error command failed
-npm error command C:\WINDOWS\system32\cmd.exe /d /s /c next build
+   Generating static pages (9/19) 

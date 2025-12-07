@@ -37,7 +37,11 @@
       "Bash(npx ts-node:*)",
       "Bash(npx tsx:*)",
       "Bash(node:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(if exist .next rmdir /s /q .next)",
+      "Bash(git checkout:*)",
+      "Bash(timeout /t 10 /nobreak)",
+      "Bash(if exist \"apps\\frontend\\nul\" del \"apps\\frontend\\nul\")"
     ],
     "deny": [],
     "ask": []

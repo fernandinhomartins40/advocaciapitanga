@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { RichTextEditor } from '@/components/shared/RichTextEditor';
+import { AdvancedRichTextEditor } from '@/components/shared/AdvancedRichTextEditor';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import {
@@ -434,7 +434,7 @@ export default function DocumentosPage() {
 
                 <div>
                   <label className="text-sm font-medium text-gray-700 mb-2 block">Conteúdo do Modelo *</label>
-                  <RichTextEditor
+                  <AdvancedRichTextEditor
                     content={editorContent}
                     onChange={(html) => setEditorContent(html)}
                     placeholder="Digite o conteúdo do modelo. Use {{ variavel }} para campos dinâmicos."
