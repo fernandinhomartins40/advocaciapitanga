@@ -50,6 +50,7 @@ export default function DocumentosPage() {
   const [modoEdicao, setModoEdicao] = useState<'novo' | 'editar' | null>(null);
   const [novaPastaNome, setNovaPastaNome] = useState('');
   const [mostrarNovaPasta, setMostrarNovaPasta] = useState(false);
+  const [variavelInserida, setVariavelInserida] = useState<string | null>(null);
 
   const { data: biblioteca, isLoading } = useQuery({
     queryKey: ['documentos', 'biblioteca'],
@@ -189,6 +190,34 @@ export default function DocumentosPage() {
     setEditorContent('');
     setSelectedModelo(null);
     setModoEdicao(null);
+  };
+
+  const inserirVariavel = (chave: string) => {
+    const variavelFormatada = `{{ ${chave} }}`;
+
+    // Inserir a variável no final do conteúdo atual
+    setEditorContent((prev) => {
+      // Se o conteúdo estiver vazio ou for apenas tags HTML vazias
+      if (!prev || prev === '<p></p>' || prev.trim() === '') {
+        return `<p>${variavelFormatada}</p>`;
+      }
+      // Se terminar com </p>, inserir dentro da última tag
+      if (prev.endsWith('</p>')) {
+        return prev.slice(0, -4) + ` ${variavelFormatada}</p>`;
+      }
+      // Caso contrário, adicionar em nova linha
+      return prev + `<p>${variavelFormatada}</p>`;
+    });
+
+    // Mostrar feedback visual
+    setVariavelInserida(chave);
+    setTimeout(() => setVariavelInserida(null), 2000);
+
+    toast({
+      title: 'Variável inserida',
+      description: `{{ ${chave} }} adicionada ao modelo`,
+      variant: 'success',
+    });
   };
 
   const variaveisDisponiveis = [
@@ -444,17 +473,36 @@ export default function DocumentosPage() {
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {variaveisDisponiveis.map((variavel) => (
-                    <div
+                    <button
                       key={variavel.chave}
-                      className="flex items-start gap-2 p-2 bg-gray-50 rounded border"
+                      onClick={() => inserirVariavel(variavel.chave)}
+                      disabled={!modoEdicao}
+                      className={`flex items-start gap-2 p-2 rounded border text-left transition-all ${
+                        !modoEdicao
+                          ? 'bg-gray-50 cursor-not-allowed opacity-60'
+                          : variavelInserida === variavel.chave
+                          ? 'bg-green-100 border-green-500 shadow-md scale-105'
+                          : 'bg-gray-50 hover:bg-primary-50 hover:border-primary-300 cursor-pointer hover:shadow-sm'
+                      }`}
+                      title={!modoEdicao ? 'Crie ou edite um modelo para usar variáveis' : 'Clique para inserir esta variável'}
                     >
-                      <code className="text-xs bg-white px-2 py-1 rounded border font-mono text-primary-600">
+                      <code className={`text-xs px-2 py-1 rounded border font-mono whitespace-nowrap ${
+                        variavelInserida === variavel.chave
+                          ? 'bg-green-200 text-green-800 border-green-400'
+                          : 'bg-white text-primary-600 border-gray-200'
+                      }`}>
                         {'{{ ' + variavel.chave + ' }}'}
                       </code>
-                      <span className="text-xs text-gray-600">{variavel.descricao}</span>
-                    </div>
+                      <span className="text-xs text-gray-600 flex-1">{variavel.descricao}</span>
+                    </button>
                   ))}
                 </div>
+                {!modoEdicao && (
+                  <p className="text-xs text-amber-600 mt-3 flex items-center gap-1">
+                    <Info className="h-3 w-3" />
+                    Crie ou edite um modelo para usar as variáveis clicáveis
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
