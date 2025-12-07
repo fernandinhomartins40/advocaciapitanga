@@ -194,7 +194,7 @@ echo "Applying migrations..."
 npx prisma migrate deploy --schema=./packages/database/prisma/schema.prisma
 
 echo "Running seed (idempotent)..."
-npx prisma db seed --schema=./packages/database/prisma/schema.prisma || echo "Seed already applied or failed"
+cd /app/packages/database && npx tsx prisma/seed.ts || echo "Seed already applied or failed"
 
 echo "Starting Supervisor."
 exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
