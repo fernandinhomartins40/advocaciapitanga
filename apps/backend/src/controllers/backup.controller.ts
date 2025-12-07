@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import { Response } from 'express';
+import { AuthRequest } from '../types';
 import { backupService } from '../services/backup.service';
 import { backupScheduler } from '../services/backup-scheduler.service';
 
@@ -7,7 +8,7 @@ export class BackupController {
    * Cria um backup manual do banco de dados
    * POST /api/backups
    */
-  async createBackup(req: Request, res: Response) {
+  async createBackup(req: AuthRequest, res: Response) {
     try {
       console.log(`🔧 Backup manual solicitado por: ${req.user?.email || 'usuário desconhecido'}`);
 
@@ -38,7 +39,7 @@ export class BackupController {
    * Lista todos os backups disponíveis
    * GET /api/backups
    */
-  async listBackups(req: Request, res: Response) {
+  async listBackups(req: AuthRequest, res: Response) {
     try {
       const backups = await backupService.listBackups();
 
@@ -66,7 +67,7 @@ export class BackupController {
    * Obtém estatísticas de backup
    * GET /api/backups/stats
    */
-  async getStats(req: Request, res: Response) {
+  async getStats(req: AuthRequest, res: Response) {
     try {
       const stats = await backupService.getBackupStats();
       const schedulerStatus = backupScheduler.getStatus();
@@ -92,7 +93,7 @@ export class BackupController {
    * Obtém informações sobre um backup específico
    * GET /api/backups/:filename
    */
-  async getBackupInfo(req: Request, res: Response) {
+  async getBackupInfo(req: AuthRequest, res: Response) {
     try {
       const { filename } = req.params;
 
@@ -131,7 +132,7 @@ export class BackupController {
    *
    * ⚠️ ATENÇÃO: Esta operação irá sobrescrever o banco de dados atual!
    */
-  async restoreBackup(req: Request, res: Response) {
+  async restoreBackup(req: AuthRequest, res: Response) {
     try {
       const { filename } = req.params;
       const { confirm } = req.body;
@@ -170,7 +171,7 @@ export class BackupController {
    * Deleta um backup específico
    * DELETE /api/backups/:filename
    */
-  async deleteBackup(req: Request, res: Response) {
+  async deleteBackup(req: AuthRequest, res: Response) {
     try {
       const { filename } = req.params;
 
@@ -201,7 +202,7 @@ export class BackupController {
    * Download de um backup específico
    * GET /api/backups/:filename/download
    */
-  async downloadBackup(req: Request, res: Response) {
+  async downloadBackup(req: AuthRequest, res: Response) {
     try {
       const { filename } = req.params;
 
@@ -242,7 +243,7 @@ export class BackupController {
    * Obtém status do scheduler
    * GET /api/backups/scheduler/status
    */
-  async getSchedulerStatus(req: Request, res: Response) {
+  async getSchedulerStatus(req: AuthRequest, res: Response) {
     try {
       const status = backupScheduler.getStatus();
 

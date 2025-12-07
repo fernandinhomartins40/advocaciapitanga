@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { backupController } from '../controllers/backup.controller';
 import { authMiddleware } from '../middlewares/auth.middleware';
-import { roleMiddleware } from '../middlewares/role.middleware';
+import { requireRole } from '../middlewares/role.middleware';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ const router = Router();
 
 // Middleware de autenticação e autorização
 router.use(authMiddleware);
-router.use(roleMiddleware(['ADMIN_ESCRITORIO']));
+router.use(requireRole(['ADMIN_ESCRITORIO']));
 
 /**
  * GET /api/backups/stats
