@@ -282,329 +282,317 @@ async function main() {
       {
         nome: 'Petição Inicial - Indenização por Danos Morais',
         descricao: 'Modelo base para ações indenizatórias cíveis',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-PETIÇÃO INICIAL - AÇÃO DE INDENIZAÇÃO POR DANOS MORAIS
+<h2 style="text-align: center;">PETIÇÃO INICIAL - AÇÃO DE INDENIZAÇÃO POR DANOS MORAIS</h2>
 
-{{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente e domiciliado à {{ cliente_endereco }}, por intermédio de seu advogado que esta subscreve, vem, respeitosamente, à presença de Vossa Excelência, propor
+<p>{{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente e domiciliado à {{ cliente_endereco }}, por intermédio de seu advogado que esta subscreve, vem, respeitosamente, à presença de Vossa Excelência, propor</p>
 
-AÇÃO DE INDENIZAÇÃO POR DANOS MORAIS
+<h3 style="text-align: center;">AÇÃO DE INDENIZAÇÃO POR DANOS MORAIS</h3>
 
-em face de {{ reu_nome }}, pelos fatos e fundamentos jurídicos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fatos e fundamentos jurídicos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-O dano moral configura-se pela violação dos direitos da personalidade, conforme previsto nos artigos 186 e 927 do Código Civil.
+<p>O dano moral configura-se pela violação dos direitos da personalidade, conforme previsto nos artigos 186 e 927 do Código Civil.</p>
 
-No caso em tela, restou evidenciado o dano moral sofrido pelo autor, uma vez que {{ descricao_processo }}.
+<p>No caso em tela, restou evidenciado o dano moral sofrido pelo autor, uma vez que {{ descricao_processo }}.</p>
 
-III - DO PEDIDO
+<h3>III - DO PEDIDO</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A citação do réu para, querendo, contestar a presente ação, sob pena de revelia e confissão;
+<p>a) A citação do réu para, querendo, contestar a presente ação, sob pena de revelia e confissão;</p>
 
-b) A condenação do réu ao pagamento de indenização por danos morais no valor de R$ {{ valor_causa }};
+<p>b) A condenação do réu ao pagamento de indenização por danos morais no valor de R$ {{ valor_causa }};</p>
 
-c) A condenação do réu ao pagamento de custas processuais e honorários advocatícios;
+<p>c) A condenação do réu ao pagamento de custas processuais e honorários advocatícios;</p>
 
-d) A produção de todos os meios de prova em direito admitidos.
+<p>d) A produção de todos os meios de prova em direito admitidos.</p>
 
-Dá-se à causa o valor de R$ {{ valor_causa }}.
+<p>Dá-se à causa o valor de R$ {{ valor_causa }}.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       {
         nome: 'Contestação - Responsabilidade Civil',
         descricao: 'Modelo de contestação com preliminares e mérito',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-Processo nº {{ processo_numero }}
+<p>Processo nº {{ processo_numero }}</p>
 
-CONTESTAÇÃO
+<h2 style="text-align: center;">CONTESTAÇÃO</h2>
 
-{{ cliente_nome }}, já qualificado nos autos da ação em epígrafe que lhe move {{ reu_nome }}, vem, por intermédio de seu advogado, apresentar
+<p>{{ cliente_nome }}, já qualificado nos autos da ação em epígrafe que lhe move {{ reu_nome }}, vem, por intermédio de seu advogado, apresentar</p>
 
-CONTESTAÇÃO
+<h3 style="text-align: center;">CONTESTAÇÃO</h3>
 
-pelos fundamentos de fato e de direito a seguir aduzidos:
+<p>pelos fundamentos de fato e de direito a seguir aduzidos:</p>
 
-I - PRELIMINARMENTE
+<h3>I - PRELIMINARMENTE</h3>
 
-[Inserir preliminares se aplicável - ilegitimidade, incompetência, etc.]
+<p>[Inserir preliminares se aplicável - ilegitimidade, incompetência, etc.]</p>
 
-II - DO MÉRITO
+<h3>II - DO MÉRITO</h3>
 
-Os fatos narrados na inicial não correspondem à verdade, senão vejamos:
+<p>Os fatos narrados na inicial não correspondem à verdade, senão vejamos:</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-A pretensão autoral carece de fundamento jurídico, uma vez que:
+<p>A pretensão autoral carece de fundamento jurídico, uma vez que:</p>
 
-1) Não houve comprovação do alegado dano;
-2) Inexiste nexo de causalidade entre a conduta e o suposto dano;
-3) O valor pleiteado é exorbitante e não encontra amparo legal.
+<p>1) Não houve comprovação do alegado dano;<br>
+2) Inexiste nexo de causalidade entre a conduta e o suposto dano;<br>
+3) O valor pleiteado é exorbitante e não encontra amparo legal.</p>
 
-III - DO PEDIDO
+<h3>III - DO PEDIDO</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) O acolhimento das preliminares arguidas, com extinção do processo sem resolução de mérito;
+<p>a) O acolhimento das preliminares arguidas, com extinção do processo sem resolução de mérito;</p>
 
-b) Subsidiariamente, a improcedência total dos pedidos autorais;
+<p>b) Subsidiariamente, a improcedência total dos pedidos autorais;</p>
 
-c) A condenação do autor ao pagamento de custas processuais e honorários advocatícios.
+<p>c) A condenação do autor ao pagamento de custas processuais e honorários advocatícios.</p>
 
-Protesta provar o alegado por todos os meios de prova em direito admitidos.
+<p>Protesta provar o alegado por todos os meios de prova em direito admitidos.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       {
         nome: 'Procuração ad judicia',
         descricao: 'Procuração padrão para representação em juízo',
-        conteudo: `PROCURAÇÃO
+        conteudo: `<h2 style="text-align: center;">PROCURAÇÃO</h2>
 
-OUTORGANTE: {{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente e domiciliado à {{ cliente_endereco }}.
+<p><strong>OUTORGANTE:</strong> {{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente e domiciliado à {{ cliente_endereco }}.</p>
 
-OUTORGADO: {{ advogado_nome }}, advogado, inscrito na OAB/{{ advogado_oab }}.
+<p><strong>OUTORGADO:</strong> {{ advogado_nome }}, advogado, inscrito na OAB/{{ advogado_oab }}.</p>
 
-PODERES: Pelo presente instrumento particular de procuração, o OUTORGANTE nomeia e constitui seu bastante procurador o OUTORGADO, a quem confere amplos e gerais poderes para o foro em geral, com a cláusula "ad judicia", podendo propor, em nome do outorgante, as ações que julgar convenientes, acompanhá-las e receber citações e intimações, confessar, transigir, desistir, firmar compromissos ou acordos, receber e dar quitação, podendo ainda substabelecer esta em outrem, com ou sem reserva de iguais poderes.
+<p><strong>PODERES:</strong> Pelo presente instrumento particular de procuração, o OUTORGANTE nomeia e constitui seu bastante procurador o OUTORGADO, a quem confere amplos e gerais poderes para o foro em geral, com a cláusula "ad judicia", podendo propor, em nome do outorgante, as ações que julgar convenientes, acompanhá-las e receber citações e intimações, confessar, transigir, desistir, firmar compromissos ou acordos, receber e dar quitação, podendo ainda substabelecer esta em outrem, com ou sem reserva de iguais poderes.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-_______________________________
-{{ cliente_nome }}
-CPF: {{ cliente_cpf }}`,
+<p>_______________________________<br>{{ cliente_nome }}<br>CPF: {{ cliente_cpf }}</p>`,
         folderId: pastaModelos.id,
       },
       {
         nome: 'Reclamação Trabalhista',
         descricao: 'Modelo de reclamação trabalhista com verbas rescisórias',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___</strong></p>
 
-RECLAMAÇÃO TRABALHISTA
+<h2 style="text-align: center;">RECLAMAÇÃO TRABALHISTA</h2>
 
-RECLAMANTE: {{ cliente_nome }}
-CPF: {{ cliente_cpf }}
-Endereço: {{ cliente_endereco }}
+<p><strong>RECLAMANTE:</strong> {{ cliente_nome }}<br>
+<strong>CPF:</strong> {{ cliente_cpf }}<br>
+<strong>Endereço:</strong> {{ cliente_endereco }}</p>
 
-RECLAMADA: {{ reu_nome }}
+<p><strong>RECLAMADA:</strong> {{ reu_nome }}</p>
 
-O RECLAMANTE, por intermédio de seu advogado subscritor, vem, respeitosamente, à presença de Vossa Excelência, propor
+<p>O RECLAMANTE, por intermédio de seu advogado subscritor, vem, respeitosamente, à presença de Vossa Excelência, propor</p>
 
-RECLAMAÇÃO TRABALHISTA
+<h3 style="text-align: center;">RECLAMAÇÃO TRABALHISTA</h3>
 
-em face da RECLAMADA, pelos fatos e fundamentos a seguir expostos:
+<p>em face da RECLAMADA, pelos fatos e fundamentos a seguir expostos:</p>
 
-I - DA RELAÇÃO DE EMPREGO
+<h3>I - DA RELAÇÃO DE EMPREGO</h3>
 
-O Reclamante foi admitido em [data de admissão], exercendo a função de [cargo], mediante remuneração mensal de R$ [salário].
+<p>O Reclamante foi admitido em [data de admissão], exercendo a função de [cargo], mediante remuneração mensal de R$ [salário].</p>
 
-O vínculo empregatício perdurou até [data de demissão], quando foi dispensado sem justa causa.
+<p>O vínculo empregatício perdurou até [data de demissão], quando foi dispensado sem justa causa.</p>
 
-II - DA NARRATIVA DOS FATOS
+<h3>II - DA NARRATIVA DOS FATOS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-III - DO DIREITO
+<h3>III - DO DIREITO</h3>
 
-A Reclamada deixou de pagar as seguintes verbas rescisórias:
+<p>A Reclamada deixou de pagar as seguintes verbas rescisórias:</p>
 
-a) Aviso prévio indenizado (Art. 487, CLT);
-b) Férias vencidas e proporcionais acrescidas de 1/3 constitucional (Art. 146, CLT);
-c) 13º salário proporcional (Lei 4.090/62);
-d) Saldo de salário;
-e) FGTS com multa de 40% (Art. 18, §1º, Lei 8.036/90);
-f) Multa do Art. 477, §8º da CLT.
+<p>a) Aviso prévio indenizado (Art. 487, CLT);<br>
+b) Férias vencidas e proporcionais acrescidas de 1/3 constitucional (Art. 146, CLT);<br>
+c) 13º salário proporcional (Lei 4.090/62);<br>
+d) Saldo de salário;<br>
+e) FGTS com multa de 40% (Art. 18, §1º, Lei 8.036/90);<br>
+f) Multa do Art. 477, §8º da CLT.</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A citação da Reclamada;
+<p>a) A citação da Reclamada;</p>
 
-b) A condenação ao pagamento das verbas acima discriminadas;
+<p>b) A condenação ao pagamento das verbas acima discriminadas;</p>
 
-c) A condenação em custas processuais e honorários advocatícios;
+<p>c) A condenação em custas processuais e honorários advocatícios;</p>
 
-d) A produção de todos os meios de prova em direito admitidos.
+<p>d) A produção de todos os meios de prova em direito admitidos.</p>
 
-Dá-se à causa o valor de R$ {{ valor_causa }}.
+<p>Dá-se à causa o valor de R$ {{ valor_causa }}.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaTrabalhistas.id,
       },
       {
         nome: 'Contrato de Prestação de Serviços Advocatícios',
         descricao: 'Contrato para formalizar honorários advocatícios',
-        conteudo: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS
+        conteudo: `<h2 style="text-align: center;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS</h2>
 
-CONTRATANTE: {{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.
+<p><strong>CONTRATANTE:</strong> {{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.</p>
 
-CONTRATADO: {{ advogado_nome }}, advogado inscrito na OAB/{{ advogado_oab }}.
+<p><strong>CONTRATADO:</strong> {{ advogado_nome }}, advogado inscrito na OAB/{{ advogado_oab }}.</p>
 
-As partes acima qualificadas celebram o presente CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS, mediante as seguintes cláusulas e condições:
+<p>As partes acima qualificadas celebram o presente CONTRATO DE PRESTAÇÃO DE SERVIÇOS ADVOCATÍCIOS, mediante as seguintes cláusulas e condições:</p>
 
-CLÁUSULA PRIMEIRA - DO OBJETO
-O presente contrato tem por objeto a prestação de serviços advocatícios pelo CONTRATADO ao CONTRATANTE, referente a: {{ descricao_processo }}
+<h3>CLÁUSULA PRIMEIRA - DO OBJETO</h3>
+<p>O presente contrato tem por objeto a prestação de serviços advocatícios pelo CONTRATADO ao CONTRATANTE, referente a: {{ descricao_processo }}</p>
 
-CLÁUSULA SEGUNDA - DOS HONORÁRIOS
-Pelos serviços prestados, o CONTRATANTE pagará ao CONTRATADO honorários no valor de {{ honorarios }}, a ser pago da seguinte forma: [condições de pagamento].
+<h3>CLÁUSULA SEGUNDA - DOS HONORÁRIOS</h3>
+<p>Pelos serviços prestados, o CONTRATANTE pagará ao CONTRATADO honorários no valor de {{ honorarios }}, a ser pago da seguinte forma: [condições de pagamento].</p>
 
-CLÁUSULA TERCEIRA - DAS OBRIGAÇÕES DO CONTRATADO
-O CONTRATADO obriga-se a:
-a) Prestar os serviços advocatícios com zelo e diligência;
-b) Manter o CONTRATANTE informado sobre o andamento do processo;
-c) Guardar sigilo sobre todas as informações recebidas.
+<h3>CLÁUSULA TERCEIRA - DAS OBRIGAÇÕES DO CONTRATADO</h3>
+<p>O CONTRATADO obriga-se a:<br>
+a) Prestar os serviços advocatícios com zelo e diligência;<br>
+b) Manter o CONTRATANTE informado sobre o andamento do processo;<br>
+c) Guardar sigilo sobre todas as informações recebidas.</p>
 
-CLÁUSULA QUARTA - DAS OBRIGAÇÕES DO CONTRATANTE
-O CONTRATANTE obriga-se a:
-a) Fornecer todas as informações e documentos necessários;
-b) Efetuar o pagamento dos honorários na forma acordada;
-c) Arcar com custas processuais e despesas correlatas.
+<h3>CLÁUSULA QUARTA - DAS OBRIGAÇÕES DO CONTRATANTE</h3>
+<p>O CONTRATANTE obriga-se a:<br>
+a) Fornecer todas as informações e documentos necessários;<br>
+b) Efetuar o pagamento dos honorários na forma acordada;<br>
+c) Arcar com custas processuais e despesas correlatas.</p>
 
-CLÁUSULA QUINTA - DO FORO
-Fica eleito o foro da comarca de ___ para dirimir quaisquer questões oriundas deste contrato.
+<h3>CLÁUSULA QUINTA - DO FORO</h3>
+<p>Fica eleito o foro da comarca de ___ para dirimir quaisquer questões oriundas deste contrato.</p>
 
-E, por estarem assim justos e contratados, firmam o presente instrumento em duas vias de igual teor.
+<p>E, por estarem assim justos e contratados, firmam o presente instrumento em duas vias de igual teor.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-_______________________________        _______________________________
-{{ cliente_nome }}                    {{ advogado_nome }}
-CONTRATANTE                           OAB/{{ advogado_oab }}`,
+<p>_______________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_______________________________<br>
+{{ cliente_nome }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ advogado_nome }}<br>
+CONTRATANTE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;OAB/{{ advogado_oab }}</p>`,
         folderId: pastaModelos.id,
       },
       {
         nome: 'Recurso de Apelação',
         descricao: 'Modelo de recurso de apelação cível',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR DESEMBARGADOR RELATOR DO TRIBUNAL DE JUSTIÇA DO ESTADO DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR DESEMBARGADOR RELATOR DO TRIBUNAL DE JUSTIÇA DO ESTADO DE ___</strong></p>
 
-Processo nº {{ processo_numero }}
+<p>Processo nº {{ processo_numero }}</p>
 
-RECURSO DE APELAÇÃO
+<h2 style="text-align: center;">RECURSO DE APELAÇÃO</h2>
 
-{{ cliente_nome }}, já qualificado nos autos do processo em epígrafe, inconformado com a r. sentença proferida às fls. ___, que [resultado da sentença], vem, por intermédio de seu advogado, interpor
+<p>{{ cliente_nome }}, já qualificado nos autos do processo em epígrafe, inconformado com a r. sentença proferida às fls. ___, que [resultado da sentença], vem, por intermédio de seu advogado, interpor</p>
 
-RECURSO DE APELAÇÃO
+<h3 style="text-align: center;">RECURSO DE APELAÇÃO</h3>
 
-com fundamento no artigo 1.009 do Código de Processo Civil, pelas razões de fato e de direito a seguir aduzidas:
+<p>com fundamento no artigo 1.009 do Código de Processo Civil, pelas razões de fato e de direito a seguir aduzidas:</p>
 
-I - DA TEMPESTIVIDADE
+<h3>I - DA TEMPESTIVIDADE</h3>
 
-O presente recurso é tempestivo, conforme se verifica pela publicação da sentença em [data].
+<p>O presente recurso é tempestivo, conforme se verifica pela publicação da sentença em [data].</p>
 
-II - DO CABIMENTO
+<h3>II - DO CABIMENTO</h3>
 
-O recurso de apelação é o meio adequado para impugnar a sentença que [fundamentação].
+<p>O recurso de apelação é o meio adequado para impugnar a sentença que [fundamentação].</p>
 
-III - DOS FATOS
+<h3>III - DOS FATOS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-IV - DO DIREITO
+<h3>IV - DO DIREITO</h3>
 
-A r. sentença recorrida merece reforma pelos seguintes fundamentos:
+<p>A r. sentença recorrida merece reforma pelos seguintes fundamentos:</p>
 
-1) [Primeiro fundamento];
-2) [Segundo fundamento];
-3) [Terceiro fundamento].
+<p>1) [Primeiro fundamento];<br>
+2) [Segundo fundamento];<br>
+3) [Terceiro fundamento].</p>
 
-V - DOS PEDIDOS
+<h3>V - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) O recebimento do presente recurso;
+<p>a) O recebimento do presente recurso;</p>
 
-b) A reforma da sentença recorrida para [pedido específico];
+<p>b) A reforma da sentença recorrida para [pedido específico];</p>
 
-c) A condenação do apelado em custas processuais e honorários advocatícios.
+<p>c) A condenação do apelado em custas processuais e honorários advocatícios.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       {
         nome: 'Agravo de Instrumento',
         descricao: 'Modelo de agravo de instrumento',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR DESEMBARGADOR RELATOR DO TRIBUNAL DE JUSTIÇA DO ESTADO DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR DESEMBARGADOR RELATOR DO TRIBUNAL DE JUSTIÇA DO ESTADO DE ___</strong></p>
 
-Processo nº {{ processo_numero }}
+<p>Processo nº {{ processo_numero }}</p>
 
-AGRAVO DE INSTRUMENTO
+<h2 style="text-align: center;">AGRAVO DE INSTRUMENTO</h2>
 
-{{ cliente_nome }}, já qualificado nos autos do processo originário em epígrafe, vem, por intermédio de seu advogado subscritor, interpor
+<p>{{ cliente_nome }}, já qualificado nos autos do processo originário em epígrafe, vem, por intermédio de seu advogado subscritor, interpor</p>
 
-AGRAVO DE INSTRUMENTO
+<h3 style="text-align: center;">AGRAVO DE INSTRUMENTO</h3>
 
-com fulcro no artigo 1.015 do Código de Processo Civil, em face da r. decisão interlocutória proferida às fls. ___, pelos fundamentos a seguir expostos:
+<p>com fulcro no artigo 1.015 do Código de Processo Civil, em face da r. decisão interlocutória proferida às fls. ___, pelos fundamentos a seguir expostos:</p>
 
-I - DA TEMPESTIVIDADE E CABIMENTO
+<h3>I - DA TEMPESTIVIDADE E CABIMENTO</h3>
 
-O presente recurso é tempestivo e cabível, nos termos do art. 1.015 do CPC.
+<p>O presente recurso é tempestivo e cabível, nos termos do art. 1.015 do CPC.</p>
 
-II - DA DECISÃO AGRAVADA
+<h3>II - DA DECISÃO AGRAVADA</h3>
 
-A decisão agravada determinou [descrição da decisão], causando grave prejuízo ao agravante.
+<p>A decisão agravada determinou [descrição da decisão], causando grave prejuízo ao agravante.</p>
 
-III - DOS FATOS
+<h3>III - DOS FATOS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-IV - DO DIREITO
+<h3>IV - DO DIREITO</h3>
 
-A decisão merece reforma pelos seguintes fundamentos:
+<p>A decisão merece reforma pelos seguintes fundamentos:</p>
 
-[Fundamentação jurídica detalhada]
+<p>[Fundamentação jurídica detalhada]</p>
 
-V - DO PEDIDO LIMINAR
+<h3>V - DO PEDIDO LIMINAR</h3>
 
-Requer-se a concessão de efeito suspensivo/ativo ao presente agravo.
+<p>Requer-se a concessão de efeito suspensivo/ativo ao presente agravo.</p>
 
-VI - DOS PEDIDOS FINAIS
+<h3>VI - DOS PEDIDOS FINAIS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A concessão de efeito suspensivo;
-b) O provimento do recurso para reformar a decisão agravada;
-c) A intimação do agravado para contrarrazões.
+<p>a) A concessão de efeito suspensivo;<br>
+b) O provimento do recurso para reformar a decisão agravada;<br>
+c) A intimação do agravado para contrarrazões.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaRecursos.id,
       },
 
@@ -612,128 +600,122 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Ação de Divórcio Consensual',
         descricao: 'Modelo de divórcio com acordo entre as partes',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA E SUCESSÕES DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA E SUCESSÕES DA COMARCA DE ___</strong></p>
 
-AÇÃO DE DIVÓRCIO CONSENSUAL
+<h2 style="text-align: center;">AÇÃO DE DIVÓRCIO CONSENSUAL</h2>
 
-{{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, e {{ reu_nome }}, já qualificado nos autos, vêm, por seus advogados, requerer
+<p>{{ cliente_nome }}, nacionalidade, estado civil, profissão, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, e {{ reu_nome }}, já qualificado nos autos, vêm, por seus advogados, requerer</p>
 
-DIVÓRCIO CONSENSUAL
+<h3 style="text-align: center;">DIVÓRCIO CONSENSUAL</h3>
 
-com fundamento no art. 731 do CPC, pelos fundamentos de fato e de direito a seguir expostos:
+<p>com fundamento no art. 731 do CPC, pelos fundamentos de fato e de direito a seguir expostos:</p>
 
-I - DO CASAMENTO
+<h3>I - DO CASAMENTO</h3>
 
-Os requerentes contraíram matrimônio em [data], conforme certidão em anexo.
+<p>Os requerentes contraíram matrimônio em [data], conforme certidão em anexo.</p>
 
-II - DA INEXISTÊNCIA DE BENS A PARTILHAR
+<h3>II - DA INEXISTÊNCIA DE BENS A PARTILHAR</h3>
 
-Declaram os requerentes que não possuem bens a partilhar, conforme declaração em anexo.
+<p>Declaram os requerentes que não possuem bens a partilhar, conforme declaração em anexo.</p>
 
-III - DOS FILHOS
+<h3>III - DOS FILHOS</h3>
 
-[Não há filhos menores ou incapazes] OU [Há filhos menores, conforme acordo de guarda e alimentos em anexo]
+<p>[Não há filhos menores ou incapazes] OU [Há filhos menores, conforme acordo de guarda e alimentos em anexo]</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-Diante do exposto, requerem:
+<p>Diante do exposto, requerem:</p>
 
-a) A decretação do divórcio consensual;
-b) A expedição de mandado para averbação junto ao Cartório competente.
+<p>a) A decretação do divórcio consensual;<br>
+b) A expedição de mandado para averbação junto ao Cartório competente.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaFamilia.id,
       },
       {
         nome: 'Ação de Alimentos',
         descricao: 'Pedido de pensão alimentícia',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA DA COMARCA DE ___</strong></p>
 
-AÇÃO DE ALIMENTOS
+<h2 style="text-align: center;">AÇÃO DE ALIMENTOS</h2>
 
-{{ cliente_nome }}, menor impúbere, representado por sua genitora [nome da mãe], vem, por intermédio de seu advogado, propor
+<p>{{ cliente_nome }}, menor impúbere, representado por sua genitora [nome da mãe], vem, por intermédio de seu advogado, propor</p>
 
-AÇÃO DE ALIMENTOS
+<h3 style="text-align: center;">AÇÃO DE ALIMENTOS</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-O requerido é genitor do autor, conforme certidão de nascimento em anexo.
+<p>O requerido é genitor do autor, conforme certidão de nascimento em anexo.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-O dever de prestar alimentos decorre do poder familiar, nos termos dos artigos 1.694 e seguintes do Código Civil.
+<p>O dever de prestar alimentos decorre do poder familiar, nos termos dos artigos 1.694 e seguintes do Código Civil.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A fixação de alimentos provisórios no percentual de 30% dos rendimentos líquidos do requerido;
-b) A citação do requerido;
-c) A condenação definitiva ao pagamento de alimentos no valor de R$ {{ valor_causa }} ou percentual sobre os rendimentos.
+<p>a) A fixação de alimentos provisórios no percentual de 30% dos rendimentos líquidos do requerido;<br>
+b) A citação do requerido;<br>
+c) A condenação definitiva ao pagamento de alimentos no valor de R$ {{ valor_causa }} ou percentual sobre os rendimentos.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaFamilia.id,
       },
       {
         nome: 'Inventário e Partilha',
         descricao: 'Abertura de inventário judicial',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA E SUCESSÕES DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA VARA DE FAMÍLIA E SUCESSÕES DA COMARCA DE ___</strong></p>
 
-INVENTÁRIO E PARTILHA
+<h2 style="text-align: center;">INVENTÁRIO E PARTILHA</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, na qualidade de herdeiro de [nome do falecido], vem requerer
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, na qualidade de herdeiro de [nome do falecido], vem requerer</p>
 
-ABERTURA DE INVENTÁRIO E PARTILHA
+<h3 style="text-align: center;">ABERTURA DE INVENTÁRIO E PARTILHA</h3>
 
-pelos fundamentos a seguir expostos:
+<p>pelos fundamentos a seguir expostos:</p>
 
-I - DO FALECIMENTO
+<h3>I - DO FALECIMENTO</h3>
 
-O(a) falecido(a) [nome] veio a falecer em [data], conforme certidão de óbito em anexo.
+<p>O(a) falecido(a) [nome] veio a falecer em [data], conforme certidão de óbito em anexo.</p>
 
-II - DOS HERDEIROS
+<h3>II - DOS HERDEIROS</h3>
 
-São herdeiros do falecido:
-- {{ cliente_nome }}, CPF {{ cliente_cpf }}
-- [Demais herdeiros]
+<p>São herdeiros do falecido:<br>
+- {{ cliente_nome }}, CPF {{ cliente_cpf }}<br>
+- [Demais herdeiros]</p>
 
-III - DOS BENS
+<h3>III - DOS BENS</h3>
 
-O espólio é composto pelos seguintes bens:
-{{ narrativa_fatos }}
+<p>O espólio é composto pelos seguintes bens:<br>
+{{ narrativa_fatos }}</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A abertura do inventário;
-b) A nomeação do requerente como inventariante;
-c) A citação dos herdeiros e interessados;
-d) A avaliação e partilha dos bens.
+<p>a) A abertura do inventário;<br>
+b) A nomeação do requerente como inventariante;<br>
+c) A citação dos herdeiros e interessados;<br>
+d) A avaliação e partilha dos bens.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaFamilia.id,
       },
 
@@ -741,130 +723,124 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Reclamação - Defeito no Produto',
         descricao: 'Ação de reparação por vício do produto',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DO JUIZADO ESPECIAL CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DO JUIZADO ESPECIAL CÍVEL DA COMARCA DE ___</strong></p>
 
-RECLAMAÇÃO - DEFEITO NO PRODUTO
+<h2 style="text-align: center;">RECLAMAÇÃO - DEFEITO NO PRODUTO</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-RECLAMAÇÃO
+<h3 style="text-align: center;">RECLAMAÇÃO</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-Em [data], o reclamante adquiriu [produto], no valor de R$ {{ valor_causa }}.
+<p>Em [data], o reclamante adquiriu [produto], no valor de R$ {{ valor_causa }}.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O produto apresentou defeito dentro do prazo de garantia, e a reclamada se recusou a reparar ou substituir o bem.
+<p>O produto apresentou defeito dentro do prazo de garantia, e a reclamada se recusou a reparar ou substituir o bem.</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-O Código de Defesa do Consumidor (Lei 8.078/90) garante ao consumidor o direito à reparação por vício do produto (arts. 18 e seguintes).
+<p>O Código de Defesa do Consumidor (Lei 8.078/90) garante ao consumidor o direito à reparação por vício do produto (arts. 18 e seguintes).</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A condenação da reclamada à restituição do valor pago (R$ {{ valor_causa }});
-b) Indenização por danos morais no valor de R$ [valor];
-c) Inversão do ônus da prova.
+<p>a) A condenação da reclamada à restituição do valor pago (R$ {{ valor_causa }});<br>
+b) Indenização por danos morais no valor de R$ [valor];<br>
+c) Inversão do ônus da prova.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaConsumidor.id,
       },
       {
         nome: 'Ação contra Plano de Saúde',
         descricao: 'Obrigação de fazer - cobertura de procedimento',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-AÇÃO DE OBRIGAÇÃO DE FAZER C/C INDENIZAÇÃO POR DANOS MORAIS
+<h2 style="text-align: center;">AÇÃO DE OBRIGAÇÃO DE FAZER C/C INDENIZAÇÃO POR DANOS MORAIS</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO DE OBRIGAÇÃO DE FAZER
+<h3 style="text-align: center;">AÇÃO DE OBRIGAÇÃO DE FAZER</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-O autor é beneficiário do plano de saúde operado pela ré, mediante pagamento regular de mensalidades.
+<p>O autor é beneficiário do plano de saúde operado pela ré, mediante pagamento regular de mensalidades.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-A ré negou indevidamente cobertura para [procedimento], violando o contrato e a legislação consumerista.
+<p>A ré negou indevidamente cobertura para [procedimento], violando o contrato e a legislação consumerista.</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-A recusa é abusiva e viola o CDC (art. 51, IV) e a Lei 9.656/98.
+<p>A recusa é abusiva e viola o CDC (art. 51, IV) e a Lei 9.656/98.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) TUTELA DE URGÊNCIA para determinar a imediata cobertura do procedimento;
-b) A condenação da ré à obrigação de fazer (autorizar o procedimento);
-c) Indenização por danos morais no valor de R$ {{ valor_causa }};
-d) Condenação em custas e honorários.
+<p>a) TUTELA DE URGÊNCIA para determinar a imediata cobertura do procedimento;<br>
+b) A condenação da ré à obrigação de fazer (autorizar o procedimento);<br>
+c) Indenização por danos morais no valor de R$ {{ valor_causa }};<br>
+d) Condenação em custas e honorários.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaConsumidor.id,
       },
       {
         nome: 'Revisão de Contrato Bancário',
         descricao: 'Ação revisional de cláusulas abusivas',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-AÇÃO REVISIONAL DE CONTRATO BANCÁRIO
+<h2 style="text-align: center;">AÇÃO REVISIONAL DE CONTRATO BANCÁRIO</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO REVISIONAL DE CONTRATO
+<h3 style="text-align: center;">AÇÃO REVISIONAL DE CONTRATO</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-O autor celebrou contrato de [tipo de contrato] com a ré em [data].
+<p>O autor celebrou contrato de [tipo de contrato] com a ré em [data].</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O contrato contém cláusulas abusivas: juros exorbitantes, capitalização irregular, tarifas indevidas.
+<p>O contrato contém cláusulas abusivas: juros exorbitantes, capitalização irregular, tarifas indevidas.</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-As cláusulas violam o CDC (arts. 39, 51) e legislação bancária.
+<p>As cláusulas violam o CDC (arts. 39, 51) e legislação bancária.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A revisão das cláusulas contratuais abusivas;
-b) A limitação dos juros aos índices legais;
-c) A restituição em dobro dos valores cobrados indevidamente;
-d) A consignação em pagamento dos valores corretos;
-e) Condenação em custas e honorários.
+<p>a) A revisão das cláusulas contratuais abusivas;<br>
+b) A limitação dos juros aos índices legais;<br>
+c) A restituição em dobro dos valores cobrados indevidamente;<br>
+d) A consignação em pagamento dos valores corretos;<br>
+e) Condenação em custas e honorários.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaConsumidor.id,
       },
 
@@ -872,123 +848,123 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Contrato de Locação Residencial',
         descricao: 'Modelo de contrato de aluguel residencial',
-        conteudo: `CONTRATO DE LOCAÇÃO RESIDENCIAL
+        conteudo: `<h2 style="text-align: center;">CONTRATO DE LOCAÇÃO RESIDENCIAL</h2>
 
-LOCADOR: {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.
+<p><strong>LOCADOR:</strong> {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.</p>
 
-LOCATÁRIO: {{ reu_nome }}, CPF ___, residente à ___.
+<p><strong>LOCATÁRIO:</strong> {{ reu_nome }}, CPF ___, residente à ___.</p>
 
-Pelo presente instrumento, as partes acima qualificadas celebram CONTRATO DE LOCAÇÃO:
+<p>Pelo presente instrumento, as partes acima qualificadas celebram CONTRATO DE LOCAÇÃO:</p>
 
-CLÁUSULA PRIMEIRA - DO OBJETO
-O LOCADOR dá em locação ao LOCATÁRIO o imóvel situado à [endereço completo], para fins exclusivamente residenciais.
+<h3>CLÁUSULA PRIMEIRA - DO OBJETO</h3>
+<p>O LOCADOR dá em locação ao LOCATÁRIO o imóvel situado à [endereço completo], para fins exclusivamente residenciais.</p>
 
-CLÁUSULA SEGUNDA - DO PRAZO
-O prazo de locação é de [___] meses, iniciando-se em [data] e findando em [data].
+<h3>CLÁUSULA SEGUNDA - DO PRAZO</h3>
+<p>O prazo de locação é de [___] meses, iniciando-se em [data] e findando em [data].</p>
 
-CLÁUSULA TERCEIRA - DO VALOR E FORMA DE PAGAMENTO
-O valor mensal do aluguel é de R$ {{ valor_causa }}, a ser pago até o dia [__] de cada mês.
+<h3>CLÁUSULA TERCEIRA - DO VALOR E FORMA DE PAGAMENTO</h3>
+<p>O valor mensal do aluguel é de R$ {{ valor_causa }}, a ser pago até o dia [__] de cada mês.</p>
 
-CLÁUSULA QUARTA - DO REAJUSTE
-O aluguel será reajustado anualmente pelo IGP-M ou índice que vier a substituí-lo.
+<h3>CLÁUSULA QUARTA - DO REAJUSTE</h3>
+<p>O aluguel será reajustado anualmente pelo IGP-M ou índice que vier a substituí-lo.</p>
 
-CLÁUSULA QUINTA - DAS OBRIGAÇÕES DO LOCATÁRIO
-a) Pagar pontualmente o aluguel e encargos;
-b) Conservar o imóvel em bom estado;
-c) Restituir o imóvel nas mesmas condições.
+<h3>CLÁUSULA QUINTA - DAS OBRIGAÇÕES DO LOCATÁRIO</h3>
+<p>a) Pagar pontualmente o aluguel e encargos;<br>
+b) Conservar o imóvel em bom estado;<br>
+c) Restituir o imóvel nas mesmas condições.</p>
 
-CLÁUSULA SEXTA - DAS MULTAS
-O atraso no pagamento sujeitará o locatário a multa de 10% sobre o valor.
+<h3>CLÁUSULA SEXTA - DAS MULTAS</h3>
+<p>O atraso no pagamento sujeitará o locatário a multa de 10% sobre o valor.</p>
 
-CLÁUSULA SÉTIMA - DO FORO
-Fica eleito o foro da comarca de ___.
+<h3>CLÁUSULA SÉTIMA - DO FORO</h3>
+<p>Fica eleito o foro da comarca de ___.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-_______________________________        _______________________________
-{{ cliente_nome }}                    {{ reu_nome }}
-LOCADOR                               LOCATÁRIO`,
+<p>_______________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_______________________________<br>
+{{ cliente_nome }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ reu_nome }}<br>
+LOCADOR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;LOCATÁRIO</p>`,
         folderId: pastaContratos.id,
       },
       {
         nome: 'Contrato de Compra e Venda',
         descricao: 'Modelo de contrato de compra e venda de bem móvel',
-        conteudo: `CONTRATO DE COMPRA E VENDA
+        conteudo: `<h2 style="text-align: center;">CONTRATO DE COMPRA E VENDA</h2>
 
-VENDEDOR: {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.
+<p><strong>VENDEDOR:</strong> {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.</p>
 
-COMPRADOR: {{ reu_nome }}, CPF ___, residente à ___.
+<p><strong>COMPRADOR:</strong> {{ reu_nome }}, CPF ___, residente à ___.</p>
 
-Pelo presente instrumento, as partes celebram CONTRATO DE COMPRA E VENDA:
+<p>Pelo presente instrumento, as partes celebram CONTRATO DE COMPRA E VENDA:</p>
 
-CLÁUSULA PRIMEIRA - DO OBJETO
-O VENDEDOR vende ao COMPRADOR [descrição detalhada do bem], pelo valor total de R$ {{ valor_causa }}.
+<h3>CLÁUSULA PRIMEIRA - DO OBJETO</h3>
+<p>O VENDEDOR vende ao COMPRADOR [descrição detalhada do bem], pelo valor total de R$ {{ valor_causa }}.</p>
 
-CLÁUSULA SEGUNDA - DO PREÇO E FORMA DE PAGAMENTO
-O preço será pago da seguinte forma:
-a) Sinal: R$ [___] na assinatura deste contrato;
-b) Saldo: R$ [___] em [data ou condições].
+<h3>CLÁUSULA SEGUNDA - DO PREÇO E FORMA DE PAGAMENTO</h3>
+<p>O preço será pago da seguinte forma:<br>
+a) Sinal: R$ [___] na assinatura deste contrato;<br>
+b) Saldo: R$ [___] em [data ou condições].</p>
 
-CLÁUSULA TERCEIRA - DA TRADIÇÃO
-A entrega do bem será realizada em [data/condições].
+<h3>CLÁUSULA TERCEIRA - DA TRADIÇÃO</h3>
+<p>A entrega do bem será realizada em [data/condições].</p>
 
-CLÁUSULA QUARTA - DAS GARANTIAS
-O VENDEDOR garante que o bem está livre de ônus e gravames.
+<h3>CLÁUSULA QUARTA - DAS GARANTIAS</h3>
+<p>O VENDEDOR garante que o bem está livre de ônus e gravames.</p>
 
-CLÁUSULA QUINTA - DAS MULTAS
-O descumprimento de qualquer cláusula sujeitará a parte infratora a multa de 10% sobre o valor total.
+<h3>CLÁUSULA QUINTA - DAS MULTAS</h3>
+<p>O descumprimento de qualquer cláusula sujeitará a parte infratora a multa de 10% sobre o valor total.</p>
 
-CLÁUSULA SEXTA - DO FORO
-Fica eleito o foro da comarca de ___.
+<h3>CLÁUSULA SEXTA - DO FORO</h3>
+<p>Fica eleito o foro da comarca de ___.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-_______________________________        _______________________________
-{{ cliente_nome }}                    {{ reu_nome }}
-VENDEDOR                              COMPRADOR`,
+<p>_______________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_______________________________<br>
+{{ cliente_nome }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ reu_nome }}<br>
+VENDEDOR&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;COMPRADOR</p>`,
         folderId: pastaContratos.id,
       },
       {
         nome: 'Contrato de Prestação de Serviços',
         descricao: 'Modelo genérico de contrato de serviços',
-        conteudo: `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
+        conteudo: `<h2 style="text-align: center;">CONTRATO DE PRESTAÇÃO DE SERVIÇOS</h2>
 
-CONTRATANTE: {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.
+<p><strong>CONTRATANTE:</strong> {{ cliente_nome }}, CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}.</p>
 
-CONTRATADO: {{ reu_nome }}, CPF ___, residente à ___.
+<p><strong>CONTRATADO:</strong> {{ reu_nome }}, CPF ___, residente à ___.</p>
 
-Pelo presente instrumento, as partes celebram CONTRATO DE PRESTAÇÃO DE SERVIÇOS:
+<p>Pelo presente instrumento, as partes celebram CONTRATO DE PRESTAÇÃO DE SERVIÇOS:</p>
 
-CLÁUSULA PRIMEIRA - DO OBJETO
-O CONTRATADO prestará ao CONTRATANTE os seguintes serviços: {{ descricao_processo }}
+<h3>CLÁUSULA PRIMEIRA - DO OBJETO</h3>
+<p>O CONTRATADO prestará ao CONTRATANTE os seguintes serviços: {{ descricao_processo }}</p>
 
-CLÁUSULA SEGUNDA - DO PRAZO
-Os serviços serão prestados no prazo de [___] dias/meses, iniciando-se em [data].
+<h3>CLÁUSULA SEGUNDA - DO PRAZO</h3>
+<p>Os serviços serão prestados no prazo de [___] dias/meses, iniciando-se em [data].</p>
 
-CLÁUSULA TERCEIRA - DO VALOR
-O CONTRATANTE pagará ao CONTRATADO o valor total de R$ {{ valor_causa }}, da seguinte forma: [condições].
+<h3>CLÁUSULA TERCEIRA - DO VALOR</h3>
+<p>O CONTRATANTE pagará ao CONTRATADO o valor total de R$ {{ valor_causa }}, da seguinte forma: [condições].</p>
 
-CLÁUSULA QUARTA - DAS OBRIGAÇÕES DO CONTRATADO
-a) Executar os serviços com zelo e diligência;
-b) Fornecer materiais/equipamentos necessários [se aplicável];
-c) Cumprir os prazos acordados.
+<h3>CLÁUSULA QUARTA - DAS OBRIGAÇÕES DO CONTRATADO</h3>
+<p>a) Executar os serviços com zelo e diligência;<br>
+b) Fornecer materiais/equipamentos necessários [se aplicável];<br>
+c) Cumprir os prazos acordados.</p>
 
-CLÁUSULA QUINTA - DAS OBRIGAÇÕES DO CONTRATANTE
-a) Fornecer informações necessárias;
-b) Efetuar os pagamentos nas datas acordadas;
-c) Receber os serviços prestados.
+<h3>CLÁUSULA QUINTA - DAS OBRIGAÇÕES DO CONTRATANTE</h3>
+<p>a) Fornecer informações necessárias;<br>
+b) Efetuar os pagamentos nas datas acordadas;<br>
+c) Receber os serviços prestados.</p>
 
-CLÁUSULA SEXTA - DA RESCISÃO
-O contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia de [__] dias.
+<h3>CLÁUSULA SEXTA - DA RESCISÃO</h3>
+<p>O contrato poderá ser rescindido por qualquer das partes, mediante notificação prévia de [__] dias.</p>
 
-CLÁUSULA SÉTIMA - DO FORO
-Fica eleito o foro da comarca de ___.
+<h3>CLÁUSULA SÉTIMA - DO FORO</h3>
+<p>Fica eleito o foro da comarca de ___.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-_______________________________        _______________________________
-{{ cliente_nome }}                    {{ reu_nome }}
-CONTRATANTE                           CONTRATADO`,
+<p>_______________________________&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_______________________________<br>
+{{ cliente_nome }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ reu_nome }}<br>
+CONTRATANTE&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CONTRATADO</p>`,
         folderId: pastaContratos.id,
       },
 
@@ -996,85 +972,81 @@ CONTRATANTE                           CONTRATADO`,
       {
         nome: 'Aposentadoria por Tempo de Contribuição',
         descricao: 'Ação de concessão de benefício previdenciário',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ FEDERAL DA ___ VARA DA SUBSEÇÃO JUDICIÁRIA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ FEDERAL DA ___ VARA DA SUBSEÇÃO JUDICIÁRIA DE ___</strong></p>
 
-AÇÃO DE CONCESSÃO DE APOSENTADORIA POR TEMPO DE CONTRIBUIÇÃO
+<h2 style="text-align: center;">AÇÃO DE CONCESSÃO DE APOSENTADORIA POR TEMPO DE CONTRIBUIÇÃO</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO DE CONCESSÃO DE BENEFÍCIO PREVIDENCIÁRIO
+<h3 style="text-align: center;">AÇÃO DE CONCESSÃO DE BENEFÍCIO PREVIDENCIÁRIO</h3>
 
-em face do INSTITUTO NACIONAL DO SEGURO SOCIAL - INSS, pelos fundamentos a seguir expostos:
+<p>em face do INSTITUTO NACIONAL DO SEGURO SOCIAL - INSS, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-O autor possui [___] anos de tempo de contribuição, conforme CNIS e documentos em anexo.
+<p>O autor possui [___] anos de tempo de contribuição, conforme CNIS e documentos em anexo.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O INSS negou administrativamente o pedido de aposentadoria (NB [número]).
+<p>O INSS negou administrativamente o pedido de aposentadoria (NB [número]).</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-O autor preenche todos os requisitos legais para a concessão da aposentadoria por tempo de contribuição, nos termos da Lei 8.213/91.
+<p>O autor preenche todos os requisitos legais para a concessão da aposentadoria por tempo de contribuição, nos termos da Lei 8.213/91.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A concessão da aposentadoria por tempo de contribuição;
-b) O pagamento das parcelas vencidas desde o requerimento administrativo;
-c) A implantação do benefício;
-d) Condenação em custas e honorários.
+<p>a) A concessão da aposentadoria por tempo de contribuição;<br>
+b) O pagamento das parcelas vencidas desde o requerimento administrativo;<br>
+c) A implantação do benefício;<br>
+d) Condenação em custas e honorários.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaPrevidenciario.id,
       },
       {
         nome: 'Auxílio-Doença/Aposentadoria por Invalidez',
         descricao: 'Concessão de benefício por incapacidade',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ FEDERAL DA ___ VARA DA SUBSEÇÃO JUDICIÁRIA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ FEDERAL DA ___ VARA DA SUBSEÇÃO JUDICIÁRIA DE ___</strong></p>
 
-AÇÃO DE CONCESSÃO DE AUXÍLIO-DOENÇA/APOSENTADORIA POR INVALIDEZ
+<h2 style="text-align: center;">AÇÃO DE CONCESSÃO DE AUXÍLIO-DOENÇA/APOSENTADORIA POR INVALIDEZ</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO DE CONCESSÃO DE BENEFÍCIO POR INCAPACIDADE
+<h3 style="text-align: center;">AÇÃO DE CONCESSÃO DE BENEFÍCIO POR INCAPACIDADE</h3>
 
-em face do INSTITUTO NACIONAL DO SEGURO SOCIAL - INSS, pelos fundamentos a seguir expostos:
+<p>em face do INSTITUTO NACIONAL DO SEGURO SOCIAL - INSS, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-O autor encontra-se incapacitado para o trabalho desde [data], conforme laudos médicos em anexo.
+<p>O autor encontra-se incapacitado para o trabalho desde [data], conforme laudos médicos em anexo.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-II - DA INCAPACIDADE
+<h3>II - DA INCAPACIDADE</h3>
 
-Perícia médica do INSS reconheceu a incapacidade temporária/permanente.
+<p>Perícia médica do INSS reconheceu a incapacidade temporária/permanente.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A produção de prova pericial;
-b) A concessão do auxílio-doença ou aposentadoria por invalidez;
-c) O pagamento das parcelas vencidas;
-d) A implantação do benefício.
+<p>a) A produção de prova pericial;<br>
+b) A concessão do auxílio-doença ou aposentadoria por invalidez;<br>
+c) O pagamento das parcelas vencidas;<br>
+d) A implantação do benefício.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaPrevidenciario.id,
       },
 
@@ -1082,85 +1054,81 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Embargos de Declaração',
         descricao: 'Recurso para sanar omissão/contradição',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA ___ DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA ___ DA COMARCA DE ___</strong></p>
 
-Processo nº {{ processo_numero }}
+<p>Processo nº {{ processo_numero }}</p>
 
-EMBARGOS DE DECLARAÇÃO
+<h2 style="text-align: center;">EMBARGOS DE DECLARAÇÃO</h2>
 
-{{ cliente_nome }}, já qualificado nos autos, vem opor
+<p>{{ cliente_nome }}, já qualificado nos autos, vem opor</p>
 
-EMBARGOS DE DECLARAÇÃO
+<h3 style="text-align: center;">EMBARGOS DE DECLARAÇÃO</h3>
 
-em face da r. decisão/sentença proferida às fls. ___, pelos fundamentos a seguir expostos:
+<p>em face da r. decisão/sentença proferida às fls. ___, pelos fundamentos a seguir expostos:</p>
 
-I - DA OMISSÃO/CONTRADIÇÃO/OBSCURIDADE
+<h3>I - DA OMISSÃO/CONTRADIÇÃO/OBSCURIDADE</h3>
 
-A decisão embargada incorreu em [omissão/contradição/obscuridade] quanto a:
+<p>A decisão embargada incorreu em [omissão/contradição/obscuridade] quanto a:</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-II - DO PEDIDO
+<h3>II - DO PEDIDO</h3>
 
-Diante do exposto, requer-se o acolhimento dos presentes embargos para que seja sanado o vício apontado.
+<p>Diante do exposto, requer-se o acolhimento dos presentes embargos para que seja sanado o vício apontado.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaRecursos.id,
       },
       {
         nome: 'Recurso Especial',
         descricao: 'Recurso ao STJ',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR MINISTRO PRESIDENTE DO SUPERIOR TRIBUNAL DE JUSTIÇA
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR MINISTRO PRESIDENTE DO SUPERIOR TRIBUNAL DE JUSTIÇA</strong></p>
 
-Processo nº {{ processo_numero }}
+<p>Processo nº {{ processo_numero }}</p>
 
-RECURSO ESPECIAL
+<h2 style="text-align: center;">RECURSO ESPECIAL</h2>
 
-{{ cliente_nome }}, já qualificado nos autos, vem interpor
+<p>{{ cliente_nome }}, já qualificado nos autos, vem interpor</p>
 
-RECURSO ESPECIAL
+<h3 style="text-align: center;">RECURSO ESPECIAL</h3>
 
-com fundamento no art. 105, III, da Constituição Federal, em face do v. acórdão proferido pelo Tribunal de Justiça, pelos fundamentos a seguir expostos:
+<p>com fundamento no art. 105, III, da Constituição Federal, em face do v. acórdão proferido pelo Tribunal de Justiça, pelos fundamentos a seguir expostos:</p>
 
-I - DO CABIMENTO
+<h3>I - DO CABIMENTO</h3>
 
-O presente recurso é cabível, pois o acórdão recorrido:
+<p>O presente recurso é cabível, pois o acórdão recorrido:</p>
 
-a) Contrariou lei federal (art. 105, III, "a", CF);
-b) [outros fundamentos]
+<p>a) Contrariou lei federal (art. 105, III, "a", CF);<br>
+b) [outros fundamentos]</p>
 
-II - DO PREQUESTIONAMENTO
+<h3>II - DO PREQUESTIONAMENTO</h3>
 
-A matéria federal foi devidamente prequestionada nas razões de [apelação/embargos].
+<p>A matéria federal foi devidamente prequestionada nas razões de [apelação/embargos].</p>
 
-III - DOS FATOS
+<h3>III - DOS FATOS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-IV - DO DIREITO
+<h3>IV - DO DIREITO</h3>
 
-O v. acórdão violou [dispositivos legais federais].
+<p>O v. acórdão violou [dispositivos legais federais].</p>
 
-V - DOS PEDIDOS
+<h3>V - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) O recebimento e provimento do recurso;
-b) A reforma/anulação do acórdão recorrido.
+<p>a) O recebimento e provimento do recurso;<br>
+b) A reforma/anulação do acórdão recorrido.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaRecursos.id,
       },
 
@@ -1168,91 +1136,87 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Ação de Horas Extras',
         descricao: 'Pedido de pagamento de horas extraordinárias',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___</strong></p>
 
-RECLAMAÇÃO TRABALHISTA - HORAS EXTRAS
+<h2 style="text-align: center;">RECLAMAÇÃO TRABALHISTA - HORAS EXTRAS</h2>
 
-RECLAMANTE: {{ cliente_nome }}, CPF {{ cliente_cpf }}
-RECLAMADA: {{ reu_nome }}
+<p><strong>RECLAMANTE:</strong> {{ cliente_nome }}, CPF {{ cliente_cpf }}<br>
+<strong>RECLAMADA:</strong> {{ reu_nome }}</p>
 
-HORAS EXTRAS NÃO PAGAS
+<h3 style="text-align: center;">HORAS EXTRAS NÃO PAGAS</h3>
 
-I - DA RELAÇÃO DE EMPREGO
+<h3>I - DA RELAÇÃO DE EMPREGO</h3>
 
-O Reclamante laborou para a Reclamada de [data inicial] até [data final], na função de [cargo].
+<p>O Reclamante laborou para a Reclamada de [data inicial] até [data final], na função de [cargo].</p>
 
-II - DAS HORAS EXTRAS
+<h3>II - DAS HORAS EXTRAS</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O Reclamante laborava habitualmente [___] horas diárias, extrapolando a jornada legal, sem o devido pagamento de horas extras.
+<p>O Reclamante laborava habitualmente [___] horas diárias, extrapolando a jornada legal, sem o devido pagamento de horas extras.</p>
 
-III - DO DIREITO
+<h3>III - DO DIREITO</h3>
 
-As horas extras são devidas nos termos dos arts. 59 e seguintes da CLT, com adicional de no mínimo 50%.
+<p>As horas extras são devidas nos termos dos arts. 59 e seguintes da CLT, com adicional de no mínimo 50%.</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-a) Pagamento de horas extras com adicional de 50%;
-b) Reflexos em DSR, férias, 13º salário e FGTS;
-c) Multa do art. 477 da CLT;
-d) Honorários advocatícios.
+<p>a) Pagamento de horas extras com adicional de 50%;<br>
+b) Reflexos em DSR, férias, 13º salário e FGTS;<br>
+c) Multa do art. 477 da CLT;<br>
+d) Honorários advocatícios.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaTrabalhistas.id,
       },
       {
         nome: 'Ação de Acidente de Trabalho',
         descricao: 'Indenização por acidente laboral',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DO TRABALHO DA ___ VARA DO TRABALHO DE ___</strong></p>
 
-RECLAMAÇÃO TRABALHISTA - ACIDENTE DE TRABALHO
+<h2 style="text-align: center;">RECLAMAÇÃO TRABALHISTA - ACIDENTE DE TRABALHO</h2>
 
-RECLAMANTE: {{ cliente_nome }}, CPF {{ cliente_cpf }}
-RECLAMADA: {{ reu_nome }}
+<p><strong>RECLAMANTE:</strong> {{ cliente_nome }}, CPF {{ cliente_cpf }}<br>
+<strong>RECLAMADA:</strong> {{ reu_nome }}</p>
 
-INDENIZAÇÃO POR ACIDENTE DE TRABALHO
+<h3 style="text-align: center;">INDENIZAÇÃO POR ACIDENTE DE TRABALHO</h3>
 
-I - DA RELAÇÃO DE EMPREGO
+<h3>I - DA RELAÇÃO DE EMPREGO</h3>
 
-O Reclamante laborava para a Reclamada desde [data] na função de [cargo].
+<p>O Reclamante laborava para a Reclamada desde [data] na função de [cargo].</p>
 
-II - DO ACIDENTE DE TRABALHO
+<h3>II - DO ACIDENTE DE TRABALHO</h3>
 
-Em [data], o Reclamante sofreu acidente de trabalho:
+<p>Em [data], o Reclamante sofreu acidente de trabalho:</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-III - DA CULPA DA RECLAMADA
+<h3>III - DA CULPA DA RECLAMADA</h3>
 
-A Reclamada não forneceu EPIs adequados nem treinamento, violando normas de segurança do trabalho.
+<p>A Reclamada não forneceu EPIs adequados nem treinamento, violando normas de segurança do trabalho.</p>
 
-IV - DOS DANOS
+<h3>IV - DOS DANOS</h3>
 
-O acidente causou [lesões/sequelas permanentes], gerando danos materiais, morais e estéticos.
+<p>O acidente causou [lesões/sequelas permanentes], gerando danos materiais, morais e estéticos.</p>
 
-V - DOS PEDIDOS
+<h3>V - DOS PEDIDOS</h3>
 
-a) Indenização por danos materiais (lucros cessantes): R$ [valor];
-b) Indenização por danos morais: R$ {{ valor_causa }};
-c) Indenização por danos estéticos: R$ [valor];
-d) Pensão vitalícia mensal;
-e) Estabilidade acidentária;
-f) Honorários advocatícios.
+<p>a) Indenização por danos materiais (lucros cessantes): R$ [valor];<br>
+b) Indenização por danos morais: R$ {{ valor_causa }};<br>
+c) Indenização por danos estéticos: R$ [valor];<br>
+d) Pensão vitalícia mensal;<br>
+e) Estabilidade acidentária;<br>
+f) Honorários advocatícios.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaTrabalhistas.id,
       },
 
@@ -1260,133 +1224,127 @@ OAB/{{ advogado_oab }}`,
       {
         nome: 'Ação de Cobrança',
         descricao: 'Cobrança de dívida líquida e certa',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-AÇÃO DE COBRANÇA
+<h2 style="text-align: center;">AÇÃO DE COBRANÇA</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO DE COBRANÇA
+<h3 style="text-align: center;">AÇÃO DE COBRANÇA</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DOS FATOS
+<h3>I - DOS FATOS</h3>
 
-Em [data], o réu contraiu dívida com o autor no valor de R$ {{ valor_causa }}, conforme documentos em anexo.
+<p>Em [data], o réu contraiu dívida com o autor no valor de R$ {{ valor_causa }}, conforme documentos em anexo.</p>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O débito encontra-se vencido e não pago, apesar de notificações extrajudiciais.
+<p>O débito encontra-se vencido e não pago, apesar de notificações extrajudiciais.</p>
 
-II - DO DIREITO
+<h3>II - DO DIREITO</h3>
 
-A dívida é líquida, certa e exigível, nos termos dos arts. 586 e seguintes do CPC.
+<p>A dívida é líquida, certa e exigível, nos termos dos arts. 586 e seguintes do CPC.</p>
 
-III - DOS PEDIDOS
+<h3>III - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A citação do réu para pagamento ou defesa;
-b) A condenação ao pagamento de R$ {{ valor_causa }}, corrigido e com juros;
-c) Condenação em custas e honorários advocatícios.
+<p>a) A citação do réu para pagamento ou defesa;<br>
+b) A condenação ao pagamento de R$ {{ valor_causa }}, corrigido e com juros;<br>
+c) Condenação em custas e honorários advocatícios.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       {
         nome: 'Ação de Despejo',
         descricao: 'Retomada de imóvel por falta de pagamento',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA CÍVEL DA COMARCA DE ___</strong></p>
 
-AÇÃO DE DESPEJO C/C COBRANÇA DE ALUGUÉIS
+<h2 style="text-align: center;">AÇÃO DE DESPEJO C/C COBRANÇA DE ALUGUÉIS</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem propor</p>
 
-AÇÃO DE DESPEJO POR FALTA DE PAGAMENTO
+<h3 style="text-align: center;">AÇÃO DE DESPEJO POR FALTA DE PAGAMENTO</h3>
 
-em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:
+<p>em face de {{ reu_nome }}, pelos fundamentos a seguir expostos:</p>
 
-I - DA LOCAÇÃO
+<h3>I - DA LOCAÇÃO</h3>
 
-O autor é locador do imóvel situado à [endereço], locado ao réu mediante contrato em anexo.
+<p>O autor é locador do imóvel situado à [endereço], locado ao réu mediante contrato em anexo.</p>
 
-II - DA INADIMPLÊNCIA
+<h3>II - DA INADIMPLÊNCIA</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-O réu encontra-se inadimplente com os aluguéis vencidos desde [mês/ano], totalizando R$ {{ valor_causa }}.
+<p>O réu encontra-se inadimplente com os aluguéis vencidos desde [mês/ano], totalizando R$ {{ valor_causa }}.</p>
 
-III - DO DIREITO
+<h3>III - DO DIREITO</h3>
 
-O despejo é cabível nos termos da Lei 8.245/91, art. 9º, III.
+<p>O despejo é cabível nos termos da Lei 8.245/91, art. 9º, III.</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A citação do réu para purgação da mora em 15 dias;
-b) A decretação do despejo;
-c) A condenação ao pagamento dos aluguéis vencidos e vincendos;
-d) Multa contratual e honorários.
+<p>a) A citação do réu para purgação da mora em 15 dias;<br>
+b) A decretação do despejo;<br>
+c) A condenação ao pagamento dos aluguéis vencidos e vincendos;<br>
+d) Multa contratual e honorários.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       {
         nome: 'Mandado de Segurança',
         descricao: 'Proteção de direito líquido e certo',
-        conteudo: `EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA DA FAZENDA PÚBLICA DA COMARCA DE ___
+        conteudo: `<p style="text-align: center;"><strong>EXCELENTÍSSIMO SENHOR DOUTOR JUIZ DE DIREITO DA ___ VARA DA FAZENDA PÚBLICA DA COMARCA DE ___</strong></p>
 
-MANDADO DE SEGURANÇA
+<h2 style="text-align: center;">MANDADO DE SEGURANÇA</h2>
 
-{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem impetrar
+<p>{{ cliente_nome }}, portador do CPF {{ cliente_cpf }}, residente à {{ cliente_endereco }}, vem impetrar</p>
 
-MANDADO DE SEGURANÇA
+<h3 style="text-align: center;">MANDADO DE SEGURANÇA</h3>
 
-em face do ato do [autoridade coatora], pelos fundamentos a seguir expostos:
+<p>em face do ato do [autoridade coatora], pelos fundamentos a seguir expostos:</p>
 
-I - DO ATO COATOR
+<h3>I - DO ATO COATOR</h3>
 
-{{ narrativa_fatos }}
+<p>{{ narrativa_fatos }}</p>
 
-A autoridade impetrada praticou ato ilegal ao [descrever o ato].
+<p>A autoridade impetrada praticou ato ilegal ao [descrever o ato].</p>
 
-II - DO DIREITO LÍQUIDO E CERTO
+<h3>II - DO DIREITO LÍQUIDO E CERTO</h3>
 
-O impetrante possui direito líquido e certo a [descrever direito], violado pelo ato coator.
+<p>O impetrante possui direito líquido e certo a [descrever direito], violado pelo ato coator.</p>
 
-III - DA ILEGALIDADE
+<h3>III - DA ILEGALIDADE</h3>
 
-O ato é ilegal por violar [dispositivos legais/constitucionais].
+<p>O ato é ilegal por violar [dispositivos legais/constitucionais].</p>
 
-IV - DOS PEDIDOS
+<h3>IV - DOS PEDIDOS</h3>
 
-Diante do exposto, requer-se:
+<p>Diante do exposto, requer-se:</p>
 
-a) A concessão de liminar para suspender o ato coator;
-b) A notificação da autoridade coatora;
-c) A concessão definitiva da segurança;
-d) Honorários advocatícios.
+<p>a) A concessão de liminar para suspender o ato coator;<br>
+b) A notificação da autoridade coatora;<br>
+c) A concessão definitiva da segurança;<br>
+d) Honorários advocatícios.</p>
 
-Termos em que,
-Pede deferimento.
+<p>Termos em que,<br>Pede deferimento.</p>
 
-Local e data.
+<p>Local e data.</p>
 
-{{ advogado_nome }}
-OAB/{{ advogado_oab }}`,
+<p>{{ advogado_nome }}<br>OAB/{{ advogado_oab }}</p>`,
         folderId: pastaCiveis.id,
       },
       ],
