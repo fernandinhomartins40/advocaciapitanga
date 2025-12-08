@@ -123,9 +123,10 @@ export default function HistoricoIAPage() {
             <CardTitle>Conteúdo Gerado</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
-              <pre className="text-sm whitespace-pre-wrap font-mono">{documentoSelecionado.conteudoGerado}</pre>
-            </div>
+            <div
+              className="bg-white p-8 rounded-md border border-gray-200 prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{ __html: documentoSelecionado.conteudoGerado }}
+            />
           </CardContent>
         </Card>
       </div>
@@ -178,19 +179,33 @@ export default function HistoricoIAPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-gray-600 line-clamp-2">{doc.contexto}</p>
-                  <div className="mt-3 flex items-center gap-4 text-xs text-gray-500">
-                    {doc.cliente && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-semibold">Cliente:</span> {doc.cliente.user.nome}
-                      </span>
-                    )}
-                    {doc.processo && (
-                      <span className="flex items-center gap-1">
-                        <span className="font-semibold">Processo:</span> {doc.processo.numero}
-                      </span>
-                    )}
-                    <span className="ml-auto">{formatarData(doc.createdAt)}</span>
+                  <div className="mb-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {doc.cliente && (
+                        <div>
+                          <span className="text-gray-500 font-semibold">Cliente:</span>
+                          <p className="text-gray-900">{doc.cliente.user.nome}</p>
+                        </div>
+                      )}
+                      {doc.processo && (
+                        <div>
+                          <span className="text-gray-500 font-semibold">Processo:</span>
+                          <p className="text-gray-900">{doc.processo.numero}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded border border-gray-200">
+                    <p className="text-xs text-gray-500 mb-1 font-semibold">Preview:</p>
+                    <div
+                      className="text-sm text-gray-700 line-clamp-3 prose-sm"
+                      dangerouslySetInnerHTML={{
+                        __html: doc.conteudoGerado?.substring(0, 300) + '...' || doc.contexto
+                      }}
+                    />
+                  </div>
+                  <div className="mt-3 flex justify-end text-xs text-gray-500">
+                    <span>{formatarData(doc.createdAt)}</span>
                   </div>
                 </CardContent>
               </Card>
