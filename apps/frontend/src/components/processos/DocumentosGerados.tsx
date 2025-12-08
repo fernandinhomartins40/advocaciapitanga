@@ -160,7 +160,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   <div className="flex items-center gap-2 mb-2">
                     <FileText className="h-5 w-5 text-primary-600" />
                     <h3 className="font-semibold text-lg">{doc.titulo}</h3>
-                    <Badge variant="outline">v{doc.versao}</Badge>
+                    <Badge variant="info">v{doc.versao}</Badge>
                   </div>
 
                   {doc.template && (
@@ -218,7 +218,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
             <DialogTitle>
               Editar Documento - {documentoEdit?.titulo}
               {documentoEdit && (
-                <Badge variant="outline" className="ml-2">
+                <Badge variant="info" className="ml-2">
                   v{documentoEdit.versao}
                 </Badge>
               )}
