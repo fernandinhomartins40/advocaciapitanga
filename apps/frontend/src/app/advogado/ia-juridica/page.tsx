@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
-import { Brain, Download, FileText, Copy, History, Settings } from 'lucide-react';
+import { Brain, Download, FileText, Copy, History, Settings, Save } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { AdvancedRichTextEditor } from '@/components/shared/AdvancedRichTextEditor';
 import SelectCliente from '@/components/advogado/SelectCliente';
@@ -38,6 +38,8 @@ export default function IAJuridicaPage() {
   const [processoSelecionado, setProcessoSelecionado] = useState<any>(null);
   const [formatoExportar, setFormatoExportar] = useState('pdf');
   const [modeloBaseId, setModeloBaseId] = useState('');
+  const [documentoId, setDocumentoId] = useState(''); // ID do documento salvo
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   const { data: modelos } = useQuery({
@@ -69,6 +71,22 @@ export default function IAJuridicaPage() {
   }, [modeloBaseId, modelos]);
 
   const handleGenerate = async () => {
+    // Validações
+    if (!modeloBaseId) {
+      toast({ title: 'Atenção', description: 'Selecione um modelo base', variant: 'error' });
+      return;
+    }
+
+    if (!clienteId) {
+      toast({ title: 'Atenção', description: 'Selecione um cliente', variant: 'error' });
+      return;
+    }
+
+    if (!processoId) {
+      toast({ title: 'Atenção', description: 'Selecione um processo', variant: 'error' });
+      return;
+    }
+
     if (!contexto.trim()) {
       toast({ title: 'Atenção', description: 'Preencha o contexto', variant: 'error' });
       return;
@@ -82,12 +100,12 @@ export default function IAJuridicaPage() {
         fundamentosLegais,
         pedidos,
         partes: partes.split('\n').filter(p => p.trim()),
-        clienteId: clienteId || undefined,
-        processoId: processoId || undefined,
-        templateId: modeloBaseId || undefined
+        clienteId,
+        processoId,
+        templateId: modeloBaseId
       });
       setConteudoGerado(response.data.conteudo);
-      toast({ title: 'Sucesso', description: 'Peça gerada com sucesso!', variant: 'success' });
+      toast({ title: 'Sucesso', description: 'Peça gerada com sucesso! Agora salve o documento.', variant: 'success' });
     } catch (error: any) {
       toast({
         title: 'Erro',
@@ -99,18 +117,59 @@ export default function IAJuridicaPage() {
     }
   };
 
-  const handleExport = async (formato: string) => {
+  const handleSalvarDocumento = async () => {
     if (!conteudoGerado) {
       toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
       return;
     }
 
+    if (!clienteId || !processoId) {
+      toast({ title: 'Atenção', description: 'Cliente e processo são obrigatórios', variant: 'error' });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await api.post('/documentos-processo', {
+        processoId,
+        clienteId,
+        templateId: modeloBaseId || null,
+        titulo: tipoPeca,
+        conteudoHTML: conteudoGerado
+      });
+
+      setDocumentoId(response.data.id);
+      toast({
+        title: 'Sucesso',
+        description: 'Documento salvo com sucesso! Agora você pode exportar.',
+        variant: 'success'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.error || 'Erro ao salvar documento',
+        variant: 'error'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleExport = async (formato: string) => {
+    if (!documentoId) {
+      toast({
+        title: 'Atenção',
+        description: 'Salve o documento antes de exportar',
+        variant: 'error'
+      });
+      return;
+    }
+
     setIsExporting(true);
     try {
-      const endpoint = `/ia/exportar-${formato}`;
       const response = await api.post(
-        endpoint,
-        { conteudo: conteudoGerado, titulo: tipoPeca },
+        `/documentos-processo/${documentoId}/exportar`,
+        { formato },
         { responseType: 'blob' }
       );
 
@@ -122,8 +181,12 @@ export default function IAJuridicaPage() {
       window.URL.revokeObjectURL(url);
 
       toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
-    } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao exportar documento', variant: 'error' });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.error || 'Erro ao exportar documento',
+        variant: 'error'
+      });
     } finally {
       setIsExporting(false);
     }
@@ -314,39 +377,61 @@ export default function IAJuridicaPage() {
               </CardTitle>
               {conteudoGerado && (
                 <div className="flex gap-2 items-center">
-                  <Select
-                    value={formatoExportar}
-                    onChange={(e) => setFormatoExportar(e.target.value)}
-                    className="w-28"
-                  >
-                    <option value="pdf">PDF</option>
-                    <option value="docx">DOCX</option>
-                    <option value="txt">TXT</option>
-                    <option value="rtf">RTF</option>
-                  </Select>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopy}
-                  >
-                    <Copy className="h-4 w-4 mr-1" />
-                    Copiar
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleExport(formatoExportar)}
-                    disabled={isExporting}
-                  >
-                    {isExporting ? (
-                      <LoadingSpinner size="sm" />
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-1" />
-                        Exportar
-                      </>
-                    )}
-                  </Button>
+                  {!documentoId && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={handleSalvarDocumento}
+                      disabled={isSaving}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      {isSaving ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-1" />
+                          Salvar
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {documentoId && (
+                    <>
+                      <Select
+                        value={formatoExportar}
+                        onChange={(e) => setFormatoExportar(e.target.value)}
+                        className="w-28"
+                      >
+                        <option value="pdf">PDF</option>
+                        <option value="docx">DOCX</option>
+                        <option value="txt">TXT</option>
+                        <option value="rtf">RTF</option>
+                      </Select>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopy}
+                      >
+                        <Copy className="h-4 w-4 mr-1" />
+                        Copiar
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleExport(formatoExportar)}
+                        disabled={isExporting}
+                      >
+                        {isExporting ? (
+                          <LoadingSpinner size="sm" />
+                        ) : (
+                          <>
+                            <Download className="h-4 w-4 mr-1" />
+                            Exportar
+                          </>
+                        )}
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
