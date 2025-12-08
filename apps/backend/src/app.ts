@@ -18,6 +18,7 @@ import configuracaoIARoutes from './routes/configuracao-ia.routes';
 import projudiRoutes from './routes/projudi.routes';
 import escritorioRoutes from './routes/escritorio.routes';
 import backupRoutes from './routes/backup.routes';
+import documentoProcessoRoutes from './routes/documento-processo.routes';
 
 const app = express();
 
@@ -87,6 +88,7 @@ app.use('/api/configuracao-ia', configuracaoIARoutes);
 app.use('/api/projudi', projudiRoutes);
 app.use('/api/escritorio', escritorioRoutes);
 app.use('/api/backups', backupRoutes);
+app.use('/api/documentos-processo', documentoProcessoRoutes);
 
 // Rota de health check
 app.get('/api/health', (req, res) => {

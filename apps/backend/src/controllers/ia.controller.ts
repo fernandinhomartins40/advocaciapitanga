@@ -59,6 +59,7 @@ export class IAController {
         });
       }
 
+      let dadosPartes: any[] | undefined = undefined;
       if (processoId) {
         dadosProcesso = await prisma.processo.findUnique({
           where: { id: processoId },
@@ -72,9 +73,15 @@ export class IAController {
                   }
                 }
               }
-            }
+            },
+            partes: true
           }
         });
+
+        // Extrair partes do processo
+        if (dadosProcesso?.partes) {
+          dadosPartes = dadosProcesso.partes as any[];
+        }
       }
 
       // Gerar peça com IA, passando advogadoId para buscar configurações
@@ -86,6 +93,7 @@ export class IAController {
         partes,
         dadosCliente,
         dadosProcesso,
+        dadosPartes,
         templateBase: templateBase?.conteudo
       }, advogado.id);
 

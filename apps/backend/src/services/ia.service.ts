@@ -63,6 +63,7 @@ export class IAService {
     partes?: string[];
     dadosCliente?: any;
     dadosProcesso?: any;
+    dadosPartes?: any[];
     templateBase?: string;
   }, advogadoId: string): Promise<string> {
     try {
@@ -70,7 +71,7 @@ export class IAService {
       const modelo = await this.getModeloGPT(advogadoId);
       const systemPrompt = this.getPromptByTipo(data.tipoPeca);
 
-      // Enriquecer prompt com dados do cliente e processo
+      // Enriquecer prompt com dados do cliente, processo e partes
       let dadosAdicionais = '';
 
       if (data.dadosCliente) {
@@ -78,87 +79,161 @@ export class IAService {
         dadosAdicionais += `Nome: ${data.dadosCliente.user.nome}\n`;
         dadosAdicionais += `Email: ${data.dadosCliente.user.email}\n`;
         if (data.dadosCliente.cpf) dadosAdicionais += `CPF: ${data.dadosCliente.cpf}\n`;
+        if (data.dadosCliente.rg) dadosAdicionais += `RG: ${data.dadosCliente.rg}\n`;
         if (data.dadosCliente.telefone) dadosAdicionais += `Telefone: ${data.dadosCliente.telefone}\n`;
-        if (data.dadosCliente.endereco) dadosAdicionais += `Endereço: ${data.dadosCliente.endereco}\n`;
+        if (data.dadosCliente.nacionalidade) dadosAdicionais += `Nacionalidade: ${data.dadosCliente.nacionalidade}\n`;
+        if (data.dadosCliente.estadoCivil) dadosAdicionais += `Estado Civil: ${data.dadosCliente.estadoCivil}\n`;
+        if (data.dadosCliente.profissao) dadosAdicionais += `Profissão: ${data.dadosCliente.profissao}\n`;
+
+        // Endereço completo
+        const enderecoPartes = [];
+        if (data.dadosCliente.logradouro) enderecoPartes.push(data.dadosCliente.logradouro);
+        if (data.dadosCliente.numero) enderecoPartes.push(`nº ${data.dadosCliente.numero}`);
+        if (data.dadosCliente.complemento) enderecoPartes.push(data.dadosCliente.complemento);
+        if (data.dadosCliente.bairro) enderecoPartes.push(data.dadosCliente.bairro);
+        if (data.dadosCliente.cidade) enderecoPartes.push(data.dadosCliente.cidade);
+        if (data.dadosCliente.uf) enderecoPartes.push(data.dadosCliente.uf);
+        if (data.dadosCliente.cep) enderecoPartes.push(`CEP: ${data.dadosCliente.cep}`);
+
+        if (enderecoPartes.length > 0) {
+          dadosAdicionais += `Endereço: ${enderecoPartes.join(', ')}\n`;
+        }
       }
 
       if (data.dadosProcesso) {
         dadosAdicionais += `\n\nDADOS DO PROCESSO:\n`;
         dadosAdicionais += `Número: ${data.dadosProcesso.numero}\n`;
-        dadosAdicionais += `Descrição: ${data.dadosProcesso.descricao}\n`;
-        dadosAdicionais += `Status: ${data.dadosProcesso.status}\n`;
-        if (data.dadosProcesso.cliente) {
-          dadosAdicionais += `Cliente do processo: ${data.dadosProcesso.cliente.user.nome}\n`;
+        if (data.dadosProcesso.tipoAcao) dadosAdicionais += `Tipo de Ação: ${data.dadosProcesso.tipoAcao}\n`;
+        if (data.dadosProcesso.areaDireito) dadosAdicionais += `Área do Direito: ${data.dadosProcesso.areaDireito}\n`;
+        if (data.dadosProcesso.comarca) dadosAdicionais += `Comarca: ${data.dadosProcesso.comarca}\n`;
+        if (data.dadosProcesso.foro) dadosAdicionais += `Foro: ${data.dadosProcesso.foro}\n`;
+        if (data.dadosProcesso.vara) dadosAdicionais += `Vara: ${data.dadosProcesso.vara}\n`;
+        if (data.dadosProcesso.objetoAcao) dadosAdicionais += `Objeto da Ação: ${data.dadosProcesso.objetoAcao}\n`;
+        if (data.dadosProcesso.pedidoPrincipal) dadosAdicionais += `Pedido Principal: ${data.dadosProcesso.pedidoPrincipal}\n`;
+        if (data.dadosProcesso.valorCausa) dadosAdicionais += `Valor da Causa: R$ ${data.dadosProcesso.valorCausa}\n`;
+        if (data.dadosProcesso.descricao) dadosAdicionais += `Descrição: ${data.dadosProcesso.descricao}\n`;
+        if (data.dadosProcesso.status) dadosAdicionais += `Status: ${data.dadosProcesso.status}\n`;
+      }
+
+      // Adicionar dados das partes processuais
+      if (data.dadosPartes && data.dadosPartes.length > 0) {
+        dadosAdicionais += `\n\nPARTES PROCESSUAIS:\n`;
+
+        const autor = data.dadosPartes.find((p: any) => p.tipoParte === 'AUTOR');
+        const reu = data.dadosPartes.find((p: any) => p.tipoParte === 'REU');
+        const advogado = data.dadosPartes.find((p: any) => p.tipoParte === 'ADVOGADO');
+
+        if (autor) {
+          dadosAdicionais += `\nAUTOR:\n`;
+          dadosAdicionais += `Nome: ${autor.nomeCompleto}\n`;
+          if (autor.cpf) dadosAdicionais += `CPF: ${autor.cpf}\n`;
+          if (autor.rg) dadosAdicionais += `RG: ${autor.rg}${autor.orgaoEmissor ? ` - ${autor.orgaoEmissor}` : ''}\n`;
+          if (autor.nacionalidade) dadosAdicionais += `Nacionalidade: ${autor.nacionalidade}\n`;
+          if (autor.estadoCivil) dadosAdicionais += `Estado Civil: ${autor.estadoCivil}\n`;
+          if (autor.profissao) dadosAdicionais += `Profissão: ${autor.profissao}\n`;
+
+          const enderecoAutor = [];
+          if (autor.logradouro) enderecoAutor.push(autor.logradouro);
+          if (autor.numero) enderecoAutor.push(`nº ${autor.numero}`);
+          if (autor.complemento) enderecoAutor.push(autor.complemento);
+          if (autor.bairro) enderecoAutor.push(autor.bairro);
+          if (autor.cidade) enderecoAutor.push(autor.cidade);
+          if (autor.uf) enderecoAutor.push(autor.uf);
+          if (autor.cep) enderecoAutor.push(`CEP: ${autor.cep}`);
+
+          if (enderecoAutor.length > 0) {
+            dadosAdicionais += `Endereço: ${enderecoAutor.join(', ')}\n`;
+          }
+        }
+
+        if (reu) {
+          dadosAdicionais += `\nRÉU:\n`;
+          dadosAdicionais += `Nome: ${reu.nomeCompleto}\n`;
+
+          if (reu.tipoPessoa === 'FISICA') {
+            if (reu.cpf) dadosAdicionais += `CPF: ${reu.cpf}\n`;
+            if (reu.rg) dadosAdicionais += `RG: ${reu.rg}${reu.orgaoEmissor ? ` - ${reu.orgaoEmissor}` : ''}\n`;
+          } else {
+            if (reu.cnpj) dadosAdicionais += `CNPJ: ${reu.cnpj}\n`;
+            if (reu.razaoSocial) dadosAdicionais += `Razão Social: ${reu.razaoSocial}\n`;
+            if (reu.inscricaoEstadual) dadosAdicionais += `Inscrição Estadual: ${reu.inscricaoEstadual}\n`;
+          }
+
+          const enderecoReu = [];
+          if (reu.logradouro) enderecoReu.push(reu.logradouro);
+          if (reu.numero) enderecoReu.push(`nº ${reu.numero}`);
+          if (reu.complemento) enderecoReu.push(reu.complemento);
+          if (reu.bairro) enderecoReu.push(reu.bairro);
+          if (reu.cidade) enderecoReu.push(reu.cidade);
+          if (reu.uf) enderecoReu.push(reu.uf);
+          if (reu.cep) enderecoReu.push(`CEP: ${reu.cep}`);
+
+          if (enderecoReu.length > 0) {
+            dadosAdicionais += `Endereço: ${enderecoReu.join(', ')}\n`;
+          }
+        }
+
+        if (advogado) {
+          dadosAdicionais += `\nADVOGADO:\n`;
+          dadosAdicionais += `Nome: ${advogado.nomeCompleto}\n`;
+          if (advogado.oab) dadosAdicionais += `OAB: ${advogado.oab}\n`;
+
+          const enderecoAdv = [];
+          if (advogado.logradouro) enderecoAdv.push(advogado.logradouro);
+          if (advogado.numero) enderecoAdv.push(`nº ${advogado.numero}`);
+          if (advogado.complemento) enderecoAdv.push(advogado.complemento);
+          if (advogado.bairro) enderecoAdv.push(advogado.bairro);
+          if (advogado.cidade) enderecoAdv.push(advogado.cidade);
+          if (advogado.uf) enderecoAdv.push(advogado.uf);
+
+          if (enderecoAdv.length > 0) {
+            dadosAdicionais += `Endereço: ${enderecoAdv.join(', ')}\n`;
+          }
         }
       }
 
-      let userPrompt = '';
+      // Template agora é OBRIGATÓRIO
+      const userPrompt = `
+        Elabore um documento jurídico USANDO OBRIGATORIAMENTE o modelo abaixo como base estrutural:
 
-      // Se há template base, usar como referência
-      if (data.templateBase) {
-        userPrompt = `
-        Elabore ${data.tipoPeca.toLowerCase()} usando o seguinte MODELO BASE como referência estrutural:
-
-        === MODELO BASE ===
+        === MODELO BASE (HTML) ===
         ${data.templateBase}
         === FIM DO MODELO BASE ===
 
-        Adapte e complete o modelo acima com base nas seguintes informações específicas:
+        INSTRUÇÕES IMPORTANTES:
+        1. MANTENHA a estrutura HTML do modelo
+        2. SUBSTITUA todas as variáveis {{ }} pelos dados reais fornecidos abaixo
+        3. ENRIQUEÇA o conteúdo com linguagem jurídica apropriada ao tipo de peça: ${data.tipoPeca}
+        4. ADICIONE fundamentação legal quando aplicável
+        5. MANTENHA formatação profissional e técnica
+        6. Se uma variável não tiver dados disponíveis, deixe em branco ou use placeholder apropriado
 
-        CONTEXTO:
-        ${data.contexto}
+        === DADOS PARA SUBSTITUIÇÃO ===
 
         ${dadosAdicionais}
 
+        ${data.contexto ? `
+        CONTEXTO ADICIONAL DO CASO:
+        ${data.contexto}
+        ` : ''}
+
         ${data.partes && data.partes.length > 0 ? `
-        PARTES ENVOLVIDAS:
+        OBSERVAÇÕES SOBRE PARTES (texto livre):
         ${data.partes.join('\n')}
         ` : ''}
 
         ${data.fundamentosLegais ? `
-        FUNDAMENTOS LEGAIS:
+        FUNDAMENTOS LEGAIS A INCLUIR:
         ${data.fundamentosLegais}
         ` : ''}
 
         ${data.pedidos ? `
-        PEDIDOS:
+        PEDIDOS A INCLUIR:
         ${data.pedidos}
         ` : ''}
 
-        IMPORTANTE:
-        - Mantenha a estrutura e o estilo do modelo base
-        - Substitua as variáveis {{ }} pelos dados reais fornecidos
-        - Adapte o conteúdo ao caso específico
-        - Mantenha a formatação profissional e técnica
+        Por favor, gere o documento completo e formatado em HTML, mantendo a estrutura do modelo base e substituindo todas as variáveis pelos dados fornecidos.
       `;
-      } else {
-        userPrompt = `
-        Elabore ${data.tipoPeca.toLowerCase()} com base nas seguintes informações:
-
-        CONTEXTO:
-        ${data.contexto}
-
-        ${dadosAdicionais}
-
-        ${data.partes && data.partes.length > 0 ? `
-        PARTES ENVOLVIDAS:
-        ${data.partes.join('\n')}
-        ` : ''}
-
-        ${data.fundamentosLegais ? `
-        FUNDAMENTOS LEGAIS:
-        ${data.fundamentosLegais}
-        ` : ''}
-
-        ${data.pedidos ? `
-        PEDIDOS:
-        ${data.pedidos}
-        ` : ''}
-
-        Por favor, elabore o documento de forma profissional, técnica e completa.
-        Use formatação adequada com parágrafos, seções e numeração quando apropriado.
-      `;
-      }
 
       const completion = await openai.chat.completions.create({
         model: modelo,

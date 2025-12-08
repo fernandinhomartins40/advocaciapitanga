@@ -76,8 +76,9 @@ model Cliente {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  processos    Processo[]
-  documentosIA DocumentoIA[]
+  processos          Processo[]
+  documentosIA       DocumentoIA[]
+  documentosProcesso DocumentoProcesso[]
 }
 
 model Advogado {
@@ -95,6 +96,7 @@ model Advogado {
   configuracaoIA      ConfiguracaoIA?
   escritoriosAdmin    Escritorio[]       @relation("EscritorioAdmin")
   escritorioVinculado Escritorio?        @relation("EscritorioVinculo", fields: [escritorioId], references: [id], onDelete: SetNull)
+  documentosProcesso  DocumentoProcesso[]
 }
 
 model Escritorio {
@@ -192,6 +194,7 @@ model Processo {
   consultasProjudi  ConsultaProjudi[]
   descricao         String? @db.Text
   documentosHistorico DocumentHistory[]
+  documentosProcesso  DocumentoProcesso[]
 }
 
 model ParteProcessual {
@@ -336,7 +339,8 @@ model DocumentTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  documentos Documento[]
+  documentos          Documento[]
+  documentosProcesso  DocumentoProcesso[]
 }
 
 model DocumentHistory {
@@ -452,6 +456,33 @@ model ConfiguracaoIA {
   rodape       String?  @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model DocumentoProcesso {
+  id              String   @id @default(cuid())
+  processoId      String
+  processo        Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  clienteId       String
+  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  advogadoId      String
+  advogado        Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+
+  templateId      String?
+  template        DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  titulo          String
+  conteudoHTML    String   @db.Text
+
+  // Metadados
+  versao          Int      @default(1)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([processoId])
+  @@index([clienteId])
+  @@index([advogadoId])
+  @@index([createdAt])
 }
 
 model ConsultaProjudi {
