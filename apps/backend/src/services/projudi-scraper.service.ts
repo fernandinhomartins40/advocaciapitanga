@@ -475,8 +475,8 @@ export class ProjudiScraperService {
     const agora = Date.now();
     const umDiaAtras = agora - 24 * 60 * 60 * 1000;
 
-    for (const [userId, timestamp] of this.consultas.entries()) {
-      if (timestamp < umDiaAtras) {
+    for (const [userId, registro] of this.consultas.entries()) {
+      if (registro.janelaInicio < umDiaAtras) {
         this.consultas.delete(userId);
       }
     }
