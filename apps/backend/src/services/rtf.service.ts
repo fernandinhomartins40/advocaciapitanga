@@ -1,3 +1,4 @@
+import { convert } from 'html-to-text';
 import fs from 'fs';
 import path from 'path';
 
@@ -7,7 +8,7 @@ export interface RTFOptions {
 }
 
 export class RTFService {
-  async gerarRTF(conteudo: string, titulo: string, options?: RTFOptions): Promise<string> {
+  async gerarRTF(conteudoHTML: string, titulo: string, options?: RTFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
     // Criar diretório se não existir
@@ -17,6 +18,16 @@ export class RTFService {
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.rtf`;
     const filepath = path.join(uploadsDir, filename);
+
+    // Converter HTML para texto limpo
+    const conteudoTexto = convert(conteudoHTML, {
+      wordwrap: false,
+      preserveNewlines: true,
+      selectors: [
+        { selector: 'a', options: { ignoreHref: true } },
+        { selector: 'img', format: 'skip' }
+      ]
+    });
 
     // Escapar caracteres especiais para RTF
     const escapeRTF = (text: string): string => {
@@ -60,8 +71,8 @@ export class RTFService {
     // Título do documento
     rtfContent += '\\pard\\qc\\b\\f0\\fs28 ' + escapeRTF(titulo) + '\\b0\\fs24\\par\\par\n';
 
-    // Conteúdo principal
-    rtfContent += '\\pard\\qj\\f1\\fs24 ' + escapeRTF(conteudo) + '\\par\\par\n';
+    // Conteúdo principal (já convertido de HTML)
+    rtfContent += '\\pard\\qj\\f1\\fs24 ' + escapeRTF(conteudoTexto) + '\\par\\par\n';
 
     // Timestamp
     const dataHora = new Date().toLocaleString('pt-BR');

@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+import puppeteer from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,7 +8,7 @@ export interface PDFOptions {
 }
 
 export class PDFService {
-  async gerarPDF(conteudo: string, titulo: string, options?: PDFOptions): Promise<string> {
+  async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
     // Criar diretório se não existir
@@ -19,95 +19,151 @@ export class PDFService {
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.pdf`;
     const filepath = path.join(uploadsDir, filename);
 
-    return new Promise((resolve, reject) => {
-      try {
-        const doc = new PDFDocument({
-          size: 'A4',
-          margins: {
-            top: options?.cabecalho ? 100 : 72,
-            bottom: options?.rodape ? 100 : 72,
-            left: 72,
-            right: 72
-          }
-        });
+    let browser;
+    try {
+      // Montar HTML completo com estilos
+      const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
 
-        const stream = fs.createWriteStream(filepath);
+      // Iniciar puppeteer
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
 
-        doc.pipe(stream);
+      const page = await browser.newPage();
 
-        // Cabeçalho personalizado ou padrão
-        if (options?.cabecalho) {
-          doc.fontSize(10)
-            .font('Helvetica')
-            .text(options.cabecalho, 72, 40, {
-              align: 'center',
-              width: doc.page.width - 144
-            })
-            .moveDown(0.5);
-        } else {
-          doc.fontSize(16)
-            .font('Helvetica-Bold')
-            .text('Advocacia Pitanga', { align: 'center' })
-            .moveDown(0.5);
-        }
+      // Carregar HTML
+      await page.setContent(htmlCompleto, { waitUntil: 'networkidle0' });
 
-        doc.fontSize(14)
-          .font('Helvetica-Bold')
-          .text(titulo, { align: 'center' })
-          .moveDown(2);
+      // Gerar PDF
+      await page.pdf({
+        path: filepath,
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '2cm',
+          right: '2cm',
+          bottom: '2cm',
+          left: '2cm'
+        },
+        displayHeaderFooter: true,
+        headerTemplate: this.montarCabecalho(options),
+        footerTemplate: this.montarRodape(options)
+      });
 
-        // Conteúdo
-        doc.fontSize(12)
-          .font('Helvetica')
-          .text(conteudo, {
-            align: 'justify',
-            lineGap: 5
-          });
-
-        // Rodapé personalizado ou padrão
-        const pages = doc.bufferedPageRange();
-        for (let i = 0; i < pages.count; i++) {
-          doc.switchToPage(i);
-
-          if (options?.rodape) {
-            doc.fontSize(9)
-              .font('Helvetica')
-              .text(
-                options.rodape,
-                72,
-                doc.page.height - 80,
-                {
-                  align: 'center',
-                  width: doc.page.width - 144
-                }
-              );
-          }
-
-          // Número da página sempre no final
-          doc.fontSize(9)
-            .text(
-              `Página ${i + 1} de ${pages.count}`,
-              72,
-              doc.page.height - 50,
-              {
-                align: 'center',
-                width: doc.page.width - 144
-              }
-            );
-        }
-
-        doc.end();
-
-        stream.on('finish', () => {
-          resolve(filepath);
-        });
-
-        stream.on('error', (err) => {
-          reject(err);
-        });
-      } catch (error) {
-        reject(error);
+      await browser.close();
+      return filepath;
+    } catch (error) {
+      if (browser) {
+        await browser.close();
       }
-    });
+      throw error;
+    }
+  }
+
+  private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            @page {
+              size: A4;
+              margin: 2cm;
+            }
+            body {
+              font-family: 'Times New Roman', Times, serif;
+              font-size: 12pt;
+              line-height: 1.5;
+              color: #000;
+              margin: 0;
+              padding: 20px 0;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              font-family: Arial, sans-serif;
+              margin-top: 1.5em;
+              margin-bottom: 0.75em;
+              font-weight: bold;
+            }
+            h1 {
+              font-size: 18pt;
+              text-align: center;
+              margin-bottom: 1.5em;
+            }
+            h2 { font-size: 16pt; }
+            h3 { font-size: 14pt; }
+            p {
+              margin: 0.5em 0;
+              text-align: justify;
+            }
+            ul, ol {
+              margin: 0.5em 0;
+              padding-left: 2em;
+            }
+            li {
+              margin: 0.25em 0;
+            }
+            strong, b {
+              font-weight: bold;
+            }
+            em, i {
+              font-style: italic;
+            }
+            u {
+              text-decoration: underline;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 1em 0;
+            }
+            table, th, td {
+              border: 1px solid #000;
+            }
+            th, td {
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+            .titulo-principal {
+              text-align: center;
+              font-size: 18pt;
+              font-weight: bold;
+              margin-bottom: 2em;
+              margin-top: 1em;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="titulo-principal">${titulo}</div>
+          ${conteudo}
+        </body>
+      </html>
+    `;
+  }
+
+  private montarCabecalho(options?: PDFOptions): string {
+    const cabecalhoTexto = options?.cabecalho || 'Advocacia Pitanga';
+    return `
+      <div style="width: 100%; font-size: 9pt; text-align: center; padding: 10px 0; border-bottom: 1px solid #ccc;">
+        ${cabecalhoTexto}
+      </div>
+    `;
+  }
+
+  private montarRodape(options?: PDFOptions): string {
+    const rodapeTexto = options?.rodape || '';
+    return `
+      <div style="width: 100%; font-size: 9pt; text-align: center; padding: 10px 40px;">
+        ${rodapeTexto ? `<div style="margin-bottom: 5px;">${rodapeTexto}</div>` : ''}
+        <div>
+          Página <span class="pageNumber"></span> de <span class="totalPages"></span>
+        </div>
+      </div>
+    `;
   }
 }

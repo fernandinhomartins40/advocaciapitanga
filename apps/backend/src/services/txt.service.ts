@@ -1,3 +1,4 @@
+import { convert } from 'html-to-text';
 import fs from 'fs';
 import path from 'path';
 
@@ -7,7 +8,7 @@ export interface TXTOptions {
 }
 
 export class TXTService {
-  async gerarTXT(conteudo: string, titulo: string, options?: TXTOptions): Promise<string> {
+  async gerarTXT(conteudoHTML: string, titulo: string, options?: TXTOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
     // Criar diretório se não existir
@@ -17,6 +18,16 @@ export class TXTService {
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.txt`;
     const filepath = path.join(uploadsDir, filename);
+
+    // Converter HTML para texto limpo
+    const conteudoTexto = convert(conteudoHTML, {
+      wordwrap: 80,
+      preserveNewlines: true,
+      selectors: [
+        { selector: 'a', options: { ignoreHref: true } },
+        { selector: 'img', format: 'skip' }
+      ]
+    });
 
     let conteudoCompleto = '';
 
@@ -33,8 +44,8 @@ export class TXTService {
     conteudoCompleto += titulo.toUpperCase() + '\n';
     conteudoCompleto += '-'.repeat(80) + '\n\n';
 
-    // Conteúdo principal
-    conteudoCompleto += conteudo + '\n\n';
+    // Conteúdo principal (já convertido de HTML)
+    conteudoCompleto += conteudoTexto + '\n\n';
 
     // Rodapé
     if (options?.rodape) {

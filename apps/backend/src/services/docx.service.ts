@@ -1,4 +1,5 @@
 import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, Header, Footer, PageNumber } from 'docx';
+import { convert } from 'html-to-text';
 import fs from 'fs';
 import path from 'path';
 
@@ -8,7 +9,7 @@ export interface DOCXOptions {
 }
 
 export class DOCXService {
-  async gerarDOCX(conteudo: string, titulo: string, options?: DOCXOptions): Promise<string> {
+  async gerarDOCX(conteudoHTML: string, titulo: string, options?: DOCXOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
     if (!fs.existsSync(uploadsDir)) {
@@ -18,8 +19,18 @@ export class DOCXService {
     const filename = `${Date.now()}-${titulo}.docx`;
     const filepath = path.join(uploadsDir, filename);
 
+    // Converter HTML para texto formatado
+    const conteudoTexto = convert(conteudoHTML, {
+      wordwrap: false,
+      preserveNewlines: true,
+      selectors: [
+        { selector: 'a', options: { ignoreHref: true } },
+        { selector: 'img', format: 'skip' }
+      ]
+    });
+
     // Dividir o conteúdo em parágrafos
-    const paragrafos = conteudo.split('\n').filter(line => line.trim() !== '');
+    const paragrafos = conteudoTexto.split('\n').filter(line => line.trim() !== '');
 
     // Preparar cabeçalho
     const cabecalhoChildren = [];
