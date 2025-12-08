@@ -21,6 +21,7 @@ import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
 import { ListaPartes } from '@/components/processos/ListaPartes';
+import { DocumentosGerados } from '@/components/processos/DocumentosGerados';
 import { useQueryClient } from '@tanstack/react-query';
 import { ModalCaptchaProjudi } from '@/components/processos/ModalCaptchaProjudi';
 import {
@@ -561,6 +562,9 @@ export default function ProcessoDetalhesPage() {
           <TabsTrigger value="documentos">
             Documentos ({processo.documentos?.length || 0})
           </TabsTrigger>
+          <TabsTrigger value="documentos-gerados">
+            Documentos Gerados ({processo.documentosProcesso?.length || 0})
+          </TabsTrigger>
           <TabsTrigger value="mensagens">
             Mensagens ({processo.mensagens?.length || 0})
           </TabsTrigger>
@@ -760,6 +764,13 @@ export default function ProcessoDetalhesPage() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="documentos-gerados">
+          <DocumentosGerados
+            processoId={id}
+            documentos={processo.documentosProcesso || []}
+          />
         </TabsContent>
 
         <TabsContent value="mensagens">

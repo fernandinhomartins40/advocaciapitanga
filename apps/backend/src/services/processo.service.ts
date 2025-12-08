@@ -92,6 +92,17 @@ export class ProcessoService {
         },
         partes: {
           orderBy: { createdAt: 'asc' }
+        },
+        documentosProcesso: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            template: {
+              select: {
+                id: true,
+                nome: true,
+              }
+            }
+          }
         }
       }
     });
