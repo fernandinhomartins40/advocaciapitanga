@@ -451,8 +451,8 @@ export default function ProcessoDetalhesPage() {
    * Decide qual método usar automaticamente
    */
   const handleAtualizarProcesso = async () => {
-    // Se API está habilitada, usa API
-    if (projudiStatus?.api?.enabled) {
+    // Se API está habilitada e disponível, usa API; senão cai para scraping assistido
+    if (projudiStatus?.api?.enabled && projudiStatus.api.disponivel) {
       await handleAtualizarAPI();
     } else {
       // Caso contrário, usa scraping assistido

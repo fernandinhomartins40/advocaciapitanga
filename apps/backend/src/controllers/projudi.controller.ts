@@ -51,11 +51,13 @@ export class ProjudiController {
       const { id } = req.params;
       const userId = req.user!.userId;
 
-      // Buscar processo
-      const processo = await processoService.getById(id, userId, req.user!.role);
-
-      if (!processo) {
-        return res.status(404).json({ error: 'Processo não encontrado' });
+      // Buscar processo com tratamento de erros controlado
+      let processo;
+      try {
+        processo = await processoService.getById(id, userId, req.user!.role);
+      } catch (err: any) {
+        if (this.handleProcessoErro(err, res)) return;
+        throw err;
       }
 
       // Validar se é processo do Paraná
@@ -101,11 +103,19 @@ export class ProjudiController {
         });
       }
 
-      // Buscar processo
-      const processo = await processoService.getById(id, userId, req.user!.role);
+      // Buscar processo com tratamento de erros controlado
+      let processo;
+      try {
+        processo = await processoService.getById(id, userId, req.user!.role);
+      } catch (err: any) {
+        if (this.handleProcessoErro(err, res)) return;
+        throw err;
+      }
 
-      if (!processo) {
-        return res.status(404).json({ error: 'Processo não encontrado' });
+      if (processo.uf !== 'PR') {
+        return res.status(400).json({
+          error: 'Consulta PROJUDI disponível apenas para processos do Paraná (PR)'
+        });
       }
 
       // Consultar PROJUDI com CAPTCHA
@@ -152,8 +162,8 @@ export class ProjudiController {
           cpf: parte.cpf || null
         }));
 
-        // Nota: Aqui você pode decidir se quer sobrescrever ou apenas adicionar partes
-        // Por segurança, vamos apenas adicionar novas partes não existentes
+        // Sobrescreve partes para refletir fielmente o PROJUDI
+        await processoService.updatePartes(id, partesMapeadas);
       }
 
       // Registrar sucesso
@@ -202,11 +212,13 @@ export class ProjudiController {
         });
       }
 
-      // Buscar processo
-      const processo = await processoService.getById(id, userId, req.user!.role);
-
-      if (!processo) {
-        return res.status(404).json({ error: 'Processo não encontrado' });
+      // Buscar processo com tratamento de erros controlado
+      let processo;
+      try {
+        processo = await processoService.getById(id, userId, req.user!.role);
+      } catch (err: any) {
+        if (this.handleProcessoErro(err, res)) return;
+        throw err;
       }
 
       // Validar se é processo do Paraná
@@ -274,7 +286,13 @@ export class ProjudiController {
         });
       }
 
-      const processo = await processoService.getById(id, userId, req.user!.role);
+      let processo;
+      try {
+        processo = await processoService.getById(id, userId, req.user!.role);
+      } catch (err: any) {
+        if (this.handleProcessoErro(err, res)) return;
+        throw err;
+      }
 
       if (!processo || processo.uf !== 'PR') {
         return res.status(400).json({
@@ -294,12 +312,15 @@ export class ProjudiController {
    * Mapeia tipo de parte do PROJUDI para enum do sistema
    */
   private mapearTipoParte(tipo: string): string {
-    const tipoUpper = tipo.toUpperCase();
+    const tipoUpper = tipo
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
 
     if (tipoUpper.includes('AUTOR') || tipoUpper.includes('REQUERENTE') || tipoUpper.includes('ATIVO')) {
       return 'AUTOR';
     }
-    if (tipoUpper.includes('RÉU') || tipoUpper.includes('REU') || tipoUpper.includes('REQUERIDO') || tipoUpper.includes('PASSIVO')) {
+    if (tipoUpper.includes('REU') || tipoUpper.includes('REQUERIDO') || tipoUpper.includes('PASSIVO')) {
       return 'REU';
     }
     if (tipoUpper.includes('TERCEIRO')) {
@@ -317,8 +338,8 @@ export class ProjudiController {
    */
   async testarConfiguracao(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      // Apenas admins podem testar
-      if (req.user!.role !== 'ADVOGADO') {
+      // Apenas advogados/admins podem testar
+      if (req.user!.role !== 'ADVOGADO' && req.user!.role !== 'ADMIN') {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
@@ -334,5 +355,18 @@ export class ProjudiController {
     } catch (error: any) {
       next(error);
     }
+  }
+
+  private handleProcessoErro(err: any, res: Response): boolean {
+    const mensagem = (err?.message || '').toLowerCase();
+    if (mensagem.includes('processo') && mensagem.includes('encontr')) {
+      res.status(404).json({ error: 'Processo não encontrado' });
+      return true;
+    }
+    if (mensagem.includes('acesso negado')) {
+      res.status(403).json({ error: 'Acesso negado' });
+      return true;
+    }
+    return false;
   }
 }

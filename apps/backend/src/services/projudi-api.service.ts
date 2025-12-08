@@ -286,7 +286,6 @@ export class ProjudiApiService {
         dados.comarca = dadosMNI.orgaoJulgador.comarca;
       }
       if (dadosMNI.orgaoJulgador.nome) {
-        // Tentar extrair vara do nome
         dados.vara = dadosMNI.orgaoJulgador.nome;
       }
       if (dadosMNI.orgaoJulgador.instancia) {
@@ -324,12 +323,12 @@ export class ProjudiApiService {
   private mapearPolo(polo?: string): string {
     if (!polo) return 'TERCEIRO_INTERESSADO';
 
-    const poloUpper = polo.toUpperCase();
+    const poloUpper = this.normalizarTexto(polo);
 
     if (poloUpper.includes('ATIVO') || poloUpper.includes('AUTOR') || poloUpper.includes('REQUERENTE')) {
       return 'AUTOR';
     }
-    if (poloUpper.includes('PASSIVO') || poloUpper.includes('RÉU') || poloUpper.includes('REU') || poloUpper.includes('REQUERIDO')) {
+    if (poloUpper.includes('PASSIVO') || poloUpper.includes('REU') || poloUpper.includes('REQUERIDO')) {
       return 'REU';
     }
 
@@ -358,6 +357,16 @@ export class ProjudiApiService {
     }
 
     return 'PRIMEIRA';
+  }
+
+  /**
+   * Normaliza texto removendo acentos para comparações
+   */
+  private normalizarTexto(texto: string): string {
+    return texto
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
   }
 
   /**

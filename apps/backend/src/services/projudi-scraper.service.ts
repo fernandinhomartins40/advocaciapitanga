@@ -8,6 +8,12 @@ interface SessionData {
   numeroProcesso: string;
 }
 
+interface ConsultaRegistro {
+  ultimaConsulta: number;
+  janelaInicio: number;
+  totalJanela: number;
+}
+
 interface DadosProcessoProjudi {
   numero?: string;
   comarca?: string;
@@ -30,7 +36,7 @@ interface DadosProcessoProjudi {
 
 export class ProjudiScraperService {
   private sessions: Map<string, SessionData>;
-  private consultas: Map<string, number>;
+  private consultas: Map<string, ConsultaRegistro>;
   private readonly SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutos
   private readonly DELAY_ENTRE_CONSULTAS = 5000; // 5 segundos
   private readonly MAX_CONSULTAS_DIA = 50;
@@ -56,24 +62,35 @@ export class ProjudiScraperService {
    * Valida uso responsável (rate limiting)
    */
   private validarUsoResponsavel(userId: string): void {
-    const ultimaConsulta = this.consultas.get(userId);
     const agora = Date.now();
+    const janela24h = 24 * 60 * 60 * 1000;
 
-    if (ultimaConsulta && agora - ultimaConsulta < this.DELAY_ENTRE_CONSULTAS) {
-      const tempoRestante = Math.ceil((this.DELAY_ENTRE_CONSULTAS - (agora - ultimaConsulta)) / 1000);
+    const registroAtual = this.consultas.get(userId) || {
+      ultimaConsulta: 0,
+      janelaInicio: agora,
+      totalJanela: 0
+    };
+
+    // Delay entre chamadas
+    if (registroAtual.ultimaConsulta && agora - registroAtual.ultimaConsulta < this.DELAY_ENTRE_CONSULTAS) {
+      const tempoRestante = Math.ceil((this.DELAY_ENTRE_CONSULTAS - (agora - registroAtual.ultimaConsulta)) / 1000);
       throw new Error(`Aguarde ${tempoRestante} segundos antes de fazer nova consulta`);
     }
 
-    // Verificar limite diário (simplificado - seria melhor usar Redis)
-    const consultasHoje = Array.from(this.consultas.entries())
-      .filter(([_, timestamp]) => agora - timestamp < 24 * 60 * 60 * 1000)
-      .length;
+    // Reset janela se passou 24h
+    if (agora - registroAtual.janelaInicio > janela24h) {
+      registroAtual.janelaInicio = agora;
+      registroAtual.totalJanela = 0;
+    }
 
-    if (consultasHoje >= this.MAX_CONSULTAS_DIA) {
+    if (registroAtual.totalJanela >= this.MAX_CONSULTAS_DIA) {
       throw new Error('Limite diário de consultas atingido');
     }
 
-    this.consultas.set(userId, agora);
+    registroAtual.totalJanela += 1;
+    registroAtual.ultimaConsulta = agora;
+
+    this.consultas.set(userId, registroAtual);
   }
 
   /**
@@ -86,6 +103,32 @@ export class ProjudiScraperService {
         this.sessions.delete(sessionId);
       }
     }
+
+    // Limpa histórico de consultas com janela expirada (mantém mapas enxutos)
+    for (const [userId, registro] of this.consultas.entries()) {
+      if (agora - registro.janelaInicio > 2 * 24 * 60 * 60 * 1000) {
+        this.consultas.delete(userId);
+      }
+    }
+  }
+
+  /**
+   * Resolve caminho executável do Chromium/Puppeteer considerando ambientes distintos
+   */
+  private getExecutablePath(): string | undefined {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      return process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    if (typeof (puppeteer as any).executablePath === 'function') {
+      try {
+        return (puppeteer as any).executablePath();
+      } catch {
+        return undefined;
+      }
+    }
+
+    return undefined;
   }
 
   /**
@@ -106,10 +149,12 @@ export class ProjudiScraperService {
     let browser: Browser | null = null;
 
     try {
+      const executablePath = this.getExecutablePath();
+
       // Iniciar browser headless
       browser = await puppeteer.launch({
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
@@ -206,9 +251,11 @@ export class ProjudiScraperService {
     let browser: Browser | null = null;
 
     try {
+      const executablePath = this.getExecutablePath();
+
       browser = await puppeteer.launch({
         headless: true,
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
