@@ -266,7 +266,7 @@ export function AdvancedRichTextEditor({
             {/* Cor do texto */}
             <div className="relative">
               <ToolbarButton
-                icon={({ className }) => (
+                icon={({ className }: { className: string }) => (
                   <div className={className}>
                     <div>A</div>
                     <div className="h-1 w-full bg-current mt-0.5"></div>
