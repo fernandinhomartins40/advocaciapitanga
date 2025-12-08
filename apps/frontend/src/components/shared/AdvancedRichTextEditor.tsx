@@ -458,6 +458,8 @@ interface ToolbarButtonProps {
 }
 
 function ToolbarButton({ icon: Icon, onClick, isActive, disabled, title }: ToolbarButtonProps) {
+  const isReactComponent = typeof Icon === 'function' && Icon.length === 0;
+
   return (
     <Button
       type="button"
@@ -468,8 +470,10 @@ function ToolbarButton({ icon: Icon, onClick, isActive, disabled, title }: Toolb
       className={`h-8 w-8 p-0 ${isActive ? 'bg-primary-100 text-primary-700' : ''}`}
       title={title}
     >
-      {typeof Icon === 'function' ? (
+      {isReactComponent ? (
         <Icon className="h-4 w-4" />
+      ) : typeof Icon === 'function' ? (
+        Icon({ className: 'h-4 w-4' })
       ) : (
         <Icon className="h-4 w-4" />
       )}
