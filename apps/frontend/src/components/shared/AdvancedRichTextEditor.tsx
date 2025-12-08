@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -457,9 +458,7 @@ interface ToolbarButtonProps {
   title: string;
 }
 
-function ToolbarButton({ icon: Icon, onClick, isActive, disabled, title }: ToolbarButtonProps) {
-  const isReactComponent = typeof Icon === 'function' && Icon.length === 0;
-
+function ToolbarButton({ icon, onClick, isActive, disabled, title }: ToolbarButtonProps) {
   return (
     <Button
       type="button"
@@ -470,13 +469,9 @@ function ToolbarButton({ icon: Icon, onClick, isActive, disabled, title }: Toolb
       className={`h-8 w-8 p-0 ${isActive ? 'bg-primary-100 text-primary-700' : ''}`}
       title={title}
     >
-      {isReactComponent ? (
-        <Icon className="h-4 w-4" />
-      ) : typeof Icon === 'function' ? (
-        Icon({ className: 'h-4 w-4' })
-      ) : (
-        <Icon className="h-4 w-4" />
-      )}
+      {typeof icon === 'function' && 'length' in icon && icon.length > 0
+        ? icon({ className: 'h-4 w-4' })
+        : React.createElement(icon as any, { className: 'h-4 w-4' })}
     </Button>
   );
 }
