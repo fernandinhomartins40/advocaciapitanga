@@ -13,7 +13,7 @@ import SelectCliente from '@/components/advogado/SelectCliente';
 import SelectProcesso from '@/components/advogado/SelectProcesso';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 
 type Modelo = {
@@ -41,6 +41,7 @@ export default function IAJuridicaPage() {
   const [documentoId, setDocumentoId] = useState(''); // ID do documento salvo
   const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const { data: modelos } = useQuery({
     queryKey: ['documentos', 'modelos'],
@@ -139,6 +140,10 @@ export default function IAJuridicaPage() {
       });
 
       setDocumentoId(response.data.id);
+
+      // Invalidar a query do processo para atualizar a lista de documentos
+      queryClient.invalidateQueries({ queryKey: ['processo', processoId] });
+
       toast({
         title: 'Sucesso',
         description: 'Documento salvo com sucesso! Agora você pode exportar.',
