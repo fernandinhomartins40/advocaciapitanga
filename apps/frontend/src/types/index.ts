@@ -177,9 +177,24 @@ export interface Processo {
   advogado: Advogado & { user: { nome: string } };
   documentos?: Documento[];
   mensagens?: Mensagem[];
+  partes?: any[];
+  documentosProcesso?: DocumentoProcesso[];
   _count?: {
     documentos: number;
     mensagens: number;
+  };
+}
+
+export interface DocumentoProcesso {
+  id: string;
+  titulo: string;
+  conteudoHTML: string;
+  versao: number;
+  createdAt: string;
+  updatedAt: string;
+  template?: {
+    id: string;
+    nome: string;
   };
 }
 
