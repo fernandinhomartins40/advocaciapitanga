@@ -37,7 +37,7 @@ export function Sidebar() {
       </div>
 
       {/* Menu */}
-      <nav className="flex-1 overflow-y-auto p-4">
+      <nav className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-primary-700 scrollbar-track-primary-900 hover:scrollbar-thumb-primary-600">
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
