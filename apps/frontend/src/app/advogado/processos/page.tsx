@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Check, AlertCircle } from 'lucide-react';
-import { useProcessos, useCreateProcesso } from '@/hooks/useProcessos';
+import { Plus, FileText, Check, AlertCircle, Trash2 } from 'lucide-react';
+import { useProcessos, useCreateProcesso, useDeleteProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate } from '@/lib/utils';
@@ -98,6 +98,7 @@ export default function ProcessosPage() {
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
   const createMutation = useCreateProcesso();
+  const deleteMutation = useDeleteProcesso();
   const { toast } = useToast();
 
   // FASE 1.4: Reset correto do formulário quando modal fechar
@@ -218,6 +219,19 @@ export default function ProcessosPage() {
     setFormData({ ...formData, partes: novasPartes });
   };
 
+  const handleDeleteProcesso = async (id: string, numero: string) => {
+    if (!window.confirm(`Tem certeza que deseja deletar o processo ${numero}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      await deleteMutation.mutateAsync(id);
+      toast({ title: 'Sucesso', description: 'Processo deletado com sucesso', variant: 'success' });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.response?.data?.error || 'Erro ao deletar processo', variant: 'error' });
+    }
+  };
+
   // FASE 3.1: Debounce para formatação de moeda
   const debounce = <T extends (...args: any[]) => any>(func: T, wait: number) => {
     let timeout: NodeJS.Timeout;
@@ -322,9 +336,23 @@ export default function ProcessosPage() {
               <CardHeader>
                 <div className="flex items-start justify-between">
                   <FileText className="h-8 w-8 text-primary-600" />
-                  <Badge variant={statusColors[processo.status]}>
-                    {processo.status.replace('_', ' ')}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={statusColors[processo.status]}>
+                      {processo.status.replace('_', ' ')}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDeleteProcesso(processo.id, processo.numero);
+                      }}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      title="Deletar processo"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
                 <CardTitle className="mt-4 text-lg">{processo.numero}</CardTitle>
               </CardHeader>
