@@ -463,7 +463,7 @@ ref) {
       </div>
     </div>
   );
-}
+});
 
 // Componente auxiliar para botões da toolbar
 interface ToolbarButtonProps {
