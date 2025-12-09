@@ -50,12 +50,44 @@ export class ProjudiScraperService {
   }
 
   /**
+   * Normaliza o número do processo para o formato CNJ
+   * Remove caracteres não numéricos e adiciona formatação
+   */
+  private normalizarNumeroProcesso(numero: string): string {
+    // Remove tudo exceto dígitos
+    const apenasNumeros = numero.replace(/\D/g, '');
+
+    // Verifica se tem 20 dígitos (formato CNJ)
+    if (apenasNumeros.length !== 20) {
+      throw new Error('Número do processo deve conter exatamente 20 dígitos');
+    }
+
+    // Formata: NNNNNNN-DD.AAAA.J.TT.OOOO
+    return `${apenasNumeros.slice(0, 7)}-${apenasNumeros.slice(7, 9)}.${apenasNumeros.slice(9, 13)}.${apenasNumeros.slice(13, 14)}.${apenasNumeros.slice(14, 16)}.${apenasNumeros.slice(16, 20)}`;
+  }
+
+  /**
    * Valida formato CNJ do número do processo
    */
   validarNumeroProcesso(numero: string): boolean {
+    // Remove tudo exceto dígitos para validar
+    const apenasNumeros = numero.replace(/\D/g, '');
+
+    // Deve ter exatamente 20 dígitos
+    if (apenasNumeros.length !== 20) {
+      return false;
+    }
+
     // Formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
     const regexCNJ = /^\d{7}-\d{2}\.\d{4}\.\d{1}\.\d{2}\.\d{4}$/;
-    return regexCNJ.test(numero);
+
+    // Tenta normalizar e validar
+    try {
+      const numeroFormatado = this.normalizarNumeroProcesso(numero);
+      return regexCNJ.test(numeroFormatado);
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -144,6 +176,9 @@ export class ProjudiScraperService {
       throw new Error('Número de processo inválido. Use o formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO');
     }
 
+    // Normaliza o número do processo para o formato CNJ correto
+    const numeroFormatado = this.normalizarNumeroProcesso(numeroProcesso);
+
     this.validarUsoResponsavel(userId);
 
     let browser: Browser | null = null;
@@ -205,11 +240,11 @@ export class ProjudiScraperService {
       // Gerar ID único da sessão
       const sessionId = uuidv4();
 
-      // Armazenar sessão
+      // Armazenar sessão com o número formatado
       this.sessions.set(sessionId, {
         cookies,
         timestamp: Date.now(),
-        numeroProcesso
+        numeroProcesso: numeroFormatado
       });
 
       await browser.close();
@@ -217,7 +252,7 @@ export class ProjudiScraperService {
       return {
         sessionId,
         captchaImage: `data:image/png;base64,${captchaBase64}`,
-        numeroProcesso
+        numeroProcesso: numeroFormatado
       };
     } catch (error: any) {
       if (browser) {
@@ -291,7 +326,7 @@ export class ProjudiScraperService {
         waitUntil: 'networkidle2'
       });
 
-      // Preencher formulário
+      // Preencher formulário - usa o número normalizado
       await page.waitForSelector('#numeroProcesso');
       await page.type('#numeroProcesso', session.numeroProcesso);
 
