@@ -222,8 +222,8 @@ export function ConviteMembroDialog({ open, onOpenChange, onSuccess }: ConviteMe
                   id="oab"
                   value={formData.oab}
                   onChange={(e) => setFormData({ ...formData, oab: e.target.value.toUpperCase() })}
-                  placeholder="SP123456"
-                  maxLength={8}
+                  placeholder="Ex: SP123456"
+                  maxLength={10}
                   required
                 />
               </div>

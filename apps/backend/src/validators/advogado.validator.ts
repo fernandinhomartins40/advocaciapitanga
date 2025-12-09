@@ -15,8 +15,8 @@ export const updateProfileValidator = [
     .isString()
     .withMessage('OAB deve ser uma string')
     .trim()
-    .matches(/^[A-Z]{2}\d{6}$/)
-    .withMessage('OAB deve estar no formato: UF seguido de 6 dígitos (ex: SP123456)'),
+    .matches(/^[A-Z]{2}\d{4,8}$/)
+    .withMessage('OAB deve estar no formato: UF seguido de 4 a 8 dígitos (ex: SP123456)'),
 
   body('telefone')
     .optional()

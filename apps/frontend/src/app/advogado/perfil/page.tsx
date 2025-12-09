@@ -65,18 +65,18 @@ export default function PerfilPage() {
     }
   };
 
-  // Validação de formato de OAB (UF + 6 dígitos)
+  // Validação de formato de OAB (UF + 4-8 dígitos)
   const formatOAB = (value: string) => {
     // Remove tudo que não é letra ou número
     const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-    // Limita a 8 caracteres (2 letras + 6 números)
+    // Limita a 10 caracteres (2 letras + até 8 números)
     if (cleaned.length <= 2) {
       return cleaned;
     }
 
     const uf = cleaned.slice(0, 2);
-    const numbers = cleaned.slice(2, 8);
+    const numbers = cleaned.slice(2, 10);
 
     return `${uf}${numbers}`;
   };
@@ -99,12 +99,12 @@ export default function PerfilPage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validação de OAB
-    const oabRegex = /^[A-Z]{2}\d{6}$/;
+    // Validação de OAB (UF + 4 a 8 dígitos)
+    const oabRegex = /^[A-Z]{2}\d{4,8}$/;
     if (!oabRegex.test(profile.oab)) {
       toast({
         title: 'Erro',
-        description: 'OAB inválida. Use o formato: UF123456 (ex: SP123456)',
+        description: 'OAB inválida. Use o formato: UF seguido de 4 a 8 dígitos (ex: SP123456)',
         variant: 'error'
       });
       return;
@@ -250,11 +250,11 @@ export default function PerfilPage() {
                 id="oab"
                 value={profile.oab}
                 onChange={(e) => setProfile({ ...profile, oab: formatOAB(e.target.value) })}
-                placeholder="SP123456"
-                maxLength={8}
+                placeholder="Ex: SP123456"
+                maxLength={10}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Formato: UF seguido de 6 dígitos (ex: SP123456)</p>
+              <p className="text-xs text-gray-500 mt-1">Formato: UF seguido de 4 a 8 dígitos (ex: SP123456)</p>
             </div>
             <div>
               <Label htmlFor="telefone">Telefone</Label>

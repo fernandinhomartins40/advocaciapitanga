@@ -171,10 +171,11 @@ export default function RegisterPage() {
                   id="oab"
                   name="oab"
                   type="text"
-                  placeholder="OAB/UF 000000"
+                  placeholder="Ex: SP123456"
                   value={formData.oab}
                   onChange={handleChange}
                   required
+                  maxLength={10}
                 />
               </div>
             )}
