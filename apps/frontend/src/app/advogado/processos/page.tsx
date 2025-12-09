@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
 import { ListaPartes } from '@/components/processos/ListaPartes';
+import { usePartesExistentes } from '@/hooks/usePartes';
 
 interface ProcessoFormData {
   numero: string;
@@ -97,6 +98,7 @@ export default function ProcessosPage() {
 
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
+  const { data: partesData } = usePartesExistentes();
   const createMutation = useCreateProcesso();
   const deleteMutation = useDeleteProcesso();
   const { toast } = useToast();
@@ -786,6 +788,8 @@ export default function ProcessosPage() {
         onOpenChange={setIsParteModalOpen}
         onSave={handleAddParte}
         parteEdit={parteEditIndex !== null ? formData.partes[parteEditIndex] : undefined}
+        clientes={clientesData?.clientes || []}
+        partesExistentes={partesData?.partes || []}
       />
     </div>
   );

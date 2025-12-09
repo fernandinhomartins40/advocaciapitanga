@@ -359,6 +359,7 @@ export class ProcessoService {
       await prisma.parteProcessual.createMany({
         data: partes.map((parte: any) => ({
           processoId,
+          clienteId: parte.clienteId || null,
           tipoParte: parte.tipoParte,
           tipoPessoa: parte.tipoPessoa,
           nomeCompleto: parte.nomeCompleto,

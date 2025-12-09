@@ -22,6 +22,7 @@ import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
 import { ListaPartes } from '@/components/processos/ListaPartes';
 import { DocumentosGerados } from '@/components/processos/DocumentosGerados';
+import { usePartesExistentes } from '@/hooks/usePartes';
 import { useQueryClient } from '@tanstack/react-query';
 import { ModalCaptchaProjudi } from '@/components/processos/ModalCaptchaProjudi';
 import {
@@ -69,6 +70,7 @@ export default function ProcessoDetalhesPage() {
   const id = params.id as string;
   const { data: processo, isLoading } = useProcesso(id);
   const { data: clientesData } = useClientes({ limit: 100 });
+  const { data: partesData } = usePartesExistentes();
   const updateMutation = useUpdateProcesso();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -1173,6 +1175,8 @@ export default function ProcessoDetalhesPage() {
         onOpenChange={setIsParteModalOpen}
         onSave={handleAddParte}
         parteEdit={parteEditIndex !== null ? (formData.partes || [])[parteEditIndex] : undefined}
+        clientes={clientesData?.clientes || []}
+        partesExistentes={partesData?.partes || []}
       />
 
       {/* Modal CAPTCHA PROJUDI */}

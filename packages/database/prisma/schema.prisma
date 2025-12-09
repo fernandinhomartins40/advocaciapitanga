@@ -20,10 +20,10 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  cliente          Cliente?
-  advogado         Advogado?
-  auditLogs        AuditLog[]
-  membroEscritorio MembroEscritorio?
+  cliente             Cliente?
+  advogado            Advogado?
+  auditLogs           AuditLog[]
+  membroEscritorio    MembroEscritorio?
   documentosHistorico DocumentHistory[]
 }
 
@@ -36,24 +36,24 @@ enum Role {
 }
 
 model Cliente {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Tipo de pessoa
   tipoPessoa TipoPessoa @default(FISICA)
 
   // Pessoa Física
-  cpf            String?   @unique
+  cpf            String?      @unique
   rg             String?
   orgaoEmissor   String?
-  nacionalidade  String?   @default("Brasileiro(a)")
+  nacionalidade  String?      @default("Brasileiro(a)")
   estadoCivil    EstadoCivil?
   profissao      String?
   dataNascimento DateTime?
 
   // Pessoa Jurídica
-  cnpj               String?   @unique
+  cnpj               String? @unique
   razaoSocial        String?
   nomeFantasia       String?
   inscricaoEstadual  String?
@@ -79,6 +79,7 @@ model Cliente {
   processos          Processo[]
   documentosIA       DocumentoIA[]
   documentosProcesso DocumentoProcesso[]
+  partesProcessuais  ParteProcessual[]
 }
 
 model Advogado {
@@ -94,9 +95,10 @@ model Advogado {
   processos           Processo[]
   documentosIA        DocumentoIA[]
   configuracaoIA      ConfiguracaoIA?
-  escritoriosAdmin    Escritorio[]       @relation("EscritorioAdmin")
-  escritorioVinculado Escritorio?        @relation("EscritorioVinculo", fields: [escritorioId], references: [id], onDelete: SetNull)
+  escritoriosAdmin    Escritorio[]        @relation("EscritorioAdmin")
+  escritorioVinculado Escritorio?         @relation("EscritorioVinculo", fields: [escritorioId], references: [id], onDelete: SetNull)
   documentosProcesso  DocumentoProcesso[]
+  processosVinculados ProcessoAdvogado[]
 }
 
 model Escritorio {
@@ -109,18 +111,18 @@ model Escritorio {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  membros    MembroEscritorio[]
-  advogados  Advogado[]         @relation("EscritorioVinculo")
+  membros   MembroEscritorio[]
+  advogados Advogado[]         @relation("EscritorioVinculo")
 
   @@index([adminId])
 }
 
 model MembroEscritorio {
-  id             String    @id @default(cuid())
-  escritorioId   String
-  escritorio     Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
-  userId         String    @unique
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String     @id @default(cuid())
+  escritorioId String
+  escritorio   Escritorio @relation(fields: [escritorioId], references: [id], onDelete: Cascade)
+  userId       String     @unique
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Permissões individuais
   gerenciarUsuarios          Boolean @default(false)
@@ -134,13 +136,13 @@ model MembroEscritorio {
   visualizarRelatorios       Boolean @default(false)
   exportarDados              Boolean @default(false)
 
-  ativo          Boolean   @default(true)
-  dataConvite    DateTime  @default(now())
-  dataAceitacao  DateTime?
-  convidadoPor   String?
+  ativo         Boolean   @default(true)
+  dataConvite   DateTime  @default(now())
+  dataAceitacao DateTime?
+  convidadoPor  String?
 
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([escritorioId])
   @@index([userId])
@@ -187,20 +189,25 @@ model Processo {
   updatedAt DateTime @updatedAt
 
   // Relações
-  partes            ParteProcessual[]
-  documentos        Documento[]
-  mensagens         Mensagem[]
-  documentosIA      DocumentoIA[]
-  consultasProjudi  ConsultaProjudi[]
-  descricao         String? @db.Text
+  partes              ParteProcessual[]
+  documentos          Documento[]
+  mensagens           Mensagem[]
+  documentosIA        DocumentoIA[]
+  consultasProjudi    ConsultaProjudi[]
+  descricao           String?             @db.Text
   documentosHistorico DocumentHistory[]
   documentosProcesso  DocumentoProcesso[]
+  advogadosVinculados ProcessoAdvogado[]
 }
 
 model ParteProcessual {
   id         String   @id @default(cuid())
   processoId String
   processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  // Vinculação com Cliente (opcional - se for um cliente cadastrado)
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id], onDelete: SetNull)
 
   // Tipo e posição
   tipoParte  TipoParte
@@ -243,6 +250,27 @@ model ParteProcessual {
 
   @@index([processoId])
   @@index([tipoParte])
+  @@index([clienteId])
+}
+
+model ProcessoAdvogado {
+  id         String        @id @default(cuid())
+  processoId String
+  processo   Processo      @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  advogadoId String
+  advogado   Advogado      @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  papel      PapelAdvogado @default(ASSISTENTE)
+  createdAt  DateTime      @default(now())
+
+  @@unique([processoId, advogadoId])
+  @@index([processoId])
+  @@index([advogadoId])
+}
+
+enum PapelAdvogado {
+  RESPONSAVEL
+  ASSISTENTE
+  ESTAGIARIO
 }
 
 enum StatusProcesso {
@@ -306,55 +334,55 @@ model Documento {
   createdAt  DateTime @default(now())
 
   // Biblioteca de documentos
-  folderId    String?
-  folder      DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  templateId  String?
-  template    DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
-  status      DocumentStatus @default(DRAFT)
-  conteudo    String?   @db.Text
-  descricao   String?
-  historico   DocumentHistory[]
+  folderId   String?
+  folder     DocumentFolder?   @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  templateId String?
+  template   DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  status     DocumentStatus    @default(DRAFT)
+  conteudo   String?           @db.Text
+  descricao  String?
+  historico  DocumentHistory[]
 }
 
 model DocumentFolder {
-  id        String   @id @default(cuid())
+  id        String           @id @default(cuid())
   nome      String
   parentId  String?
-  parent    DocumentFolder? @relation("FolderChildren", fields: [parentId], references: [id], onDelete: SetNull)
+  parent    DocumentFolder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: SetNull)
   children  DocumentFolder[] @relation("FolderChildren")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
-  templates DocumentTemplate[]
+  templates  DocumentTemplate[]
   documentos Documento[]
 }
 
 model DocumentTemplate {
-  id          String   @id @default(cuid())
-  nome        String
-  descricao   String?
-  conteudo    String   @db.Text
-  folderId    String?
-  folder      DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String          @id @default(cuid())
+  nome      String
+  descricao String?
+  conteudo  String          @db.Text
+  folderId  String?
+  folder    DocumentFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
-  documentos          Documento[]
-  documentosProcesso  DocumentoProcesso[]
+  documentos         Documento[]
+  documentosProcesso DocumentoProcesso[]
 }
 
 model DocumentHistory {
-  id          String          @id @default(cuid())
+  id          String         @id @default(cuid())
   documentoId String
-  documento   Documento       @relation(fields: [documentoId], references: [id], onDelete: Cascade)
+  documento   Documento      @relation(fields: [documentoId], references: [id], onDelete: Cascade)
   processoId  String
-  processo    Processo        @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  processo    Processo       @relation(fields: [processoId], references: [id], onDelete: Cascade)
   userId      String
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   acao        DocumentAction
   status      DocumentStatus
-  detalhe     String?         @db.Text
-  createdAt   DateTime        @default(now())
+  detalhe     String?        @db.Text
+  createdAt   DateTime       @default(now())
 
   @@index([documentoId])
   @@index([processoId])
@@ -459,25 +487,25 @@ model ConfiguracaoIA {
 }
 
 model DocumentoProcesso {
-  id              String   @id @default(cuid())
-  processoId      String
-  processo        Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
-  clienteId       String
-  cliente         Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  advogadoId      String
-  advogado        Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  clienteId  String
+  cliente    Cliente  @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  advogadoId String
+  advogado   Advogado @relation(fields: [advogadoId], references: [id], onDelete: Cascade)
 
-  templateId      String?
-  template        DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  templateId String?
+  template   DocumentTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
 
-  titulo          String
-  conteudoHTML    String   @db.Text
+  titulo       String
+  conteudoHTML String @db.Text
 
   // Metadados
-  versao          Int      @default(1)
+  versao Int @default(1)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([processoId])
   @@index([clienteId])
@@ -486,19 +514,19 @@ model DocumentoProcesso {
 }
 
 model ConsultaProjudi {
-  id             String   @id @default(cuid())
-  processoId     String
-  processo       Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  processoId String
+  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
 
   metodo         MetodoConsulta
   status         StatusConsulta
   dadosExtraidos Json?
   erroMensagem   String?
 
-  userId         String
-  ipAddress      String?
+  userId    String
+  ipAddress String?
 
-  createdAt      DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([processoId])
   @@index([userId])

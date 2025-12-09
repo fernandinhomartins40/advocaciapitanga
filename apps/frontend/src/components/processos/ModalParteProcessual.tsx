@@ -9,6 +9,7 @@ import { SelectNative as Select } from '@/components/ui/select-native';
 
 export interface ParteProcessualData {
   id?: string;
+  clienteId?: string;
   tipoParte: 'AUTOR' | 'REU' | 'TERCEIRO_INTERESSADO' | 'ASSISTENTE' | 'DENUNCIADO_LIDE' | 'CHAMADO_PROCESSO';
   tipoPessoa: 'FISICA' | 'JURIDICA';
 
@@ -50,6 +51,8 @@ interface ModalParteProcessualProps {
   onOpenChange: (open: boolean) => void;
   onSave: (parte: ParteProcessualData) => void;
   parteEdit?: ParteProcessualData;
+  clientes?: any[];
+  partesExistentes?: ParteProcessualData[];
 }
 
 const INITIAL_STATE: ParteProcessualData = {
@@ -59,17 +62,62 @@ const INITIAL_STATE: ParteProcessualData = {
   nacionalidade: 'Brasileiro(a)',
 };
 
-export function ModalParteProcessual({ open, onOpenChange, onSave, parteEdit }: ModalParteProcessualProps) {
+export function ModalParteProcessual({ open, onOpenChange, onSave, parteEdit, clientes = [], partesExistentes = [] }: ModalParteProcessualProps) {
   const [formData, setFormData] = useState<ParteProcessualData>(INITIAL_STATE);
   const [loadingCep, setLoadingCep] = useState(false);
+  const [modoSelecao, setModoSelecao] = useState<'novo' | 'cliente' | 'parte'>('novo');
 
   useEffect(() => {
     if (parteEdit) {
       setFormData(parteEdit);
+      setModoSelecao('novo');
     } else {
       setFormData(INITIAL_STATE);
+      setModoSelecao('novo');
     }
   }, [parteEdit, open]);
+
+  const handleSelecionarCliente = (clienteId: string) => {
+    const cliente = clientes.find(c => c.id === clienteId);
+    if (cliente) {
+      setFormData({
+        ...formData,
+        clienteId: cliente.id,
+        tipoPessoa: cliente.tipoPessoa || 'FISICA',
+        nomeCompleto: cliente.user?.nome || '',
+        cpf: cliente.cpf || '',
+        rg: cliente.rg || '',
+        orgaoEmissor: cliente.orgaoEmissor || '',
+        nacionalidade: cliente.nacionalidade || 'Brasileiro(a)',
+        estadoCivil: cliente.estadoCivil || undefined,
+        profissao: cliente.profissao || '',
+        dataNascimento: cliente.dataNascimento || '',
+        razaoSocial: cliente.razaoSocial || '',
+        nomeFantasia: cliente.nomeFantasia || '',
+        cnpj: cliente.cnpj || '',
+        inscricaoEstadual: cliente.inscricaoEstadual || '',
+        representanteLegal: cliente.representanteLegal || '',
+        cargoRepresentante: cliente.cargoRepresentante || '',
+        email: cliente.user?.email || '',
+        telefone: cliente.telefone || '',
+        celular: cliente.celular || '',
+        cep: cliente.cep || '',
+        logradouro: cliente.logradouro || '',
+        numero: cliente.numero || '',
+        complemento: cliente.complemento || '',
+        bairro: cliente.bairro || '',
+        cidade: cliente.cidade || '',
+        uf: cliente.uf || '',
+      });
+    }
+  };
+
+  const handleSelecionarParte = (parteId: string) => {
+    const parte = partesExistentes.find(p => p.id === parteId);
+    if (parte) {
+      setFormData({ ...parte, id: undefined });
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,6 +209,107 @@ export function ModalParteProcessual({ open, onOpenChange, onSave, parteEdit }: 
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Modo de Seleção */}
+          {!parteEdit && (
+            <div className="space-y-2">
+              <Label>Como deseja adicionar a parte?</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <label
+                  className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    modoSelecao === 'novo'
+                      ? 'border-primary-600 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modoSelecao"
+                    value="novo"
+                    checked={modoSelecao === 'novo'}
+                    onChange={() => {
+                      setModoSelecao('novo');
+                      setFormData(INITIAL_STATE);
+                    }}
+                    className="text-primary-600"
+                  />
+                  <span className="text-sm font-medium">Nova Parte</span>
+                </label>
+                <label
+                  className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    modoSelecao === 'cliente'
+                      ? 'border-primary-600 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modoSelecao"
+                    value="cliente"
+                    checked={modoSelecao === 'cliente'}
+                    onChange={() => setModoSelecao('cliente')}
+                    className="text-primary-600"
+                  />
+                  <span className="text-sm font-medium">Cliente Cadastrado</span>
+                </label>
+                <label
+                  className={`flex items-center space-x-2 border rounded-lg p-3 cursor-pointer transition-colors ${
+                    modoSelecao === 'parte'
+                      ? 'border-primary-600 bg-primary-50'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="modoSelecao"
+                    value="parte"
+                    checked={modoSelecao === 'parte'}
+                    onChange={() => setModoSelecao('parte')}
+                    className="text-primary-600"
+                  />
+                  <span className="text-sm font-medium">Parte Existente</span>
+                </label>
+              </div>
+            </div>
+          )}
+
+          {/* Seleção de Cliente */}
+          {modoSelecao === 'cliente' && !parteEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="clienteSelect">Selecionar Cliente *</Label>
+              <Select
+                id="clienteSelect"
+                onChange={(e) => handleSelecionarCliente(e.target.value)}
+                required
+              >
+                <option value="">Selecione um cliente</option>
+                {clientes.map((cliente: any) => (
+                  <option key={cliente.id} value={cliente.id}>
+                    {cliente.user?.nome} {cliente.cpf ? `- CPF: ${cliente.cpf}` : ''} {cliente.cnpj ? `- CNPJ: ${cliente.cnpj}` : ''}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
+          {/* Seleção de Parte Existente */}
+          {modoSelecao === 'parte' && !parteEdit && (
+            <div className="space-y-2">
+              <Label htmlFor="parteSelect">Selecionar Parte *</Label>
+              <Select
+                id="parteSelect"
+                onChange={(e) => handleSelecionarParte(e.target.value)}
+                required
+              >
+                <option value="">Selecione uma parte</option>
+                {partesExistentes.map((parte: any) => (
+                  <option key={parte.id} value={parte.id}>
+                    {parte.nomeCompleto} - {parte.tipoParte} ({parte.tipoPessoa === 'FISICA' ? 'Pessoa Física' : 'Pessoa Jurídica'})
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           {/* Tipo de Parte */}
           <div className="space-y-2">
             <Label>Tipo de Parte *</Label>
