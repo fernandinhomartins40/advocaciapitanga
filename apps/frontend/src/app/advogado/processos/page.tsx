@@ -276,13 +276,13 @@ export default function ProcessosPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 lg:space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Processos</h1>
-          <p className="text-gray-500">Gerencie todos os processos</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Processos</h1>
+          <p className="text-sm lg:text-base text-gray-500">Gerencie todos os processos</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)}>
+        <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo Processo
         </Button>
@@ -291,34 +291,39 @@ export default function ProcessosPage() {
       {/* Filtros */}
       <Card>
         <CardContent className="pt-6">
-          <div className="flex gap-4">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             <Button
               variant={!statusFilter ? 'default' : 'outline'}
               onClick={() => setStatusFilter('')}
+              className="whitespace-nowrap"
             >
               Todos
             </Button>
             <Button
               variant={statusFilter === 'EM_ANDAMENTO' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('EM_ANDAMENTO')}
+              className="whitespace-nowrap"
             >
               Em Andamento
             </Button>
             <Button
               variant={statusFilter === 'SUSPENSO' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('SUSPENSO')}
+              className="whitespace-nowrap"
             >
               Suspensos
             </Button>
             <Button
               variant={statusFilter === 'CONCLUIDO' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('CONCLUIDO')}
+              className="whitespace-nowrap"
             >
               Concluídos
             </Button>
             <Button
               variant={statusFilter === 'ARQUIVADO' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('ARQUIVADO')}
+              className="whitespace-nowrap"
             >
               Arquivados
             </Button>
@@ -330,14 +335,14 @@ export default function ProcessosPage() {
       {isLoading ? (
         <LoadingSpinner />
       ) : data?.processos?.length > 0 ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {data.processos.map((processo: any) => (
             <Card key={processo.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <FileText className="h-8 w-8 text-primary-600" />
-                  <div className="flex items-center gap-2">
-                    <Badge variant={statusColors[processo.status]}>
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                  <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 flex-shrink-0" />
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                    <Badge variant={statusColors[processo.status]} className="text-xs">
                       {processo.status.replace('_', ' ')}
                     </Badge>
                     <Button
@@ -347,34 +352,34 @@ export default function ProcessosPage() {
                         e.preventDefault();
                         handleDeleteProcesso(processo.id, processo.numero);
                       }}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="h-7 w-7 sm:h-8 sm:w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                       title="Deletar processo"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     </Button>
                   </div>
                 </div>
-                <CardTitle className="mt-4 text-lg">{processo.numero}</CardTitle>
+                <CardTitle className="mt-3 text-base sm:text-lg break-all">{processo.numero}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div>
+              <CardContent className="pt-3">
+                <div className="space-y-2 text-xs sm:text-sm">
+                  <div className="truncate">
                     <span className="font-semibold">Cliente:</span>{' '}
-                    {processo.cliente.user.nome}
+                    <span className="text-gray-700">{processo.cliente.user.nome}</span>
                   </div>
                   <div>
                     <span className="font-semibold">Início:</span>{' '}
-                    {formatDate(processo.dataInicio)}
+                    <span className="text-gray-700">{formatDate(processo.dataInicio)}</span>
                   </div>
-                  <p className="text-gray-600 line-clamp-2 mt-2">{processo.objetoAcao || processo.descricao}</p>
-                  <div className="flex gap-2 text-xs text-gray-500 mt-3">
-                    <span>📄 {processo._count?.documentos || 0} docs</span>
-                    <span>💬 {processo._count?.mensagens || 0} msgs</span>
-                    <span>👥 {processo._count?.partes || 0} partes</span>
+                  <p className="text-gray-600 line-clamp-2 mt-2 text-xs sm:text-sm">{processo.objetoAcao || processo.descricao}</p>
+                  <div className="flex flex-wrap gap-2 text-[10px] sm:text-xs text-gray-500 mt-3">
+                    <span className="whitespace-nowrap">📄 {processo._count?.documentos || 0} docs</span>
+                    <span className="whitespace-nowrap">💬 {processo._count?.mensagens || 0} msgs</span>
+                    <span className="whitespace-nowrap">👥 {processo._count?.partes || 0} partes</span>
                   </div>
                 </div>
-                <Link href={`/advogado/processos/${processo.id}`} className="block mt-4">
-                  <Button variant="outline" className="w-full">
+                <Link href={`/advogado/processos/${processo.id}`} className="block mt-3 sm:mt-4">
+                  <Button variant="outline" className="w-full text-sm">
                     Ver Detalhes
                   </Button>
                 </Link>
