@@ -11,31 +11,41 @@ export class PDFService {
   async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
+    console.log('[PDF] Iniciando geração de PDF:', { titulo, uploadsDir });
+
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
+      console.log('[PDF] Criando diretório:', uploadsDir);
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.pdf`;
     const filepath = path.join(uploadsDir, filename);
 
+    console.log('[PDF] Arquivo será salvo em:', filepath);
+
     let browser;
     try {
       // Montar HTML completo com estilos
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
+      console.log('[PDF] HTML montado, tamanho:', htmlCompleto.length, 'caracteres');
 
       // Iniciar puppeteer
+      console.log('[PDF] Iniciando Puppeteer...');
       browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
 
+      console.log('[PDF] Puppeteer iniciado, criando nova página...');
       const page = await browser.newPage();
 
       // Carregar HTML
+      console.log('[PDF] Carregando HTML na página...');
       await page.setContent(htmlCompleto, { waitUntil: 'networkidle0' });
 
       // Gerar PDF
+      console.log('[PDF] Gerando PDF...');
       await page.pdf({
         path: filepath,
         format: 'A4',
@@ -51,9 +61,12 @@ export class PDFService {
         footerTemplate: this.montarRodape(options)
       });
 
+      console.log('[PDF] PDF gerado com sucesso');
       await browser.close();
+      console.log('[PDF] Browser fechado');
       return filepath;
     } catch (error) {
+      console.error('[PDF] Erro ao gerar PDF:', error);
       if (browser) {
         await browser.close();
       }

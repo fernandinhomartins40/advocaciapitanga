@@ -265,6 +265,8 @@ export class DocumentoProcessoController {
       const { formato } = req.body; // pdf, docx, txt, rtf
       const userId = req.user!.userId;
 
+      console.log('[EXPORT] Iniciando exportação:', { id, formato, userId });
+
       if (!formato || !['pdf', 'docx', 'txt', 'rtf'].includes(formato)) {
         return res.status(400).json({ error: 'Formato inválido. Use: pdf, docx, txt ou rtf' });
       }
@@ -280,8 +282,11 @@ export class DocumentoProcessoController {
       });
 
       if (!advogado) {
+        console.error('[EXPORT] Advogado não encontrado para userId:', userId);
         return res.status(403).json({ error: 'Acesso negado' });
       }
+
+      console.log('[EXPORT] Advogado encontrado:', advogado.id);
 
       // Buscar documento
       const documento = await prisma.documentoProcesso.findFirst({
@@ -292,8 +297,11 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
+        console.error('[EXPORT] Documento não encontrado:', { id, advogadoId: advogado.id });
         return res.status(404).json({ error: 'Documento não encontrado' });
       }
+
+      console.log('[EXPORT] Documento encontrado:', documento.titulo);
 
       const options = advogado.configuracaoIA ? {
         cabecalho: advogado.configuracaoIA.cabecalho || undefined,
@@ -301,6 +309,8 @@ export class DocumentoProcessoController {
       } : undefined;
 
       let filepath: string;
+
+      console.log('[EXPORT] Gerando arquivo no formato:', formato);
 
       switch (formato) {
         case 'pdf':
@@ -319,15 +329,25 @@ export class DocumentoProcessoController {
           return res.status(400).json({ error: 'Formato não suportado' });
       }
 
+      console.log('[EXPORT] Arquivo gerado com sucesso:', filepath);
+
       res.download(filepath, `${documento.titulo}.${formato}`, (err) => {
         if (err) {
-          console.error('Erro ao enviar arquivo:', err);
+          console.error('[EXPORT] Erro ao enviar arquivo:', err);
+        } else {
+          console.log('[EXPORT] Arquivo enviado com sucesso');
         }
         // Deletar arquivo após download
         const fs = require('fs');
-        fs.unlinkSync(filepath);
+        try {
+          fs.unlinkSync(filepath);
+          console.log('[EXPORT] Arquivo temporário deletado');
+        } catch (deleteErr) {
+          console.error('[EXPORT] Erro ao deletar arquivo temporário:', deleteErr);
+        }
       });
     } catch (error: any) {
+      console.error('[EXPORT] Erro ao exportar documento:', error);
       next(error);
     }
   }

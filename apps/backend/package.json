@@ -39,7 +39,7 @@
     "node-cron": "^3.0.3",
     "openai": "^4.20.0",
     "pdfkit": "^0.13.0",
-    "puppeteer": "^24.31.0",
+    "puppeteer": "^24.32.1",
     "soap": "^1.6.0",
     "tough-cookie": "^6.0.0",
     "tsx": "^4.0.0",
