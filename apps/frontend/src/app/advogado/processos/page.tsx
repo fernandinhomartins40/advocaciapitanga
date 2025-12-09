@@ -14,7 +14,7 @@ import { Plus, FileText, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { useProcessos, useCreateProcesso, useDeleteProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
-import { formatDate } from '@/lib/utils';
+import { formatDate, maskProcessoCNJ, validarProcessoCNJ } from '@/lib/utils';
 import Link from 'next/link';
 import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
@@ -117,7 +117,7 @@ export default function ProcessosPage() {
 
   const validateTabs = () => {
     const validation: Record<string, boolean> = {
-      basico: !!(formData.numero && formData.clienteId && formData.tipoAcao && formData.areaDireito),
+      basico: !!(formData.numero && validarProcessoCNJ(formData.numero) && formData.clienteId && formData.tipoAcao && formData.areaDireito),
       localizacao: !!(formData.justica && formData.instancia && formData.uf),
       partes: true, // Validação de partes será feita separadamente
       informacoes: !!formData.objetoAcao,
@@ -143,6 +143,17 @@ export default function ProcessosPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validação do número do processo
+    if (!validarProcessoCNJ(formData.numero)) {
+      toast({
+        title: 'Número inválido',
+        description: 'O número do processo deve conter exatamente 20 dígitos no formato CNJ',
+        variant: 'error'
+      });
+      setCurrentTab('basico');
+      return;
+    }
 
     // Validações dos campos obrigatórios
     const camposObrigatorios = [
@@ -441,11 +452,20 @@ export default function ProcessosPage() {
                   <Input
                     id="numero"
                     value={formData.numero}
-                    onChange={(e) => setFormData({ ...formData, numero: e.target.value })}
+                    onChange={(e) => {
+                      const masked = maskProcessoCNJ(e.target.value);
+                      setFormData({ ...formData, numero: masked });
+                    }}
                     placeholder="0000000-00.0000.0.00.0000"
+                    maxLength={25}
                     required
                     aria-required="true"
                   />
+                  {formData.numero && !validarProcessoCNJ(formData.numero) && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Número deve conter exatamente 20 dígitos no formato CNJ
+                    </p>
+                  )}
                 </div>
 
                 <div>

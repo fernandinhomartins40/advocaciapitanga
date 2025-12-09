@@ -68,6 +68,18 @@ export class ProcessoController {
     try {
       const userId = req.user!.userId;
 
+      // Validar formato CNJ do número do processo
+      if (req.body.numero) {
+        const numeroLimpo = req.body.numero.replace(/\D/g, '');
+        if (numeroLimpo.length !== 20) {
+          return res.status(400).json({
+            error: 'Número do processo inválido. Deve conter exatamente 20 dígitos no formato CNJ.'
+          });
+        }
+        // Normaliza para formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
+        req.body.numero = `${numeroLimpo.slice(0, 7)}-${numeroLimpo.slice(7, 9)}.${numeroLimpo.slice(9, 13)}.${numeroLimpo.slice(13, 14)}.${numeroLimpo.slice(14, 16)}.${numeroLimpo.slice(16, 20)}`;
+      }
+
       // Buscar advogadoId do usuário logado
       const { prisma } = await import('database');
 
@@ -93,6 +105,19 @@ export class ProcessoController {
   async update(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;
+
+      // Validar formato CNJ do número do processo se estiver sendo atualizado
+      if (req.body.numero) {
+        const numeroLimpo = req.body.numero.replace(/\D/g, '');
+        if (numeroLimpo.length !== 20) {
+          return res.status(400).json({
+            error: 'Número do processo inválido. Deve conter exatamente 20 dígitos no formato CNJ.'
+          });
+        }
+        // Normaliza para formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
+        req.body.numero = `${numeroLimpo.slice(0, 7)}-${numeroLimpo.slice(7, 9)}.${numeroLimpo.slice(9, 13)}.${numeroLimpo.slice(13, 14)}.${numeroLimpo.slice(14, 16)}.${numeroLimpo.slice(16, 20)}`;
+      }
+
       const processo = await processoService.update(id, req.body);
       res.json(processo);
     } catch (error) {
