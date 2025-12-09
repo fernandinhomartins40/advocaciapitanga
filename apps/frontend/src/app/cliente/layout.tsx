@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { ClienteSidebar } from '@/components/cliente/Sidebar';
+import { ClienteMobileNav } from '@/components/cliente/MobileNav';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export default function ClienteLayout({ children }: { children: React.ReactNode }) {
@@ -31,11 +32,12 @@ export default function ClienteLayout({ children }: { children: React.ReactNode 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <ClienteSidebar />
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto p-8">
+      <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <div className="container mx-auto p-4 lg:p-8">
           {children}
         </div>
       </main>
+      <ClienteMobileNav />
     </div>
   );
 }

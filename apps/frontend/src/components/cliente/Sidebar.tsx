@@ -18,7 +18,7 @@ export function ClienteSidebar() {
   const { logout, user } = useAuth();
 
   return (
-    <div className="flex h-screen w-64 flex-col bg-primary-900 text-white">
+    <div className="hidden lg:flex h-screen w-64 flex-col bg-primary-900 text-white">
       <div className="flex items-center gap-2 p-6 border-b border-primary-800">
         <Scale className="h-8 w-8" />
         <span className="text-xl font-bold">Advocacia Pitanga</span>
