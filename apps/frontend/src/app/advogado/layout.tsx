@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Sidebar } from '@/components/advogado/Sidebar';
 import { MobileNav } from '@/components/advogado/MobileNav';
+import { MobileHeader } from '@/components/advogado/MobileHeader';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 export default function AdvogadoLayout({ children }: { children: React.ReactNode }) {
@@ -32,7 +33,8 @@ export default function AdvogadoLayout({ children }: { children: React.ReactNode
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+      <MobileHeader />
+      <main className="flex-1 overflow-y-auto pt-16 pb-20 lg:pt-0 lg:pb-0">
         <div className="container mx-auto p-4 lg:p-8">
           {children}
         </div>
