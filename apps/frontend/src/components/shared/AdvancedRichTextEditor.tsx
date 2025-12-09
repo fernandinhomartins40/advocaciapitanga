@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
@@ -47,7 +47,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
 
 interface AdvancedRichTextEditorProps {
   content: string;
@@ -57,13 +56,20 @@ interface AdvancedRichTextEditorProps {
   minHeight?: string;
 }
 
-export function AdvancedRichTextEditor({
+export type AdvancedRichTextEditorHandle = {
+  insertContent: (content: string) => void;
+  focus: () => void;
+};
+
+export const AdvancedRichTextEditor = forwardRef<AdvancedRichTextEditorHandle, AdvancedRichTextEditorProps>(function AdvancedRichTextEditor(
+{
   content,
   onChange,
   placeholder = 'Digite aqui...',
   editable = true,
   minHeight = '400px',
-}: AdvancedRichTextEditorProps) {
+}: AdvancedRichTextEditorProps,
+ref) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showHighlightPicker, setShowHighlightPicker] = useState(false);
 
@@ -119,6 +125,16 @@ export function AdvancedRichTextEditor({
       }
     },
   });
+
+  useImperativeHandle(ref, () => ({
+    insertContent: (value: string) => {
+      if (!editor) return;
+      editor.chain().focus().insertContent(value).run();
+    },
+    focus: () => {
+      editor?.commands.focus();
+    },
+  }), [editor]);
 
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {

@@ -43,6 +43,45 @@ const upload = multer({
 export const uploadMiddleware = upload.single('arquivo');
 
 export class DocumentoController {
+  private formatDate(date?: Date | string | null) {
+    if (!date) return '';
+    try {
+      return new Date(date).toLocaleDateString('pt-BR');
+    } catch {
+      return '';
+    }
+  }
+
+  private formatCurrency(value?: any) {
+    if (value === null || value === undefined) return '';
+    const numericValue = typeof value === 'string' ? parseFloat(value) : Number(value);
+    if (Number.isNaN(numericValue)) return '';
+    return numericValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  }
+
+  private formatAddress(data?: {
+    logradouro?: string | null;
+    numero?: string | null;
+    complemento?: string | null;
+    bairro?: string | null;
+    cidade?: string | null;
+    uf?: string | null;
+    cep?: string | null;
+  }) {
+    if (!data) return '';
+    const { logradouro, numero, complemento, bairro, cidade, uf, cep } = data;
+    return [
+      [logradouro, numero].filter(Boolean).join(', '),
+      complemento,
+      bairro,
+      cidade,
+      uf,
+      cep,
+    ]
+      .filter(Boolean)
+      .join(' - ');
+  }
+
   private async registrarHistorico(params: {
     documentoId: string;
     processoId: string;
@@ -93,20 +132,113 @@ export class DocumentoController {
     const advogado = processo.advogado;
     const reu = processo.partes.find((p) => p.tipoParte === 'REU');
 
+    const autor = processo.partes.find((p) => p.tipoParte === 'AUTOR');
+
+    const formatParteEndereco = (parte?: (typeof processo.partes)[number]) =>
+      this.formatAddress({
+        logradouro: parte?.logradouro,
+        numero: parte?.numero,
+        complemento: parte?.complemento,
+        bairro: parte?.bairro,
+        cidade: parte?.cidade,
+        uf: parte?.uf,
+        cep: parte?.cep,
+      });
+
+    const partesResumo = processo.partes
+      .map((parte) => {
+        const nome = parte.nomeCompleto || parte.razaoSocial || '';
+        const tipo = parte.tipoParte || '';
+        return `${tipo}: ${nome}`;
+      })
+      .filter(Boolean)
+      .join(' | ');
+
     return {
       processo_numero: processo.numero,
       descricao_processo: processo.descricao || '',
+      processo_tipo_acao: processo.tipoAcao || '',
+      processo_area_direito: processo.areaDireito || '',
+      processo_justica: processo.justica || '',
+      processo_instancia: processo.instancia || '',
+      processo_comarca: processo.comarca || '',
+      processo_foro: processo.foro || '',
+      processo_vara: processo.vara || '',
+      processo_uf: processo.uf || '',
+      processo_objeto_acao: processo.objetoAcao || '',
+      processo_pedido_principal: processo.pedidoPrincipal || '',
+      processo_valor_causa: this.formatCurrency(processo.valorCausa),
+      processo_valor_honorarios: this.formatCurrency(processo.valorHonorarios),
+      processo_data_distribuicao: this.formatDate(processo.dataDistribuicao),
+      processo_data_inicio: this.formatDate(processo.dataInicio),
+      processo_proximo_prazo: this.formatDate(processo.proximoPrazo),
+      processo_descricao_prazo: processo.descricaoPrazo || '',
+      processo_status: processo.status || '',
+      processo_prioridade: processo.prioridade || '',
+      processo_observacoes: processo.observacoes || '',
+
       cliente_nome: cliente?.user?.nome || '',
+      cliente_email: cliente?.user?.email || '',
       cliente_cpf: cliente?.cpf || '',
-      cliente_endereco: cliente?.logradouro ? `${cliente.logradouro}, ${cliente.numero || ''} - ${cliente.bairro || ''}` : '',
+      cliente_rg: cliente?.rg || '',
+      cliente_orgao_emissor: cliente?.orgaoEmissor || '',
+      cliente_nacionalidade: cliente?.nacionalidade || '',
+      cliente_estado_civil: cliente?.estadoCivil || '',
+      cliente_profissao: cliente?.profissao || '',
+      cliente_data_nascimento: this.formatDate(cliente?.dataNascimento),
+      cliente_tipo_pessoa: cliente?.tipoPessoa || '',
+      cliente_cnpj: cliente?.cnpj || '',
+      cliente_razao_social: cliente?.razaoSocial || '',
+      cliente_nome_fantasia: cliente?.nomeFantasia || '',
+      cliente_inscricao_estadual: cliente?.inscricaoEstadual || '',
+      cliente_representante_legal: cliente?.representanteLegal || '',
+      cliente_cargo_representante: cliente?.cargoRepresentante || '',
+      cliente_telefone: cliente?.telefone || '',
+      cliente_celular: cliente?.celular || '',
+      cliente_cep: cliente?.cep || '',
+      cliente_logradouro: cliente?.logradouro || '',
+      cliente_numero: cliente?.numero || '',
+      cliente_complemento: cliente?.complemento || '',
+      cliente_bairro: cliente?.bairro || '',
+      cliente_cidade: cliente?.cidade || '',
+      cliente_uf: cliente?.uf || '',
+      cliente_endereco: this.formatAddress(cliente),
+
       advogado_nome: advogado?.user?.nome || '',
       advogado_oab: advogado?.oab || '',
-      reu_nome: reu?.nomeCompleto || '',
+      advogado_telefone: advogado?.telefone || '',
+
+      reu_nome: reu?.nomeCompleto || reu?.razaoSocial || '',
+      reu_tipo_pessoa: reu?.tipoPessoa || '',
+      reu_cpf: reu?.cpf || '',
+      reu_cnpj: reu?.cnpj || '',
+      reu_razao_social: reu?.razaoSocial || '',
+      reu_nome_fantasia: reu?.nomeFantasia || '',
+      reu_email: reu?.email || '',
+      reu_telefone: reu?.telefone || '',
+      reu_celular: reu?.celular || '',
+      reu_cep: reu?.cep || '',
+      reu_logradouro: reu?.logradouro || '',
+      reu_numero: reu?.numero || '',
+      reu_complemento: reu?.complemento || '',
+      reu_bairro: reu?.bairro || '',
+      reu_cidade: reu?.cidade || '',
+      reu_uf: reu?.uf || '',
+      reu_endereco: formatParteEndereco(reu),
+      reu_representante_legal: reu?.representanteLegal || '',
+      reu_cargo_representante: reu?.cargoRepresentante || '',
+
+      autor_nome: autor?.nomeCompleto || autor?.razaoSocial || cliente?.user?.nome || '',
+      autor_cpf: autor?.cpf || cliente?.cpf || '',
+      autor_cnpj: autor?.cnpj || cliente?.cnpj || '',
+      autor_endereco: formatParteEndereco(autor) || this.formatAddress(cliente),
+
       narrativa_fatos: processo.descricao || '',
-      valor_causa: processo.valorCausa ? processo.valorCausa.toString() : '',
+      valor_causa: this.formatCurrency(processo.valorCausa),
       preliminares: '',
       merito: '',
       honorarios: '',
+      partes_resumo: partesResumo,
     };
   }
 
@@ -588,5 +720,3 @@ export class DocumentoController {
     }
   }
 }
-
-
