@@ -41,5 +41,8 @@ prisma/migrations
 uploads/
 documentos-gerados/
 
+# Puppeteer Chrome
+apps/backend/chrome/
+
 # Docker
 postgres_data/

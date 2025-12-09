@@ -32,9 +32,19 @@ export class PDFService {
 
       // Iniciar puppeteer
       console.log('[PDF] Iniciando Puppeteer...');
+      const chromePath = path.join(__dirname, '../../chrome/win64-145.0.7569.0/chrome-win64/chrome.exe');
+      console.log('[PDF] Caminho do Chrome:', chromePath);
+
       browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        executablePath: chromePath,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-features=HttpsFirstBalancedModeAutoEnable'
+        ]
       });
 
       console.log('[PDF] Puppeteer iniciado, criando nova página...');

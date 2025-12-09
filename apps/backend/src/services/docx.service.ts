@@ -1,5 +1,4 @@
-import { Document, Packer, Paragraph, TextRun, AlignmentType, HeadingLevel, Header, Footer, PageNumber } from 'docx';
-import { convert } from 'html-to-text';
+import HTMLtoDOCX from 'html-to-docx';
 import fs from 'fs';
 import path from 'path';
 
@@ -12,174 +11,127 @@ export class DOCXService {
   async gerarDOCX(conteudoHTML: string, titulo: string, options?: DOCXOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
+    console.log('[DOCX] Iniciando geração de DOCX:', { titulo, uploadsDir });
+
     if (!fs.existsSync(uploadsDir)) {
+      console.log('[DOCX] Criando diretório:', uploadsDir);
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `${Date.now()}-${titulo}.docx`;
+    const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.docx`;
     const filepath = path.join(uploadsDir, filename);
 
-    // Converter HTML para texto formatado
-    const conteudoTexto = convert(conteudoHTML, {
-      wordwrap: false,
-      preserveNewlines: true,
-      selectors: [
-        { selector: 'a', options: { ignoreHref: true } },
-        { selector: 'img', format: 'skip' }
-      ]
-    });
+    console.log('[DOCX] Arquivo será salvo em:', filepath);
 
-    // Dividir o conteúdo em parágrafos
-    const paragrafos = conteudoTexto.split('\n').filter(line => line.trim() !== '');
+    try {
+      // Montar HTML completo com cabeçalho e rodapé
+      const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
+      console.log('[DOCX] HTML montado, tamanho:', htmlCompleto.length, 'caracteres');
 
-    // Preparar cabeçalho
-    const cabecalhoChildren = [];
-    if (options?.cabecalho) {
-      cabecalhoChildren.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: options.cabecalho,
-              font: 'Arial',
-              size: 18,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        })
-      );
-    } else {
-      cabecalhoChildren.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: 'Advocacia Pitanga',
-              font: 'Arial',
-              size: 20,
-              bold: true,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 },
-        })
-      );
-    }
-
-    // Preparar rodapé
-    const rodapeChildren = [];
-    if (options?.rodape) {
-      rodapeChildren.push(
-        new Paragraph({
-          children: [
-            new TextRun({
-              text: options.rodape,
-              font: 'Arial',
-              size: 16,
-            }),
-          ],
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 100 },
-        })
-      );
-    }
-    rodapeChildren.push(
-      new Paragraph({
-        children: [
-          new TextRun({
-            text: 'Página ',
-            font: 'Arial',
-            size: 16,
-          }),
-          new TextRun({
-            children: [PageNumber.CURRENT],
-            font: 'Arial',
-            size: 16,
-          }),
-          new TextRun({
-            text: ' de ',
-            font: 'Arial',
-            size: 16,
-          }),
-          new TextRun({
-            children: [PageNumber.TOTAL_PAGES],
-            font: 'Arial',
-            size: 16,
-          }),
-        ],
-        alignment: AlignmentType.CENTER,
-      })
-    );
-
-    // Criar documento com formatação adequada
-    const doc = new Document({
-      sections: [
-        {
-          properties: {},
-          headers: {
-            default: new Header({
-              children: cabecalhoChildren,
-            }),
-          },
-          footers: {
-            default: new Footer({
-              children: rodapeChildren,
-            }),
-          },
-          children: [
-            // Título principal
-            new Paragraph({
-              text: titulo,
-              heading: HeadingLevel.HEADING_1,
-              alignment: AlignmentType.CENTER,
-              spacing: {
-                after: 400,
-              },
-            }),
-            // Conteúdo
-            ...paragrafos.map((paragrafo) => {
-              // Detectar se é um título ou subtítulo
-              const isHeading = paragrafo.match(/^#+\s/) || paragrafo.match(/^[A-Z][^a-z]*$/);
-
-              if (isHeading) {
-                return new Paragraph({
-                  text: paragrafo.replace(/^#+\s/, ''),
-                  heading: HeadingLevel.HEADING_2,
-                  spacing: {
-                    before: 200,
-                    after: 200,
-                  },
-                });
-              }
-
-              // Detectar listas
-              const isList = paragrafo.match(/^[\d\-\*]\.\s/) || paragrafo.match(/^[\-\*]\s/);
-
-              return new Paragraph({
-                children: [
-                  new TextRun({
-                    text: paragrafo,
-                    font: 'Arial',
-                    size: 24, // 12pt
-                  }),
-                ],
-                spacing: {
-                  before: 100,
-                  after: 100,
-                  line: 360, // 1.5 line spacing
-                },
-                alignment: AlignmentType.JUSTIFIED,
-                indent: isList ? { left: 720 } : undefined, // Indent para listas
-              });
-            }),
-          ],
+      // Converter HTML para DOCX
+      console.log('[DOCX] Convertendo HTML para DOCX...');
+      const docxBuffer = await HTMLtoDOCX(htmlCompleto, null, {
+        table: { row: { cantSplit: true } },
+        footer: true,
+        pageNumber: true,
+        font: 'Times New Roman',
+        fontSize: 24, // 12pt
+        lineHeight: 360, // 1.5
+        orientation: 'portrait',
+        margins: {
+          top: 1440, // 2.54cm in twips
+          right: 1440,
+          bottom: 1440,
+          left: 1440,
         },
-      ],
-    });
+      });
 
-    // Gerar o buffer e salvar
-    const buffer = await Packer.toBuffer(doc);
-    fs.writeFileSync(filepath, buffer);
+      console.log('[DOCX] Salvando arquivo...');
+      fs.writeFileSync(filepath, docxBuffer);
+      console.log('[DOCX] DOCX gerado com sucesso');
 
-    return filepath;
+      return filepath;
+    } catch (error) {
+      console.error('[DOCX] Erro ao gerar DOCX:', error);
+      throw error;
+    }
+  }
+
+  private montarHTMLCompleto(conteudo: string, titulo: string, options?: DOCXOptions): string {
+    const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
+    const rodape = options?.rodape || '';
+
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: 'Times New Roman', Times, serif;
+              font-size: 12pt;
+              line-height: 1.5;
+            }
+            h1 {
+              font-size: 18pt;
+              text-align: center;
+              margin-bottom: 1.5em;
+              font-weight: bold;
+            }
+            h2 {
+              font-size: 16pt;
+              font-weight: bold;
+            }
+            h3 {
+              font-size: 14pt;
+              font-weight: bold;
+            }
+            p {
+              margin: 0.5em 0;
+              text-align: justify;
+            }
+            ul, ol {
+              margin: 0.5em 0;
+              padding-left: 2em;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 1em 0;
+            }
+            table, th, td {
+              border: 1px solid #000;
+            }
+            th, td {
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center; font-size: 10pt; margin-bottom: 20px;">
+            <strong>${cabecalho}</strong>
+          </div>
+
+          <h1>${titulo}</h1>
+
+          ${conteudo}
+
+          ${rodape ? `
+          <div style="text-align: center; font-size: 10pt; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px;">
+            ${rodape}
+          </div>
+          ` : ''}
+
+          <div style="text-align: center; font-size: 9pt; margin-top: 20px; color: #666;">
+            Documento gerado em: ${new Date().toLocaleString('pt-BR')}
+          </div>
+        </body>
+      </html>
+    `;
   }
 }
