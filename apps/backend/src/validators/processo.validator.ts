@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 export const createProcessoValidator = [
   body('numero').notEmpty().withMessage('Número do processo é obrigatório'),
   body('clienteId').notEmpty().withMessage('Cliente é obrigatório'),
+  body('advogadoId').notEmpty().withMessage('Advogado responsável é obrigatório'),
 
   // Campos opcionais - aceitar valores vazios e null
   body('tipoAcao').optional({ values: 'null' }).isString(),

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Check, AlertCircle, Trash2 } from 'lucide-react';
 import { useProcessos, useCreateProcesso, useDeleteProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
+import { useAdvogados } from '@/hooks/useAdvogados';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import { formatDate, maskProcessoCNJ, validarProcessoCNJ } from '@/lib/utils';
 import Link from 'next/link';
@@ -24,6 +25,7 @@ import { usePartesExistentes } from '@/hooks/usePartes';
 interface ProcessoFormData {
   numero: string;
   clienteId: string;
+  advogadoId: string;
 
   // Classificação
   tipoAcao: string;
@@ -60,6 +62,7 @@ interface ProcessoFormData {
 const INITIAL_FORM_DATA: ProcessoFormData = {
   numero: '',
   clienteId: '',
+  advogadoId: '',
   tipoAcao: '',
   areaDireito: '',
   justica: '',
@@ -98,6 +101,7 @@ export default function ProcessosPage() {
 
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
+  const { data: advogadosData } = useAdvogados();
   const { data: partesData } = usePartesExistentes();
   const createMutation = useCreateProcesso();
   const deleteMutation = useDeleteProcesso();
@@ -119,7 +123,7 @@ export default function ProcessosPage() {
 
   const validateTabs = () => {
     const validation: Record<string, boolean> = {
-      basico: !!(formData.numero && validarProcessoCNJ(formData.numero) && formData.clienteId && formData.tipoAcao && formData.areaDireito),
+      basico: !!(formData.numero && validarProcessoCNJ(formData.numero) && formData.clienteId && formData.advogadoId && formData.tipoAcao && formData.areaDireito),
       localizacao: !!(formData.justica && formData.instancia && formData.uf),
       partes: true, // Validação de partes será feita separadamente
       informacoes: !!formData.objetoAcao,
@@ -161,6 +165,7 @@ export default function ProcessosPage() {
     const camposObrigatorios = [
       { campo: 'numero', nome: 'Número do Processo', tab: 'basico' },
       { campo: 'clienteId', nome: 'Cliente', tab: 'basico' },
+      { campo: 'advogadoId', nome: 'Advogado Responsável', tab: 'basico' },
       { campo: 'tipoAcao', nome: 'Tipo de Ação', tab: 'basico' },
       { campo: 'areaDireito', nome: 'Área do Direito', tab: 'basico' },
       { campo: 'justica', nome: 'Justiça', tab: 'localizacao' },
@@ -483,6 +488,24 @@ export default function ProcessosPage() {
                     {clientesData?.clientes?.map((cliente: any) => (
                       <option key={cliente.id} value={cliente.id}>
                         {cliente.user.nome}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="advogado">Advogado Responsável *</Label>
+                  <Select
+                    id="advogado"
+                    value={formData.advogadoId}
+                    onChange={(e) => setFormData({ ...formData, advogadoId: e.target.value })}
+                    required
+                    aria-required="true"
+                  >
+                    <option value="">Selecione um advogado</option>
+                    {advogadosData?.advogados?.map((advogado: any) => (
+                      <option key={advogado.id} value={advogado.id}>
+                        {advogado.user.nome} {advogado.oab ? `- OAB: ${advogado.oab}` : ''}
                       </option>
                     ))}
                   </Select>

@@ -5,6 +5,31 @@ import { hashPassword } from '../utils/bcrypt';
 import { AuditService, AuditAction } from '../services/audit.service';
 
 export class AdvogadoController {
+  async getAll(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const advogados = await prisma.advogado.findMany({
+        include: {
+          user: {
+            select: {
+              id: true,
+              nome: true,
+              email: true,
+            }
+          }
+        },
+        orderBy: {
+          user: {
+            nome: 'asc'
+          }
+        }
+      });
+
+      res.json({ advogados });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
   async getProfile(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.userId;

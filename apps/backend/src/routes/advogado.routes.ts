@@ -8,6 +8,9 @@ import { updateEmailValidator, updatePasswordValidator, updateProfileValidator }
 const router = Router();
 const advogadoController = new AdvogadoController();
 
+// Rota para listar todos os advogados (disponível para advogados e admins)
+router.get('/', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), advogadoController.getAll.bind(advogadoController));
+
 // Rotas de perfil do advogado
 router.get('/perfil', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), advogadoController.getProfile.bind(advogadoController));
 router.put('/perfil', authMiddleware, requireRole(['ADVOGADO', 'ADMIN_ESCRITORIO']), updateProfileValidator, validate, advogadoController.updateProfile.bind(advogadoController));
