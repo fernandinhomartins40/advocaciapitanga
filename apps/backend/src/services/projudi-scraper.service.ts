@@ -202,9 +202,12 @@ export class ProjudiScraperService {
           '--single-process',
           '--disable-breakpad',
           '--disable-crash-reporter',
-          '--no-crash-upload'
+          '--no-crash-upload',
+          '--disable-features=VizDisplayCompositor',
+          '--temp-dir=/tmp'
         ],
-        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection']
+        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
+        dumpio: false
       });
 
       const page = await browser.newPage();
@@ -300,9 +303,12 @@ export class ProjudiScraperService {
           '--single-process',
           '--disable-breakpad',
           '--disable-crash-reporter',
-          '--no-crash-upload'
+          '--no-crash-upload',
+          '--disable-features=VizDisplayCompositor',
+          '--temp-dir=/tmp'
         ],
-        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection']
+        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
+        dumpio: false
       });
 
       const page = await browser.newPage();
