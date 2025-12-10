@@ -2,6 +2,23 @@ import { prisma, StatusProcesso } from 'database';
 import { AuditService, AuditAction } from './audit.service';
 
 export class ProcessoService {
+  /**
+   * Normaliza o número do processo para o formato CNJ
+   * NNNNNNN-DD.AAAA.J.TT.OOOO
+   */
+  private normalizarNumeroProcesso(numero: string): string {
+    // Remove tudo exceto dígitos
+    const apenasNumeros = numero.replace(/\D/g, '');
+
+    // Se não tiver exatamente 20 dígitos, retorna o número original
+    if (apenasNumeros.length !== 20) {
+      return numero;
+    }
+
+    // Formata: NNNNNNN-DD.AAAA.J.TT.OOOO
+    return `${apenasNumeros.slice(0, 7)}-${apenasNumeros.slice(7, 9)}.${apenasNumeros.slice(9, 13)}.${apenasNumeros.slice(13, 14)}.${apenasNumeros.slice(14, 16)}.${apenasNumeros.slice(16, 20)}`;
+  }
+
   async getAll(filters: {
     advogadoId?: string;
     clienteId?: string;
@@ -120,9 +137,12 @@ export class ProcessoService {
   }
 
   async create(data: any) {
+    // Normalizar número do processo para formato CNJ
+    const numeroNormalizado = this.normalizarNumeroProcesso(data.numero);
+
     // Verificar se número já existe
     const existing = await prisma.processo.findUnique({
-      where: { numero: data.numero }
+      where: { numero: numeroNormalizado }
     });
 
     if (existing) {
@@ -153,6 +173,7 @@ export class ProcessoService {
     const processo = await prisma.processo.create({
       data: {
         ...processoData,
+        numero: numeroNormalizado, // Salvar número normalizado
         status: data.status || StatusProcesso.EM_ANDAMENTO,
         dataInicio: data.dataInicio || new Date(),
         // Criar partes processuais se fornecidas
