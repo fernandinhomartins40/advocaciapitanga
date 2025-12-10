@@ -357,6 +357,48 @@ export class ProjudiController {
     }
   }
 
+  /**
+   * Obtém informações sobre o limite de consultas do usuário
+   */
+  async obterInfoLimite(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.userId;
+      const info = projudiScraperService.obterInfoLimite(userId);
+
+      res.json({
+        ...info,
+        limiteDiario: 100,
+        delayEntreConsultas: 3
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  /**
+   * Reseta o limite de consultas do usuário (apenas para desenvolvimento/admin)
+   */
+  async resetarLimite(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      // Apenas admins podem resetar limites
+      if (req.user!.role !== 'ADMIN' && req.user!.role !== 'ADMIN_ESCRITORIO') {
+        return res.status(403).json({
+          error: 'Apenas administradores podem resetar limites de consulta'
+        });
+      }
+
+      const userId = req.user!.userId;
+      projudiScraperService.resetarLimiteUsuario(userId);
+
+      res.json({
+        sucesso: true,
+        mensagem: 'Limite de consultas resetado com sucesso'
+      });
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
   private handleProcessoErro(err: any, res: Response): boolean {
     const mensagem = (err?.message || '').toLowerCase();
     if (mensagem.includes('processo') && mensagem.includes('encontr')) {

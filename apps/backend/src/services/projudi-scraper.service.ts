@@ -38,8 +38,8 @@ export class ProjudiScraperService {
   private sessions: Map<string, SessionData>;
   private consultas: Map<string, ConsultaRegistro>;
   private readonly SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutos
-  private readonly DELAY_ENTRE_CONSULTAS = 5000; // 5 segundos
-  private readonly MAX_CONSULTAS_DIA = 50;
+  private readonly DELAY_ENTRE_CONSULTAS = 3000; // 3 segundos (reduzido de 5)
+  private readonly MAX_CONSULTAS_DIA = 100; // Aumentado de 50 para 100
 
   constructor() {
     this.sessions = new Map();
@@ -509,5 +509,52 @@ export class ProjudiScraperService {
         this.consultas.delete(userId);
       }
     }
+  }
+
+  /**
+   * Reseta o limite de consultas de um usuário específico
+   * Útil para desenvolvimento ou resolver bloqueios temporários
+   */
+  resetarLimiteUsuario(userId: string): void {
+    this.consultas.delete(userId);
+  }
+
+  /**
+   * Obtém informações do limite atual de um usuário
+   */
+  obterInfoLimite(userId: string): {
+    consultasRestantes: number;
+    tempoAteProximaConsulta: number;
+    totalConsultasHoje: number;
+  } {
+    const agora = Date.now();
+    const registro = this.consultas.get(userId);
+
+    if (!registro) {
+      return {
+        consultasRestantes: this.MAX_CONSULTAS_DIA,
+        tempoAteProximaConsulta: 0,
+        totalConsultasHoje: 0
+      };
+    }
+
+    const tempoDesdeUltimaConsulta = agora - registro.ultimaConsulta;
+    const tempoAteProxima = Math.max(0, this.DELAY_ENTRE_CONSULTAS - tempoDesdeUltimaConsulta);
+
+    // Reset janela se passou 24h
+    const janela24h = 24 * 60 * 60 * 1000;
+    if (agora - registro.janelaInicio > janela24h) {
+      return {
+        consultasRestantes: this.MAX_CONSULTAS_DIA,
+        tempoAteProximaConsulta: 0,
+        totalConsultasHoje: 0
+      };
+    }
+
+    return {
+      consultasRestantes: Math.max(0, this.MAX_CONSULTAS_DIA - registro.totalJanela),
+      tempoAteProximaConsulta: Math.ceil(tempoAteProxima / 1000),
+      totalConsultasHoje: registro.totalJanela
+    };
   }
 }

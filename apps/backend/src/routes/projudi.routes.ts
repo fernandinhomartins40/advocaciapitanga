@@ -85,4 +85,24 @@ router.get(
   projudiController.testarConfiguracao.bind(projudiController)
 );
 
+/**
+ * GET /projudi/limite
+ * Obtém informações sobre o limite de consultas do usuário
+ */
+router.get(
+  '/limite',
+  authMiddleware,
+  projudiController.obterInfoLimite.bind(projudiController)
+);
+
+/**
+ * POST /projudi/resetar-limite
+ * Reseta o limite de consultas (apenas admins)
+ */
+router.post(
+  '/resetar-limite',
+  authMiddleware,
+  projudiController.resetarLimite.bind(projudiController)
+);
+
 export default router;
