@@ -65,20 +65,30 @@ export default function PerfilPage() {
     }
   };
 
-  // Validação de formato de OAB (UF + 4-8 dígitos)
+  // Validação de formato de OAB (OAB/UF + 5-7 dígitos)
   const formatOAB = (value: string) => {
     // Remove tudo que não é letra ou número
     const cleaned = value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
 
-    // Limita a 10 caracteres (2 letras + até 8 números)
-    if (cleaned.length <= 2) {
-      return cleaned;
+    // Remove "OAB" se o usuário digitou
+    let withoutOAB = cleaned;
+    if (cleaned.startsWith('OAB')) {
+      withoutOAB = cleaned.slice(3);
     }
 
-    const uf = cleaned.slice(0, 2);
-    const numbers = cleaned.slice(2, 10);
+    // Limita a 9 caracteres (2 letras UF + até 7 números)
+    if (withoutOAB.length === 0) {
+      return 'OAB/';
+    }
 
-    return `${uf}${numbers}`;
+    if (withoutOAB.length <= 2) {
+      return `OAB/${withoutOAB}`;
+    }
+
+    const uf = withoutOAB.slice(0, 2);
+    const numbers = withoutOAB.slice(2, 9);
+
+    return `OAB/${uf}${numbers}`;
   };
 
   // Máscara de telefone
@@ -99,12 +109,12 @@ export default function PerfilPage() {
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validação de OAB (UF + 4 a 8 dígitos)
-    const oabRegex = /^[A-Z]{2}\d{4,8}$/;
+    // Validação de OAB (OAB/UF + 5 a 7 dígitos)
+    const oabRegex = /^OAB\/[A-Z]{2}\d{5,7}$/;
     if (!oabRegex.test(profile.oab)) {
       toast({
         title: 'Erro',
-        description: 'OAB inválida. Use o formato: UF seguido de 4 a 8 dígitos (ex: SP123456)',
+        description: 'OAB inválida. Use o formato: OAB/UF seguido de 5 a 7 dígitos (ex: OAB/SP123456)',
         variant: 'error'
       });
       return;
@@ -250,11 +260,11 @@ export default function PerfilPage() {
                 id="oab"
                 value={profile.oab}
                 onChange={(e) => setProfile({ ...profile, oab: formatOAB(e.target.value) })}
-                placeholder="Ex: SP123456"
-                maxLength={10}
+                placeholder="Ex: OAB/SP123456"
+                maxLength={15}
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Formato: UF seguido de 4 a 8 dígitos (ex: SP123456)</p>
+              <p className="text-xs text-gray-500 mt-1">Formato: OAB/UF seguido de 5 a 7 dígitos (ex: OAB/SP123456)</p>
             </div>
             <div>
               <Label htmlFor="telefone">Telefone</Label>
