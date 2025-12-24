@@ -126,6 +126,8 @@ COPY --from=builder /app/packages/database/prisma ./packages/database/prisma
 # Criar diretórios necessários (incluindo backups)
 RUN mkdir -p /app/uploads/documentos \
              /app/uploads/documentos-gerados \
+             /app/apps/backend/uploads/documentos \
+             /app/apps/backend/uploads/documentos-gerados \
              /app/backups \
              /var/log/nginx \
              /var/lib/nginx/tmp \
@@ -201,10 +203,12 @@ exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 EOF_ENTRY
 # Ajustar permissões (incluindo backups)
 RUN chown -R appuser:nodejs /app/uploads && \
+    chown -R appuser:nodejs /app/apps/backend/uploads && \
     chown -R appuser:nodejs /app/backups && \
     chown -R appuser:nodejs /app/apps/frontend/.next && \
     chown -R appuser:nodejs /app/.cache && \
     chmod -R 755 /app/uploads && \
+    chmod -R 755 /app/apps/backend/uploads && \
     chmod -R 755 /app/backups && \
     chmod -R 755 /var/lib/nginx && \
     chmod -R 755 /var/log/nginx && \
