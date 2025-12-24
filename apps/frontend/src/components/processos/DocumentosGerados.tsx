@@ -76,6 +76,8 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
 
   const handleExport = async (documentoId: string, formato: string, titulo: string) => {
     setIsExporting(true);
+    let url: string | null = null;
+
     try {
       const response = await api.post(
         `/documentos-processo/${documentoId}/exportar`,
@@ -83,14 +85,16 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
         { responseType: 'blob' }
       );
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Criar URL do blob
+      url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // Criar link temporário e simular clique
       const link = document.createElement('a');
       link.href = url;
       link.download = `${titulo}.${formato.toLowerCase()}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
 
       toast({
         title: 'Sucesso',
@@ -104,6 +108,10 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
         variant: 'error',
       });
     } finally {
+      // SEMPRE revogar URL para liberar memória
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
       setIsExporting(false);
     }
   };

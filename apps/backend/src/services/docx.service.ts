@@ -1,6 +1,7 @@
-import HTMLtoDOCX from 'html-to-docx';
+import HTMLtoDOCX from '@turbodocx/html-to-docx';
 import fs from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger';
 
 export interface DOCXOptions {
   cabecalho?: string;
@@ -10,49 +11,53 @@ export interface DOCXOptions {
 export class DOCXService {
   async gerarDOCX(conteudoHTML: string, titulo: string, options?: DOCXOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
+    const startTime = Date.now();
 
-    console.log('[DOCX] Iniciando geração de DOCX:', { titulo, uploadsDir });
+    logger.info('[DOCX] Iniciando geração de DOCX', { titulo, uploadsDir });
 
     if (!fs.existsSync(uploadsDir)) {
-      console.log('[DOCX] Criando diretório:', uploadsDir);
+      logger.info('[DOCX] Criando diretório', { uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.docx`;
     const filepath = path.join(uploadsDir, filename);
 
-    console.log('[DOCX] Arquivo será salvo em:', filepath);
+    logger.info('[DOCX] Arquivo será salvo', { filepath });
 
     try {
       // Montar HTML completo com cabeçalho e rodapé
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
-      console.log('[DOCX] HTML montado, tamanho:', htmlCompleto.length, 'caracteres');
+      logger.debug('[DOCX] HTML montado', { size: htmlCompleto.length });
 
-      // Converter HTML para DOCX
-      console.log('[DOCX] Convertendo HTML para DOCX...');
+      // Converter HTML para DOCX com @turbodocx/html-to-docx
+      logger.info('[DOCX] Convertendo HTML para DOCX');
       const docxBuffer = await HTMLtoDOCX(htmlCompleto, null, {
         table: { row: { cantSplit: true } },
         footer: true,
         pageNumber: true,
         font: 'Times New Roman',
-        fontSize: 24, // 12pt
-        lineHeight: 360, // 1.5
+        fontSize: 24, // 12pt (fontSize é em half-points, então 24 = 12pt)
         orientation: 'portrait',
         margins: {
-          top: 1440, // 2.54cm in twips
+          top: 1440, // 2.54cm in twips (1440 twips = 1 inch = 2.54cm)
           right: 1440,
           bottom: 1440,
           left: 1440,
         },
       });
 
-      console.log('[DOCX] Salvando arquivo...');
-      fs.writeFileSync(filepath, docxBuffer);
-      console.log('[DOCX] DOCX gerado com sucesso');
+      logger.info('[DOCX] Salvando arquivo');
+      // @turbodocx retorna Buffer, que é compatível com writeFileSync
+      fs.writeFileSync(filepath, Buffer.from(docxBuffer as ArrayBuffer));
+
+      const duration = Date.now() - startTime;
+      logger.info('[DOCX] DOCX gerado com sucesso', { filepath, duration: `${duration}ms` });
 
       return filepath;
     } catch (error) {
-      console.error('[DOCX] Erro ao gerar DOCX:', error);
+      const duration = Date.now() - startTime;
+      logger.error('[DOCX] Erro ao gerar DOCX', { error, titulo, duration: `${duration}ms` });
       throw error;
     }
   }

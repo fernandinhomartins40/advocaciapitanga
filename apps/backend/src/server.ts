@@ -5,6 +5,8 @@ import app from './app';
 import { logger } from './utils/logger';
 import { ensureDatabaseReady } from './utils/init-database';
 import { backupScheduler } from './services/backup-scheduler.service';
+import { initCleanupJob } from './jobs/cleanup-temp-files.job';
+import { puppeteerPool } from './utils/puppeteer-pool';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
@@ -22,6 +24,18 @@ async function startServer() {
       logger.info('📦 Sistema de backup automático iniciado');
     } else {
       logger.info('📦 Sistema de backup automático desabilitado');
+    }
+
+    // Iniciar job de limpeza de arquivos temporários
+    initCleanupJob();
+    logger.info('🧹 Job de limpeza de arquivos temporários iniciado');
+
+    // Inicializar pool de browsers Puppeteer
+    try {
+      await puppeteerPool.initialize();
+      logger.info('🌐 Pool de browsers Puppeteer inicializado');
+    } catch (error) {
+      logger.warn('⚠️ Erro ao inicializar pool Puppeteer (continuando sem pool)', { error });
     }
 
     // Iniciar servidor escutando em todas as interfaces (0.0.0.0)
@@ -42,18 +56,20 @@ async function startServer() {
     });
 
     // Graceful shutdown
-    process.on('SIGTERM', () => {
+    process.on('SIGTERM', async () => {
       logger.info('SIGTERM recebido, encerrando servidor gracefully...');
       backupScheduler.stop();
+      await puppeteerPool.drain();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);
       });
     });
 
-    process.on('SIGINT', () => {
+    process.on('SIGINT', async () => {
       logger.info('SIGINT recebido, encerrando servidor gracefully...');
       backupScheduler.stop();
+      await puppeteerPool.drain();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);

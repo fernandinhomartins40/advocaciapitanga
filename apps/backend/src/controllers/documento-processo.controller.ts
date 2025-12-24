@@ -4,11 +4,22 @@ import { PDFService } from '../services/pdf.service';
 import { DOCXService } from '../services/docx.service';
 import { TXTService } from '../services/txt.service';
 import { RTFService } from '../services/rtf.service';
+import { retry } from '../utils/retry';
+import { logger } from '../utils/logger';
+import fs from 'fs';
 
 const pdfService = new PDFService();
 const docxService = new DOCXService();
 const txtService = new TXTService();
 const rtfService = new RTFService();
+
+// Mapeamento de MIME types por formato
+const MIME_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  txt: 'text/plain',
+  rtf: 'application/rtf'
+};
 
 export class DocumentoProcessoController {
   /**
@@ -265,7 +276,7 @@ export class DocumentoProcessoController {
       const { formato } = req.body; // pdf, docx, txt, rtf
       const userId = req.user!.userId;
 
-      console.log('[EXPORT] Iniciando exportação:', { id, formato, userId });
+      logger.info('[EXPORT] Iniciando exportação', { id, formato, userId });
 
       if (!formato || !['pdf', 'docx', 'txt', 'rtf'].includes(formato)) {
         return res.status(400).json({ error: 'Formato inválido. Use: pdf, docx, txt ou rtf' });
@@ -282,11 +293,11 @@ export class DocumentoProcessoController {
       });
 
       if (!advogado) {
-        console.error('[EXPORT] Advogado não encontrado para userId:', userId);
+        logger.error('[EXPORT] Advogado não encontrado', { userId });
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      console.log('[EXPORT] Advogado encontrado:', advogado.id);
+      logger.debug('[EXPORT] Advogado encontrado', { advogadoId: advogado.id });
 
       // Buscar documento
       const documento = await prisma.documentoProcesso.findFirst({
@@ -297,57 +308,69 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        console.error('[EXPORT] Documento não encontrado:', { id, advogadoId: advogado.id });
+        logger.error('[EXPORT] Documento não encontrado', { id, advogadoId: advogado.id });
         return res.status(404).json({ error: 'Documento não encontrado' });
       }
 
-      console.log('[EXPORT] Documento encontrado:', documento.titulo);
+      logger.info('[EXPORT] Documento encontrado', { titulo: documento.titulo });
 
       const options = advogado.configuracaoIA ? {
         cabecalho: advogado.configuracaoIA.cabecalho || undefined,
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      let filepath: string;
+      // Gerar arquivo com retry automático
+      const filepath = await retry(async () => {
+        logger.info('[EXPORT] Gerando arquivo', { formato });
 
-      console.log('[EXPORT] Gerando arquivo no formato:', formato);
-
-      switch (formato) {
-        case 'pdf':
-          filepath = await pdfService.gerarPDF(documento.conteudoHTML, documento.titulo, options);
-          break;
-        case 'docx':
-          filepath = await docxService.gerarDOCX(documento.conteudoHTML, documento.titulo, options);
-          break;
-        case 'txt':
-          filepath = await txtService.gerarTXT(documento.conteudoHTML, documento.titulo, options);
-          break;
-        case 'rtf':
-          filepath = await rtfService.gerarRTF(documento.conteudoHTML, documento.titulo, options);
-          break;
-        default:
-          return res.status(400).json({ error: 'Formato não suportado' });
-      }
-
-      console.log('[EXPORT] Arquivo gerado com sucesso:', filepath);
-
-      res.download(filepath, `${documento.titulo}.${formato}`, (err) => {
-        if (err) {
-          console.error('[EXPORT] Erro ao enviar arquivo:', err);
-        } else {
-          console.log('[EXPORT] Arquivo enviado com sucesso');
+        switch (formato) {
+          case 'pdf':
+            return await pdfService.gerarPDF(documento.conteudoHTML, documento.titulo, options);
+          case 'docx':
+            return await docxService.gerarDOCX(documento.conteudoHTML, documento.titulo, options);
+          case 'txt':
+            return await txtService.gerarTXT(documento.conteudoHTML, documento.titulo, options);
+          case 'rtf':
+            return await rtfService.gerarRTF(documento.conteudoHTML, documento.titulo, options);
+          default:
+            throw new Error('Formato não suportado');
         }
-        // Deletar arquivo após download
-        const fs = require('fs');
-        try {
-          fs.unlinkSync(filepath);
-          console.log('[EXPORT] Arquivo temporário deletado');
-        } catch (deleteErr) {
-          console.error('[EXPORT] Erro ao deletar arquivo temporário:', deleteErr);
+      }, {
+        maxTentativas: 3,
+        delayBase: 1000,
+        onRetry: (tentativa, error) => {
+          logger.warn('[EXPORT] Retry de exportação', { tentativa, error: error.message, formato });
         }
       });
+
+      logger.info('[EXPORT] Arquivo gerado com sucesso', { filepath });
+
+      // Definir Content-Type explícito
+      res.setHeader('Content-Type', MIME_TYPES[formato]);
+      res.setHeader('Content-Disposition', `attachment; filename="${documento.titulo}.${formato}"`);
+
+      // Enviar arquivo para download
+      res.download(filepath, `${documento.titulo}.${formato}`, (err) => {
+        if (err) {
+          logger.error('[EXPORT] Erro ao enviar arquivo', { error: err, filepath });
+        } else {
+          logger.info('[EXPORT] Arquivo enviado com sucesso', { filepath });
+        }
+
+        // Deletar arquivo após download (mesmo em caso de erro)
+        setTimeout(() => {
+          try {
+            if (fs.existsSync(filepath)) {
+              fs.unlinkSync(filepath);
+              logger.debug('[EXPORT] Arquivo temporário deletado', { filepath });
+            }
+          } catch (deleteErr) {
+            logger.error('[EXPORT] Erro ao deletar arquivo temporário', { error: deleteErr, filepath });
+          }
+        }, 1000); // Aguardar 1s para garantir que o download iniciou
+      });
     } catch (error: any) {
-      console.error('[EXPORT] Erro ao exportar documento:', error);
+      logger.error('[EXPORT] Erro ao exportar documento', { error: error.message, stack: error.stack });
       next(error);
     }
   }

@@ -51,7 +51,7 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie']
+  exposedHeaders: ['Set-Cookie', 'Content-Disposition', 'Content-Type', 'Content-Length']
 }));
 
 // Rate limiting - mais permissivo para evitar bloqueios
@@ -92,9 +92,38 @@ app.use('/api/backups', backupRoutes);
 app.use('/api/documentos-processo', documentoProcessoRoutes);
 app.use('/api/partes', parteRoutes);
 
-// Rota de health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+// Rota de health check com monitoramento
+app.get('/api/health', async (req, res) => {
+  try {
+    const { puppeteerPool } = await import('./utils/puppeteer-pool');
+    const poolStats = puppeteerPool.getStats();
+
+    const memUsage = process.memoryUsage();
+    const uptime = process.uptime();
+
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: `${Math.floor(uptime / 60)}min`,
+      memory: {
+        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+      },
+      puppeteerPool: {
+        size: poolStats.size,
+        available: poolStats.available,
+        pending: poolStats.pending,
+        initialized: poolStats.initialized
+      }
+    });
+  } catch (error) {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      error: 'Could not fetch detailed stats'
+    });
+  }
 });
 
 // Middleware de tratamento de erros (deve ser o último)

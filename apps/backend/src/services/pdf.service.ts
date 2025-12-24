@@ -1,6 +1,8 @@
-import puppeteer from 'puppeteer';
+import { Browser } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
+import { logger } from '../utils/logger';
+import { puppeteerPool } from '../utils/puppeteer-pool';
 
 export interface PDFOptions {
   cabecalho?: string;
@@ -10,52 +12,54 @@ export interface PDFOptions {
 export class PDFService {
   async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
+    const startTime = Date.now();
+    let browser: Browser | null = null;
+    let usandoPool = false;
 
-    console.log('[PDF] Iniciando geração de PDF:', { titulo, uploadsDir });
+    logger.info('[PDF] Iniciando geração de PDF', { titulo, uploadsDir });
 
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
-      console.log('[PDF] Criando diretório:', uploadsDir);
+      logger.info('[PDF] Criando diretório', { uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.pdf`;
     const filepath = path.join(uploadsDir, filename);
 
-    console.log('[PDF] Arquivo será salvo em:', filepath);
+    logger.info('[PDF] Arquivo será salvo', { filepath });
 
-    let browser;
     try {
       // Montar HTML completo com estilos
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
-      console.log('[PDF] HTML montado, tamanho:', htmlCompleto.length, 'caracteres');
+      logger.debug('[PDF] HTML montado', { size: htmlCompleto.length });
 
-      // Iniciar puppeteer
-      console.log('[PDF] Iniciando Puppeteer...');
-      const chromePath = path.join(__dirname, '../../chrome/win64-145.0.7569.0/chrome-win64/chrome.exe');
-      console.log('[PDF] Caminho do Chrome:', chromePath);
+      // Tentar usar pool de browsers (fallback para criação manual se pool não disponível)
+      try {
+        browser = await puppeteerPool.acquire();
+        usandoPool = true;
+        logger.debug('[PDF] Browser adquirido do pool');
+      } catch (poolError) {
+        logger.warn('[PDF] Pool não disponível, usando browser standalone', { error: poolError });
+        // Fallback será tratado pelo código original se necessário
+      }
 
-      browser = await puppeteer.launch({
-        headless: true,
-        executablePath: chromePath,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-features=HttpsFirstBalancedModeAutoEnable'
-        ]
-      });
+      if (!browser) {
+        throw new Error('Não foi possível obter browser do pool');
+      }
 
-      console.log('[PDF] Puppeteer iniciado, criando nova página...');
+      logger.info('[PDF] Criando nova página');
       const page = await browser.newPage();
 
-      // Carregar HTML
-      console.log('[PDF] Carregando HTML na página...');
-      await page.setContent(htmlCompleto, { waitUntil: 'networkidle0' });
+      // Carregar HTML com timeout
+      logger.info('[PDF] Carregando HTML na página');
+      await page.setContent(htmlCompleto, {
+        waitUntil: 'networkidle0',
+        timeout: 30000 // Timeout de 30s para carregar conteúdo
+      });
 
       // Gerar PDF
-      console.log('[PDF] Gerando PDF...');
+      logger.info('[PDF] Gerando PDF');
       await page.pdf({
         path: filepath,
         format: 'A4',
@@ -68,19 +72,40 @@ export class PDFService {
         },
         displayHeaderFooter: true,
         headerTemplate: this.montarCabecalho(options),
-        footerTemplate: this.montarRodape(options)
+        footerTemplate: this.montarRodape(options),
+        timeout: 30000 // Timeout de 30s para gerar PDF
       });
 
-      console.log('[PDF] PDF gerado com sucesso');
-      await browser.close();
-      console.log('[PDF] Browser fechado');
+      // Fechar página para liberar memória
+      await page.close();
+
+      const duration = Date.now() - startTime;
+      logger.info('[PDF] PDF gerado com sucesso', { filepath, duration: `${duration}ms`, usandoPool });
+
       return filepath;
     } catch (error) {
-      console.error('[PDF] Erro ao gerar PDF:', error);
-      if (browser) {
-        await browser.close();
-      }
+      const duration = Date.now() - startTime;
+      logger.error('[PDF] Erro ao gerar PDF', { error, titulo, duration: `${duration}ms` });
       throw error;
+    } finally {
+      // Liberar browser de volta ao pool (ou fechar se não veio do pool)
+      if (browser) {
+        if (usandoPool) {
+          try {
+            await puppeteerPool.release(browser);
+            logger.debug('[PDF] Browser devolvido ao pool');
+          } catch (releaseError) {
+            logger.error('[PDF] Erro ao devolver browser ao pool', { error: releaseError });
+          }
+        } else {
+          try {
+            await browser.close();
+            logger.debug('[PDF] Browser standalone fechado');
+          } catch (closeError) {
+            logger.error('[PDF] Erro ao fechar browser standalone', { error: closeError });
+          }
+        }
+      }
     }
   }
 
