@@ -39,8 +39,17 @@ class PuppeteerPool {
               '--disable-setuid-sandbox',
               '--disable-dev-shm-usage',
               '--disable-gpu',
+              '--disable-software-rasterizer',
+              '--disable-gl-drawing-for-tests',
+              '--disable-features=VizDisplayCompositor',
               '--no-zygote',
-              '--disable-features=HttpsFirstBalancedModeAutoEnable'
+              '--single-process',
+              '--disable-features=HttpsFirstBalancedModeAutoEnable',
+              '--use-gl=swiftshader',
+              '--disable-vulkan',
+              '--disable-accelerated-2d-canvas',
+              '--disable-webgl',
+              '--disable-webgl2'
             ],
             timeout: 30000,
           });
@@ -55,7 +64,7 @@ class PuppeteerPool {
             await browser.close();
             logger.info('[PUPPETEER_POOL] Browser fechado com sucesso');
           } catch (error) {
-            logger.error('[PUPPETEER_POOL] Erro ao fechar browser', { error });
+            logger.error({ msg: '[PUPPETEER_POOL] Erro ao fechar browser', error });
           }
         },
 
@@ -80,12 +89,10 @@ class PuppeteerPool {
       });
 
       this.isInitialized = true;
-      logger.info('[PUPPETEER_POOL] Pool inicializado', {
-        max: 3,
-        min: 0
-      });
+      logger.info({ msg: '[PUPPETEER_POOL] Pool inicializado', max: 3,
+        min: 0 });
     } catch (error) {
-      logger.error('[PUPPETEER_POOL] Erro ao inicializar pool', { error });
+      logger.error({ msg: '[PUPPETEER_POOL] Erro ao inicializar pool', error });
       throw error;
     }
   }
@@ -101,14 +108,12 @@ class PuppeteerPool {
     try {
       logger.debug('[PUPPETEER_POOL] Adquirindo browser do pool');
       const browser = await this.pool.acquire();
-      logger.debug('[PUPPETEER_POOL] Browser adquirido', {
-        available: this.pool.available,
+      logger.debug({ msg: '[PUPPETEER_POOL] Browser adquirido', available: this.pool.available,
         pending: this.pool.pending,
-        size: this.pool.size
-      });
+        size: this.pool.size });
       return browser;
     } catch (error) {
-      logger.error('[PUPPETEER_POOL] Erro ao adquirir browser', { error });
+      logger.error({ msg: '[PUPPETEER_POOL] Erro ao adquirir browser', error });
       throw error;
     }
   }
@@ -126,18 +131,16 @@ class PuppeteerPool {
     try {
       logger.debug('[PUPPETEER_POOL] Liberando browser de volta ao pool');
       await this.pool.release(browser);
-      logger.debug('[PUPPETEER_POOL] Browser liberado', {
-        available: this.pool.available,
+      logger.debug({ msg: '[PUPPETEER_POOL] Browser liberado', available: this.pool.available,
         pending: this.pool.pending,
-        size: this.pool.size
-      });
+        size: this.pool.size });
     } catch (error) {
-      logger.error('[PUPPETEER_POOL] Erro ao liberar browser', { error });
+      logger.error({ msg: '[PUPPETEER_POOL] Erro ao liberar browser', error });
       // Em caso de erro, tentar fechar manualmente
       try {
         await browser.close();
       } catch (closeError) {
-        logger.error('[PUPPETEER_POOL] Erro ao fechar browser manualmente', { error: closeError });
+        logger.error({ msg: '[PUPPETEER_POOL] Erro ao fechar browser manualmente', error: closeError });
       }
     }
   }
@@ -178,7 +181,7 @@ class PuppeteerPool {
       this.isInitialized = false;
       logger.info('[PUPPETEER_POOL] Pool drenado com sucesso');
     } catch (error) {
-      logger.error('[PUPPETEER_POOL] Erro ao drenar pool', { error });
+      logger.error({ msg: '[PUPPETEER_POOL] Erro ao drenar pool', error });
     }
   }
 }
