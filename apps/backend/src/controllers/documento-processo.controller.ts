@@ -276,7 +276,7 @@ export class DocumentoProcessoController {
       const { formato } = req.body; // pdf, docx, txt, rtf
       const userId = req.user!.userId;
 
-      logger.info('[EXPORT] Iniciando exportação', { id, formato, userId });
+      logger.info({ msg: '[EXPORT] Iniciando exportação', id, formato, userId });
 
       if (!formato || !['pdf', 'docx', 'txt', 'rtf'].includes(formato)) {
         return res.status(400).json({ error: 'Formato inválido. Use: pdf, docx, txt ou rtf' });
@@ -293,11 +293,11 @@ export class DocumentoProcessoController {
       });
 
       if (!advogado) {
-        logger.error('[EXPORT] Advogado não encontrado', { userId });
+        logger.error({ msg: '[EXPORT] Advogado não encontrado', userId });
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      logger.debug('[EXPORT] Advogado encontrado', { advogadoId: advogado.id });
+      logger.debug({ msg: '[EXPORT] Advogado encontrado', advogadoId: advogado.id });
 
       // Buscar documento
       const documento = await prisma.documentoProcesso.findFirst({
@@ -308,11 +308,11 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        logger.error('[EXPORT] Documento não encontrado', { id, advogadoId: advogado.id });
+        logger.error({ msg: '[EXPORT] Documento não encontrado', id, advogadoId: advogado.id });
         return res.status(404).json({ error: 'Documento não encontrado' });
       }
 
-      logger.info('[EXPORT] Documento encontrado', { titulo: documento.titulo });
+      logger.info({ msg: '[EXPORT] Documento encontrado', titulo: documento.titulo });
 
       const options = advogado.configuracaoIA ? {
         cabecalho: advogado.configuracaoIA.cabecalho || undefined,
@@ -321,7 +321,7 @@ export class DocumentoProcessoController {
 
       // Gerar arquivo com retry automático
       const filepath = await retry(async () => {
-        logger.info('[EXPORT] Gerando arquivo', { formato });
+        logger.info({ msg: '[EXPORT] Gerando arquivo', formato });
 
         switch (formato) {
           case 'pdf':
@@ -339,11 +339,11 @@ export class DocumentoProcessoController {
         maxTentativas: 3,
         delayBase: 1000,
         onRetry: (tentativa, error) => {
-          logger.warn('[EXPORT] Retry de exportação', { tentativa, error: error.message, formato });
+          logger.warn({ msg: '[EXPORT] Retry de exportação', tentativa, error: error.message, formato });
         }
       });
 
-      logger.info('[EXPORT] Arquivo gerado com sucesso', { filepath });
+      logger.info({ msg: '[EXPORT] Arquivo gerado com sucesso', filepath });
 
       // Definir Content-Type explícito
       res.setHeader('Content-Type', MIME_TYPES[formato]);
@@ -352,9 +352,9 @@ export class DocumentoProcessoController {
       // Enviar arquivo para download
       res.download(filepath, `${documento.titulo}.${formato}`, (err) => {
         if (err) {
-          logger.error('[EXPORT] Erro ao enviar arquivo', { error: err, filepath });
+          logger.error({ msg: '[EXPORT] Erro ao enviar arquivo', error: err, filepath });
         } else {
-          logger.info('[EXPORT] Arquivo enviado com sucesso', { filepath });
+          logger.info({ msg: '[EXPORT] Arquivo enviado com sucesso', filepath });
         }
 
         // Deletar arquivo após download (mesmo em caso de erro)
@@ -362,15 +362,15 @@ export class DocumentoProcessoController {
           try {
             if (fs.existsSync(filepath)) {
               fs.unlinkSync(filepath);
-              logger.debug('[EXPORT] Arquivo temporário deletado', { filepath });
+              logger.debug({ msg: '[EXPORT] Arquivo temporário deletado', filepath });
             }
           } catch (deleteErr) {
-            logger.error('[EXPORT] Erro ao deletar arquivo temporário', { error: deleteErr, filepath });
+            logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporário', error: deleteErr, filepath });
           }
         }, 1000); // Aguardar 1s para garantir que o download iniciou
       });
     } catch (error: any) {
-      logger.error('[EXPORT] Erro ao exportar documento', { error: error.message, stack: error.stack });
+      logger.error({ msg: '[EXPORT] Erro ao exportar documento', error: error.message, stack: error.stack });
       next(error);
     }
   }

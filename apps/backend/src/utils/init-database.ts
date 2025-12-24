@@ -50,7 +50,7 @@ export async function checkDatabaseInitialization(): Promise<void> {
       logger.warn(`⚠️ Encontrados ${usersWithoutRole} usuário(s) sem perfil (advogado/cliente)`);
     }
   } catch (error) {
-    logger.error('❌ Erro ao verificar inicialização do banco de dados:', error);
+    logger.error({ msg: '❌ Erro ao verificar inicialização do banco de dados', error });
     logger.error('🔄 Tentando conectar ao banco de dados...');
 
     // Tentar conectar para ver se o problema é de conexão
@@ -89,7 +89,7 @@ export async function ensureDatabaseReady(): Promise<void> {
 
       return;
     } catch (error) {
-      logger.error(`❌ Tentativa ${attempt}/${MAX_RETRIES} falhou:`, error);
+      logger.error({ msg: `❌ Tentativa ${attempt}/${MAX_RETRIES} falhou`, error });
 
       if (attempt === MAX_RETRIES) {
         logger.error('❌ ERRO CRÍTICO: Não foi possível conectar ao banco de dados após múltiplas tentativas');

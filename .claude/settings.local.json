@@ -41,7 +41,16 @@
       "Bash(if exist .next rmdir /s /q .next)",
       "Bash(git checkout:*)",
       "Bash(timeout /t 10 /nobreak)",
-      "Bash(if exist \"apps\\frontend\\nul\" del \"apps\\frontend\\nul\")"
+      "Bash(if exist \"apps\\frontend\\nul\" del \"apps\\frontend\\nul\")",
+      "Bash(ping:*)",
+      "Bash(npx:*)",
+      "Bash(del nul appsbackendnul)",
+      "Bash(tasklist:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(del nul 2)",
+      "Bash(if exist nul del /f nul)",
+      "Bash(.gitignore)",
+      "Bash(NUL)"
     ],
     "deny": [],
     "ask": []

@@ -1,7 +1,8 @@
 import HTMLtoDOCX from '@turbodocx/html-to-docx';
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../utils/logger';
+import { createContextLogger, startTimer, logError } from '../utils/logger';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface DOCXOptions {
   cabecalho?: string;
@@ -9,29 +10,37 @@ export interface DOCXOptions {
 }
 
 export class DOCXService {
-  async gerarDOCX(conteudoHTML: string, titulo: string, options?: DOCXOptions): Promise<string> {
-    const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
-    const startTime = Date.now();
+  private logger = createContextLogger({ service: 'DOCXService' });
 
-    logger.info('[DOCX] Iniciando geração de DOCX', { titulo, uploadsDir });
+  async gerarDOCX(conteudoHTML: string, titulo: string, options?: DOCXOptions): Promise<string> {
+    const operationId = uuidv4();
+    const opLogger = this.logger.child({ operationId, titulo });
+    const timer = startTimer();
+
+    const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
+
+    opLogger.info({
+      msg: 'Iniciando geração de DOCX',
+      uploadsDir,
+      htmlSize: conteudoHTML.length,
+      hasOptions: !!options,
+    });
 
     if (!fs.existsSync(uploadsDir)) {
-      logger.info('[DOCX] Criando diretório', { uploadsDir });
+      opLogger.debug({ msg: 'Criando diretório de uploads', uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.docx`;
     const filepath = path.join(uploadsDir, filename);
 
-    logger.info('[DOCX] Arquivo será salvo', { filepath });
-
     try {
       // Montar HTML completo com cabeçalho e rodapé
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
-      logger.debug('[DOCX] HTML montado', { size: htmlCompleto.length });
+      opLogger.debug({ msg: 'HTML montado', htmlSize: htmlCompleto.length });
 
       // Converter HTML para DOCX com @turbodocx/html-to-docx
-      logger.info('[DOCX] Convertendo HTML para DOCX');
+      opLogger.debug('Convertendo HTML para DOCX');
       const docxBuffer = await HTMLtoDOCX(htmlCompleto, null, {
         table: { row: { cantSplit: true } },
         footer: true,
@@ -47,17 +56,29 @@ export class DOCXService {
         },
       });
 
-      logger.info('[DOCX] Salvando arquivo');
+      opLogger.debug({ msg: 'Salvando arquivo DOCX', filepath });
       // @turbodocx retorna Buffer, que é compatível com writeFileSync
       fs.writeFileSync(filepath, Buffer.from(docxBuffer as ArrayBuffer));
 
-      const duration = Date.now() - startTime;
-      logger.info('[DOCX] DOCX gerado com sucesso', { filepath, duration: `${duration}ms` });
+      const fileSize = fs.statSync(filepath).size;
+      const duration = timer();
+
+      opLogger.info({
+        msg: 'DOCX gerado com sucesso',
+        filepath,
+        fileSize_bytes: fileSize,
+        fileSize_kb: Math.round(fileSize / 1024),
+        duration_ms: duration,
+      });
 
       return filepath;
     } catch (error) {
-      const duration = Date.now() - startTime;
-      logger.error('[DOCX] Erro ao gerar DOCX', { error, titulo, duration: `${duration}ms` });
+      const duration = timer();
+      logError(opLogger, 'Erro ao gerar DOCX', error, {
+        titulo,
+        htmlSize: conteudoHTML.length,
+        duration_ms: duration,
+      });
       throw error;
     }
   }

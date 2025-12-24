@@ -16,23 +16,23 @@ export class PDFService {
     let browser: Browser | null = null;
     let usandoPool = false;
 
-    logger.info('[PDF] Iniciando geração de PDF', { titulo, uploadsDir });
+    logger.info({ msg: '[PDF] Iniciando geração de PDF', titulo, uploadsDir });
 
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
-      logger.info('[PDF] Criando diretório', { uploadsDir });
+      logger.info({ msg: '[PDF] Criando diretório', uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.pdf`;
     const filepath = path.join(uploadsDir, filename);
 
-    logger.info('[PDF] Arquivo será salvo', { filepath });
+    logger.info({ msg: '[PDF] Arquivo será salvo', filepath });
 
     try {
       // Montar HTML completo com estilos
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
-      logger.debug('[PDF] HTML montado', { size: htmlCompleto.length });
+      logger.debug({ msg: '[PDF] HTML montado', size: htmlCompleto.length });
 
       // Tentar usar pool de browsers (fallback para criação manual se pool não disponível)
       try {
@@ -40,7 +40,7 @@ export class PDFService {
         usandoPool = true;
         logger.debug('[PDF] Browser adquirido do pool');
       } catch (poolError) {
-        logger.warn('[PDF] Pool não disponível, usando browser standalone', { error: poolError });
+        logger.warn({ msg: '[PDF] Pool não disponível, usando browser standalone', error: poolError });
         // Fallback será tratado pelo código original se necessário
       }
 
@@ -80,12 +80,22 @@ export class PDFService {
       await page.close();
 
       const duration = Date.now() - startTime;
-      logger.info('[PDF] PDF gerado com sucesso', { filepath, duration: `${duration}ms`, usandoPool });
+      logger.info({
+        msg: '[PDF] PDF gerado com sucesso',
+        filepath,
+        duration: `${duration}ms`,
+        usandoPool
+      });
 
       return filepath;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('[PDF] Erro ao gerar PDF', { error, titulo, duration: `${duration}ms` });
+      logger.error({
+        msg: '[PDF] Erro ao gerar PDF',
+        error,
+        titulo,
+        duration: `${duration}ms`
+      });
       throw error;
     } finally {
       // Liberar browser de volta ao pool (ou fechar se não veio do pool)
@@ -95,14 +105,14 @@ export class PDFService {
             await puppeteerPool.release(browser);
             logger.debug('[PDF] Browser devolvido ao pool');
           } catch (releaseError) {
-            logger.error('[PDF] Erro ao devolver browser ao pool', { error: releaseError });
+            logger.error({ msg: '[PDF] Erro ao devolver browser ao pool', error: releaseError });
           }
         } else {
           try {
             await browser.close();
             logger.debug('[PDF] Browser standalone fechado');
           } catch (closeError) {
-            logger.error('[PDF] Erro ao fechar browser standalone', { error: closeError });
+            logger.error({ msg: '[PDF] Erro ao fechar browser standalone', error: closeError });
           }
         }
       }

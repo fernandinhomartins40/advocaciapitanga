@@ -16,7 +16,7 @@ export function initCleanupJob() {
       const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
       if (!fs.existsSync(uploadsDir)) {
-        logger.warn('[CLEANUP] Diretório de uploads não existe', { uploadsDir });
+        logger.warn({ msg: '[CLEANUP] Diretório de uploads não existe', uploadsDir });
         return;
       }
 
@@ -26,7 +26,7 @@ export function initCleanupJob() {
       let deletedCount = 0;
       let errorCount = 0;
 
-      logger.info('[CLEANUP] Arquivos encontrados', { count: files.length });
+      logger.info({ msg: '[CLEANUP] Arquivos encontrados', count: files.length });
 
       for (const file of files) {
         try {
@@ -37,24 +37,23 @@ export function initCleanupJob() {
           if (fileAge > maxAge) {
             fs.unlinkSync(filepath);
             deletedCount++;
-            logger.debug('[CLEANUP] Arquivo deletado', {
+            logger.debug({
+              msg: '[CLEANUP] Arquivo deletado',
               file,
               age: `${Math.round(fileAge / 1000 / 60)}min`
             });
           }
         } catch (error) {
           errorCount++;
-          logger.error('[CLEANUP] Erro ao deletar arquivo', { file, error });
+          logger.error({ msg: '[CLEANUP] Erro ao deletar arquivo', file, error });
         }
       }
 
-      logger.info('[CLEANUP] Limpeza concluída', {
-        total: files.length,
+      logger.info({ msg: '[CLEANUP] Limpeza concluída', total: files.length,
         deleted: deletedCount,
-        errors: errorCount
-      });
+        errors: errorCount });
     } catch (error) {
-      logger.error('[CLEANUP] Erro na execução do job de limpeza', { error });
+      logger.error({ msg: '[CLEANUP] Erro na execução do job de limpeza', error });
     }
   });
 

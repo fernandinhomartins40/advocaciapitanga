@@ -13,18 +13,18 @@ export class TXTService {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
     const startTime = Date.now();
 
-    logger.info('[TXT] Iniciando geração de TXT', { titulo });
+    logger.info({ msg: '[TXT] Iniciando geração de TXT', titulo });
 
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
-      logger.info('[TXT] Criando diretório', { uploadsDir });
+      logger.info({ msg: '[TXT] Criando diretório', uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.txt`;
     const filepath = path.join(uploadsDir, filename);
 
-    logger.info('[TXT] Arquivo será salvo', { filepath });
+    logger.info({ msg: '[TXT] Arquivo será salvo', filepath });
 
     try {
       // Converter HTML para texto limpo
@@ -72,12 +72,21 @@ export class TXTService {
       fs.writeFileSync(filepath, conteudoCompleto, 'utf-8');
 
       const duration = Date.now() - startTime;
-      logger.info('[TXT] TXT gerado com sucesso', { filepath, duration: `${duration}ms` });
+      logger.info({
+        msg: '[TXT] TXT gerado com sucesso',
+        filepath,
+        duration: `${duration}ms`
+      });
 
       return filepath;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('[TXT] Erro ao gerar TXT', { error, titulo, duration: `${duration}ms` });
+      logger.error({
+        msg: '[TXT] Erro ao gerar TXT',
+        error,
+        titulo,
+        duration: `${duration}ms`
+      });
       throw error;
     }
   }

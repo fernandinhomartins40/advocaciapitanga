@@ -9,3 +9,4 @@ C:\Projetos Cursor\advocaciapitanga\apps\backend\src\utils\init-database.ts:13:4
 The table `(not available)` does not exist in the current database.
 2025-11-26T13:03:21.705Z [[31merror[39m]: 🔄 Tentando conectar ao banco de dados...
 2025-12-05T21:39:24.880Z [[31merror[39m]: ❌ Porta 3001 já está em uso
+2025-12-09T00:12:29.454Z [[31merror[39m]: ❌ Porta 3001 já está em uso

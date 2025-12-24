@@ -1,6 +1,10 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
+// Inicializar Sentry o mais cedo possível
+import { initErrorTracking, flushErrorTracking } from './utils/error-tracker';
+initErrorTracking();
+
 import app from './app';
 import { logger } from './utils/logger';
 import { ensureDatabaseReady } from './utils/init-database';
@@ -35,7 +39,7 @@ async function startServer() {
       await puppeteerPool.initialize();
       logger.info('🌐 Pool de browsers Puppeteer inicializado');
     } catch (error) {
-      logger.warn('⚠️ Erro ao inicializar pool Puppeteer (continuando sem pool)', { error });
+      logger.warn({ msg: '⚠️ Erro ao inicializar pool Puppeteer (continuando sem pool)', error });
     }
 
     // Iniciar servidor escutando em todas as interfaces (0.0.0.0)
@@ -50,7 +54,7 @@ async function startServer() {
       if (error.code === 'EADDRINUSE') {
         logger.error(`❌ Porta ${PORT} já está em uso`);
       } else {
-        logger.error('❌ Erro no servidor:', error);
+        logger.error({ msg: '❌ Erro no servidor', error });
       }
       process.exit(1);
     });
@@ -60,6 +64,7 @@ async function startServer() {
       logger.info('SIGTERM recebido, encerrando servidor gracefully...');
       backupScheduler.stop();
       await puppeteerPool.drain();
+      await flushErrorTracking();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);
@@ -70,27 +75,38 @@ async function startServer() {
       logger.info('SIGINT recebido, encerrando servidor gracefully...');
       backupScheduler.stop();
       await puppeteerPool.drain();
+      await flushErrorTracking();
       server.close(() => {
         logger.info('Servidor encerrado');
         process.exit(0);
       });
     });
   } catch (error) {
-    logger.error('❌ Erro ao iniciar servidor:', error);
-    logger.error('Stack trace:', error instanceof Error ? error.stack : 'N/A');
+    logger.error({
+      msg: '❌ Erro ao iniciar servidor',
+      error,
+      stack: error instanceof Error ? error.stack : 'N/A'
+    });
     process.exit(1);
   }
 }
 
 // Tratamento global de erros não capturados
 process.on('uncaughtException', (error) => {
-  logger.error('❌ Uncaught Exception:', error);
-  logger.error('Stack trace:', error.stack);
+  logger.error({
+    msg: '❌ Uncaught Exception',
+    error,
+    stack: error.stack
+  });
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  logger.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+  logger.error({
+    msg: '❌ Unhandled Rejection',
+    reason,
+    promise: String(promise)
+  });
   process.exit(1);
 });
 

@@ -13,18 +13,18 @@ export class RTFService {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
     const startTime = Date.now();
 
-    logger.info('[RTF] Iniciando geração de RTF', { titulo });
+    logger.info({ msg: '[RTF] Iniciando geração de RTF', titulo });
 
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
-      logger.info('[RTF] Criando diretório', { uploadsDir });
+      logger.info({ msg: '[RTF] Criando diretório', uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.rtf`;
     const filepath = path.join(uploadsDir, filename);
 
-    logger.info('[RTF] Arquivo será salvo', { filepath });
+    logger.info({ msg: '[RTF] Arquivo será salvo', filepath });
 
     try {
       // Converter HTML para texto limpo
@@ -94,12 +94,21 @@ export class RTFService {
       fs.writeFileSync(filepath, rtfContent, 'utf-8');
 
       const duration = Date.now() - startTime;
-      logger.info('[RTF] RTF gerado com sucesso', { filepath, duration: `${duration}ms` });
+      logger.info({
+        msg: '[RTF] RTF gerado com sucesso',
+        filepath,
+        duration: `${duration}ms`
+      });
 
       return filepath;
     } catch (error) {
       const duration = Date.now() - startTime;
-      logger.error('[RTF] Erro ao gerar RTF', { error, titulo, duration: `${duration}ms` });
+      logger.error({
+        msg: '[RTF] Erro ao gerar RTF',
+        error,
+        titulo,
+        duration: `${duration}ms`
+      });
       throw error;
     }
   }

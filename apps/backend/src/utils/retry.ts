@@ -33,17 +33,16 @@ export async function retry<T>(
       lastError = error as Error;
 
       if (tentativa === maxTentativas) {
-        logger.error('[RETRY] Todas as tentativas falharam', {
-          tentativas: maxTentativas,
-          error: lastError
-        });
+        logger.error({ msg: '[RETRY] Todas as tentativas falharam', tentativas: maxTentativas,
+          error: lastError });
         throw lastError;
       }
 
       // Backoff exponencial com limite máximo
       const delay = Math.min(delayBase * Math.pow(2, tentativa - 1), maxDelay);
 
-      logger.warn('[RETRY] Tentativa falhou, aguardando antes de retry', {
+      logger.warn({
+        msg: '[RETRY] Tentativa falhou, aguardando antes de retry',
         tentativa,
         maxTentativas,
         delay: `${delay}ms`,

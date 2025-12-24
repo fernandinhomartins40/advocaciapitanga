@@ -5,6 +5,9 @@ import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { logger } from './utils/logger';
 import { errorMiddleware } from './middlewares/error.middleware';
+import { requestIdMiddleware } from './middlewares/request-id.middleware';
+import { httpLoggerMiddleware } from './middlewares/http-logger.middleware';
+import { metricsMiddleware } from './utils/metrics';
 
 // Importar rotas
 import authRoutes from './routes/auth.routes';
@@ -25,6 +28,15 @@ const app = express();
 
 // Confiar no proxy (Nginx)
 app.set('trust proxy', 1);
+
+// Middleware de Request ID (deve ser o primeiro)
+app.use(requestIdMiddleware);
+
+// Middleware de logging HTTP
+app.use(httpLoggerMiddleware);
+
+// Middleware de métricas
+app.use(metricsMiddleware);
 
 // Middlewares de segurança
 app.use(helmet());
@@ -70,12 +82,6 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
-
-// Logging de requisições
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`);
-  next();
-});
 
 // Rotas
 app.use('/api/auth', authRoutes);
