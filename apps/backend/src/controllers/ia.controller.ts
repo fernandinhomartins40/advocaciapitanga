@@ -1,16 +1,25 @@
-import { Response, NextFunction } from 'express';
+﻿import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import { IAService } from '../services/ia.service';
 import { PDFService } from '../services/pdf.service';
 import { DOCXService } from '../services/docx.service';
 import { TXTService } from '../services/txt.service';
 import { RTFService } from '../services/rtf.service';
+import fs from 'fs';
+import { buildDownloadFilename } from '../utils/file-utils';
 
 const iaService = new IAService();
 const pdfService = new PDFService();
 const docxService = new DOCXService();
 const txtService = new TXTService();
 const rtfService = new RTFService();
+
+const MIME_TYPES: Record<string, string> = {
+  pdf: 'application/pdf',
+  docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  txt: 'text/plain',
+  rtf: 'application/rtf'
+};
 
 export class IAController {
   async gerarPeca(req: AuthRequest, res: Response, next: NextFunction) {
@@ -19,10 +28,10 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!tipoPeca || !contexto) {
-        return res.status(400).json({ error: 'Tipo de peça e contexto são obrigatórios' });
+        return res.status(400).json({ error: 'Tipo de peÃ§a e contexto sÃ£o obrigatÃ³rios' });
       }
 
-      // Buscar advogadoId do usuário logado
+      // Buscar advogadoId do usuÃ¡rio logado
       const { prisma } = await import('database');
 
       const advogado = await prisma.advogado.findUnique({
@@ -30,7 +39,7 @@ export class IAController {
       });
 
       if (!advogado) {
-        return res.status(403).json({ error: 'Apenas advogados podem gerar peças' });
+        return res.status(403).json({ error: 'Apenas advogados podem gerar peÃ§as' });
       }
 
       // Buscar template se fornecido
@@ -84,7 +93,7 @@ export class IAController {
         }
       }
 
-      // Gerar peça com IA, passando advogadoId para buscar configurações
+      // Gerar peÃ§a com IA, passando advogadoId para buscar configuraÃ§Ãµes
       const conteudo = await iaService.gerarPecaJuridica({
         tipoPeca,
         contexto,
@@ -125,7 +134,7 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!conteudo || !titulo) {
-        return res.status(400).json({ error: 'Conteúdo e título são obrigatórios' });
+        return res.status(400).json({ error: 'ConteÃºdo e tÃ­tulo sÃ£o obrigatÃ³rios' });
       }
 
       const { prisma } = await import('database');
@@ -144,13 +153,19 @@ export class IAController {
 
       const filepath = await pdfService.gerarPDF(conteudo, titulo, options);
 
-      res.download(filepath, `${titulo}.pdf`, (err) => {
+      const downloadName = buildDownloadFilename(titulo, 'pdf');
+      res.setHeader('Content-Type', MIME_TYPES.pdf);
+      res.download(filepath, downloadName, (err) => {
         if (err) {
           console.error('Erro ao enviar arquivo:', err);
         }
-        // Deletar arquivo após download
-        const fs = require('fs');
-        fs.unlinkSync(filepath);
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+        } catch (deleteErr) {
+          console.error('Erro ao deletar arquivo:', deleteErr);
+        }
       });
     } catch (error: any) {
       next(error);
@@ -163,7 +178,7 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!conteudo || !titulo) {
-        return res.status(400).json({ error: 'Conteúdo e título são obrigatórios' });
+        return res.status(400).json({ error: 'ConteÃºdo e tÃ­tulo sÃ£o obrigatÃ³rios' });
       }
 
       const { prisma } = await import('database');
@@ -182,13 +197,19 @@ export class IAController {
 
       const filepath = await docxService.gerarDOCX(conteudo, titulo, options);
 
-      res.download(filepath, `${titulo}.docx`, (err) => {
+      const downloadName = buildDownloadFilename(titulo, 'docx');
+      res.setHeader('Content-Type', MIME_TYPES.docx);
+      res.download(filepath, downloadName, (err) => {
         if (err) {
           console.error('Erro ao enviar arquivo:', err);
         }
-        // Deletar arquivo após download
-        const fs = require('fs');
-        fs.unlinkSync(filepath);
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+        } catch (deleteErr) {
+          console.error('Erro ao deletar arquivo:', deleteErr);
+        }
       });
     } catch (error: any) {
       next(error);
@@ -201,7 +222,7 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!conteudo) {
-        return res.status(400).json({ error: 'Conteúdo é obrigatório' });
+        return res.status(400).json({ error: 'ConteÃºdo Ã© obrigatÃ³rio' });
       }
 
       const { prisma } = await import('database');
@@ -234,7 +255,7 @@ export class IAController {
       });
 
       if (!advogado) {
-        return res.status(403).json({ error: 'Apenas advogados podem acessar o histórico' });
+        return res.status(403).json({ error: 'Apenas advogados podem acessar o histÃ³rico' });
       }
 
       const skip = (Number(page) - 1) * Number(limit);
@@ -323,7 +344,7 @@ export class IAController {
       });
 
       if (!documento) {
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
       }
 
       res.json(documento);
@@ -338,7 +359,7 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!conteudo || !titulo) {
-        return res.status(400).json({ error: 'Conteúdo e título são obrigatórios' });
+        return res.status(400).json({ error: 'ConteÃºdo e tÃ­tulo sÃ£o obrigatÃ³rios' });
       }
 
       const { prisma } = await import('database');
@@ -357,12 +378,19 @@ export class IAController {
 
       const filepath = await txtService.gerarTXT(conteudo, titulo, options);
 
-      res.download(filepath, `${titulo}.txt`, (err) => {
+      const downloadName = buildDownloadFilename(titulo, 'txt');
+      res.setHeader('Content-Type', MIME_TYPES.txt);
+      res.download(filepath, downloadName, (err) => {
         if (err) {
           console.error('Erro ao enviar arquivo:', err);
         }
-        const fs = require('fs');
-        fs.unlinkSync(filepath);
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+        } catch (deleteErr) {
+          console.error('Erro ao deletar arquivo:', deleteErr);
+        }
       });
     } catch (error: any) {
       next(error);
@@ -375,7 +403,7 @@ export class IAController {
       const userId = req.user!.userId;
 
       if (!conteudo || !titulo) {
-        return res.status(400).json({ error: 'Conteúdo e título são obrigatórios' });
+        return res.status(400).json({ error: 'ConteÃºdo e tÃ­tulo sÃ£o obrigatÃ³rios' });
       }
 
       const { prisma } = await import('database');
@@ -394,15 +422,24 @@ export class IAController {
 
       const filepath = await rtfService.gerarRTF(conteudo, titulo, options);
 
-      res.download(filepath, `${titulo}.rtf`, (err) => {
+      const downloadName = buildDownloadFilename(titulo, 'rtf');
+      res.setHeader('Content-Type', MIME_TYPES.rtf);
+      res.download(filepath, downloadName, (err) => {
         if (err) {
           console.error('Erro ao enviar arquivo:', err);
         }
-        const fs = require('fs');
-        fs.unlinkSync(filepath);
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+          }
+        } catch (deleteErr) {
+          console.error('Erro ao deletar arquivo:', deleteErr);
+        }
       });
     } catch (error: any) {
       next(error);
     }
   }
 }
+
+

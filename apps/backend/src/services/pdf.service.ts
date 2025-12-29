@@ -1,8 +1,9 @@
-import { Browser } from 'puppeteer';
+import puppeteer, { Browser } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
 import { puppeteerPool } from '../utils/puppeteer-pool';
+import { buildTempFilename } from '../utils/file-utils';
 
 export interface PDFOptions {
   cabecalho?: string;
@@ -24,7 +25,7 @@ export class PDFService {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.pdf`;
+    const filename = buildTempFilename(titulo, 'pdf');
     const filepath = path.join(uploadsDir, filename);
 
     logger.info({ msg: '[PDF] Arquivo será salvo', filepath });
@@ -45,7 +46,8 @@ export class PDFService {
       }
 
       if (!browser) {
-        throw new Error('Não foi possível obter browser do pool');
+        logger.info('[PDF] Iniciando browser standalone');
+        browser = await this.launchStandaloneBrowser();
       }
 
       logger.info('[PDF] Criando nova página');
@@ -224,4 +226,45 @@ export class PDFService {
       </div>
     `;
   }
+
+  private getExecutablePath(): string {
+    const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    if (configuredPath) {
+      return configuredPath;
+    }
+
+    const bundledPath = path.join(__dirname, '../../chrome/win64-145.0.7569.0/chrome-win64/chrome.exe');
+    if (fs.existsSync(bundledPath)) {
+      return bundledPath;
+    }
+
+    return puppeteer.executablePath();
+  }
+
+  private async launchStandaloneBrowser(): Promise<Browser> {
+    const executablePath = this.getExecutablePath();
+    return puppeteer.launch({
+      headless: true,
+      executablePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-gl-drawing-for-tests',
+        '--disable-features=VizDisplayCompositor',
+        '--no-zygote',
+        '--single-process',
+        '--disable-features=HttpsFirstBalancedModeAutoEnable',
+        '--use-gl=swiftshader',
+        '--disable-vulkan',
+        '--disable-accelerated-2d-canvas',
+        '--disable-webgl',
+        '--disable-webgl2'
+      ],
+      timeout: 30000,
+    });
+  }
 }
+

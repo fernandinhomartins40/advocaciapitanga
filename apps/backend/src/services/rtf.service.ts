@@ -2,6 +2,7 @@ import { convert } from 'html-to-text';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
+import { buildTempFilename } from '../utils/file-utils';
 
 export interface RTFOptions {
   cabecalho?: string;
@@ -21,7 +22,7 @@ export class RTFService {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.rtf`;
+    const filename = buildTempFilename(titulo, 'rtf');
     const filepath = path.join(uploadsDir, filename);
 
     logger.info({ msg: '[RTF] Arquivo será salvo', filepath });

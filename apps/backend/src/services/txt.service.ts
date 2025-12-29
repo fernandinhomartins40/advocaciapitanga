@@ -2,6 +2,7 @@ import { convert } from 'html-to-text';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
+import { buildTempFilename } from '../utils/file-utils';
 
 export interface TXTOptions {
   cabecalho?: string;
@@ -21,7 +22,7 @@ export class TXTService {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.txt`;
+    const filename = buildTempFilename(titulo, 'txt');
     const filepath = path.join(uploadsDir, filename);
 
     logger.info({ msg: '[TXT] Arquivo será salvo', filepath });

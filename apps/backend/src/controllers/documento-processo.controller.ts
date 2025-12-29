@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+﻿import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import { PDFService } from '../services/pdf.service';
 import { DOCXService } from '../services/docx.service';
@@ -7,6 +7,7 @@ import { RTFService } from '../services/rtf.service';
 import { retry } from '../utils/retry';
 import { logger } from '../utils/logger';
 import fs from 'fs';
+import { buildDownloadFilename } from '../utils/file-utils';
 
 const pdfService = new PDFService();
 const docxService = new DOCXService();
@@ -29,9 +30,10 @@ export class DocumentoProcessoController {
     try {
       const { processoId, clienteId, templateId, titulo, conteudoHTML } = req.body;
       const userId = req.user!.userId;
+      const formatoNormalizado = typeof formato === 'string' ? formato.toLowerCase() : '';
 
       if (!processoId || !clienteId || !titulo || !conteudoHTML) {
-        return res.status(400).json({ error: 'processoId, clienteId, titulo e conteudoHTML são obrigatórios' });
+        return res.status(400).json({ error: 'processoId, clienteId, titulo e conteudoHTML sÃ£o obrigatÃ³rios' });
       }
 
       const { prisma } = await import('database');
@@ -54,7 +56,7 @@ export class DocumentoProcessoController {
       });
 
       if (!processo) {
-        return res.status(404).json({ error: 'Processo não encontrado' });
+        return res.status(404).json({ error: 'Processo nÃ£o encontrado' });
       }
 
       // Criar documento
@@ -141,7 +143,7 @@ export class DocumentoProcessoController {
   }
 
   /**
-   * Buscar um documento específico
+   * Buscar um documento especÃ­fico
    */
   async buscar(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -189,7 +191,7 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
       }
 
       res.json(documento);
@@ -227,10 +229,10 @@ export class DocumentoProcessoController {
       });
 
       if (!documentoExistente) {
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
       }
 
-      // Atualizar documento (incrementar versão)
+      // Atualizar documento (incrementar versÃ£o)
       const documento = await prisma.documentoProcesso.update({
         where: { id },
         data: {
@@ -276,10 +278,10 @@ export class DocumentoProcessoController {
       const { formato } = req.body; // pdf, docx, txt, rtf
       const userId = req.user!.userId;
 
-      logger.info({ msg: '[EXPORT] Iniciando exportação', id, formato, userId });
+      logger.info({ msg: '[EXPORT] Iniciando exportaÃ§Ã£o', id, formato, userId });
 
-      if (!formato || !['pdf', 'docx', 'txt', 'rtf'].includes(formato)) {
-        return res.status(400).json({ error: 'Formato inválido. Use: pdf, docx, txt ou rtf' });
+      if (!formatoNormalizado || !['pdf', 'docx', 'txt', 'rtf'].includes(formatoNormalizado)) {
+        return res.status(400).json({ error: 'Formato invÃ¡lido. Use: pdf, docx, txt ou rtf' });
       }
 
       const { prisma } = await import('database');
@@ -293,7 +295,7 @@ export class DocumentoProcessoController {
       });
 
       if (!advogado) {
-        logger.error({ msg: '[EXPORT] Advogado não encontrado', userId });
+        logger.error({ msg: '[EXPORT] Advogado nÃ£o encontrado', userId });
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
@@ -308,8 +310,8 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        logger.error({ msg: '[EXPORT] Documento não encontrado', id, advogadoId: advogado.id });
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        logger.error({ msg: '[EXPORT] Documento nÃ£o encontrado', id, advogadoId: advogado.id });
+        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
       }
 
       logger.info({ msg: '[EXPORT] Documento encontrado', titulo: documento.titulo });
@@ -319,11 +321,11 @@ export class DocumentoProcessoController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      // Gerar arquivo com retry automático
+      // Gerar arquivo com retry automÃ¡tico
       const filepath = await retry(async () => {
         logger.info({ msg: '[EXPORT] Gerando arquivo', formato });
 
-        switch (formato) {
+        switch (formatoNormalizado) {
           case 'pdf':
             return await pdfService.gerarPDF(documento.conteudoHTML, documento.titulo, options);
           case 'docx':
@@ -333,41 +335,39 @@ export class DocumentoProcessoController {
           case 'rtf':
             return await rtfService.gerarRTF(documento.conteudoHTML, documento.titulo, options);
           default:
-            throw new Error('Formato não suportado');
+            throw new Error('Formato nÃ£o suportado');
         }
       }, {
         maxTentativas: 3,
         delayBase: 1000,
         onRetry: (tentativa, error) => {
-          logger.warn({ msg: '[EXPORT] Retry de exportação', tentativa, error: error.message, formato });
+          logger.warn({ msg: '[EXPORT] Retry de exportaÃ§Ã£o', tentativa, error: error.message, formato });
         }
       });
 
       logger.info({ msg: '[EXPORT] Arquivo gerado com sucesso', filepath });
+      const downloadName = buildDownloadFilename(documento.titulo, formatoNormalizado);
 
-      // Definir Content-Type explícito
-      res.setHeader('Content-Type', MIME_TYPES[formato]);
-      res.setHeader('Content-Disposition', `attachment; filename="${documento.titulo}.${formato}"`);
+      // Definir Content-Type explÃ­cito
+      res.setHeader('Content-Type', MIME_TYPES[formatoNormalizado]);
 
       // Enviar arquivo para download
-      res.download(filepath, `${documento.titulo}.${formato}`, (err) => {
+      res.download(filepath, downloadName, (err) => {
         if (err) {
           logger.error({ msg: '[EXPORT] Erro ao enviar arquivo', error: err, filepath });
         } else {
           logger.info({ msg: '[EXPORT] Arquivo enviado com sucesso', filepath });
         }
 
-        // Deletar arquivo após download (mesmo em caso de erro)
-        setTimeout(() => {
-          try {
-            if (fs.existsSync(filepath)) {
-              fs.unlinkSync(filepath);
-              logger.debug({ msg: '[EXPORT] Arquivo temporário deletado', filepath });
+        // Deletar arquivo apÃ³s download (mesmo em caso de erro)
+        try {
+          if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+            logger.debug({ msg: '[EXPORT] Arquivo temporÃ¡rio deletado', filepath });
             }
           } catch (deleteErr) {
-            logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporário', error: deleteErr, filepath });
+            logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporÃ¡rio', error: deleteErr, filepath });
           }
-        }, 1000); // Aguardar 1s para garantir que o download iniciou
       });
     } catch (error: any) {
       logger.error({ msg: '[EXPORT] Erro ao exportar documento', error: error.message, stack: error.stack });
@@ -403,7 +403,7 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        return res.status(404).json({ error: 'Documento não encontrado' });
+        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
       }
 
       // Deletar documento
@@ -417,3 +417,7 @@ export class DocumentoProcessoController {
     }
   }
 }
+
+
+
+

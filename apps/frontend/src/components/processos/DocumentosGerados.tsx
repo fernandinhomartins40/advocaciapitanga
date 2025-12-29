@@ -77,11 +77,12 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
   const handleExport = async (documentoId: string, formato: string, titulo: string) => {
     setIsExporting(true);
     let url: string | null = null;
+    const formatoNormalizado = formato.toLowerCase();
 
     try {
       const response = await api.post(
         `/documentos-processo/${documentoId}/exportar`,
-        { formato },
+        { formato: formatoNormalizado },
         { responseType: 'blob' }
       );
 
@@ -91,7 +92,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
       // Criar link temporário e simular clique
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${titulo}.${formato.toLowerCase()}`;
+      link.download = `${titulo}.${formatoNormalizado}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

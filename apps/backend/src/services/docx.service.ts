@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { createContextLogger, startTimer, logError } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
+import { buildTempFilename } from '../utils/file-utils';
 
 export interface DOCXOptions {
   cabecalho?: string;
@@ -31,7 +32,7 @@ export class DOCXService {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const filename = `${Date.now()}-${titulo.replace(/\s+/g, '-')}.docx`;
+    const filename = buildTempFilename(titulo, 'docx');
     const filepath = path.join(uploadsDir, filename);
 
     try {
