@@ -161,6 +161,8 @@ export default function DocumentosPage() {
   const [processoId, setProcessoId] = useState('');
   const [documentoConteudo, setDocumentoConteudo] = useState('');
   const [tituloDocumento, setTituloDocumento] = useState('');
+  const [documentoProcessoId, setDocumentoProcessoId] = useState('');
+  const [isSavingDocumento, setIsSavingDocumento] = useState(false);
   const [clienteSelecionado, setClienteSelecionado] = useState<ClienteDetalhado | null>(null);
   const [clienteDetalhado, setClienteDetalhado] = useState<ClienteDetalhado | null>(null);
   const [processoSelecionado, setProcessoSelecionado] = useState<ProcessoDetalhado | null>(null);
@@ -240,7 +242,7 @@ export default function DocumentosPage() {
     } catch (error: any) {
       toast({
         title: 'Erro',
-        description: error.response?.data?.error || 'NÃ‡Â£o foi possÃ‡Â­vel carregar os dados completos do cliente',
+        description: error.response?.data?.error || 'Não foi possível carregar os dados completos do cliente',
         variant: 'error',
       });
     }
@@ -265,7 +267,7 @@ export default function DocumentosPage() {
     } catch (error: any) {
       toast({
         title: 'Erro',
-        description: error.response?.data?.error || 'NÃ‡Â£o foi possÃ‡Â­vel carregar os dados completos do processo',
+        description: error.response?.data?.error || 'Não foi possível carregar os dados completos do processo',
         variant: 'error',
       });
     }
@@ -343,7 +345,7 @@ export default function DocumentosPage() {
       advogado_oab: advogado?.oab || '',
       advogado_telefone: advogado?.telefone || '',
 
-      // RÃ©u
+      // Réu
       reu_nome: reu?.nomeCompleto || reu?.razaoSocial || '',
       reu_tipo_pessoa: reu?.tipoPessoa || '',
       reu_cpf: reu?.cpf || '',
@@ -442,7 +444,7 @@ export default function DocumentosPage() {
       if (selectedModelo) {
         limparEditor();
       }
-      toast({ title: 'Sucesso', description: 'Modelo excluÃ­do com sucesso!', variant: 'success' });
+      toast({ title: 'Sucesso', description: 'Modelo excluído com sucesso!', variant: 'success' });
     },
     onError: () => {
       toast({ title: 'Erro', description: 'Erro ao deletar modelo', variant: 'error' });
@@ -467,7 +469,7 @@ export default function DocumentosPage() {
 
   const handleSalvarModelo = () => {
     if (!tituloModelo.trim() || !editorContent.trim()) {
-      toast({ title: 'AtenÃ§Ã£o', description: 'Preencha tÃ­tulo e conteÃºdo', variant: 'error' });
+      toast({ title: 'Atenção', description: 'Preencha título e conteúdo', variant: 'error' });
       return;
     }
 
@@ -542,25 +544,52 @@ export default function DocumentosPage() {
     }, conteudo);
   };
 
-  const handleGerarDocumento = () => {
+  const handleGerarDocumento = async () => {
     if (!modeloSelecionado) {
-      toast({ title: 'AtenÃ§Ã£o', description: 'Selecione um modelo', variant: 'error' });
+      toast({ title: 'Atenção', description: 'Selecione um modelo', variant: 'error' });
+      return;
+    }
+
+    if (!clienteId || !processoId) {
+      toast({ title: 'Atenção', description: 'Selecione cliente e processo', variant: 'error' });
       return;
     }
 
     const conteudoComVariaveisSubstituidas = substituirVariaveis(modeloSelecionado.conteudo);
     setDocumentoConteudo(conteudoComVariaveisSubstituidas);
 
-    toast({
-      title: 'Documento gerado',
-      description: 'VariÃ¡veis substituÃ­das com sucesso! VocÃª pode editar o documento antes de exportar.',
-      variant: 'success',
-    });
+    setIsSavingDocumento(true);
+    try {
+      const response = await api.post('/documentos-processo', {
+        processoId,
+        clienteId,
+        templateId: modeloSelecionado?.id || null,
+        titulo: tituloDocumento || modeloSelecionado.nome,
+        conteudoHTML: conteudoComVariaveisSubstituidas
+      });
+
+      setDocumentoProcessoId(response.data.id);
+      queryClient.invalidateQueries({ queryKey: ['processo', processoId] });
+
+      toast({
+        title: 'Documento gerado',
+        description: 'Documento gerado e salvo no processo selecionado.',
+        variant: 'success',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.error || 'Erro ao salvar documento',
+        variant: 'error',
+      });
+    } finally {
+      setIsSavingDocumento(false);
+    }
   };
 
   const handleExportarDocumento = async (formato: 'pdf' | 'docx') => {
     if (!documentoConteudo) {
-      toast({ title: 'AtenÃ§Ã£o', description: 'Gere um documento primeiro', variant: 'error' });
+      toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
       return;
     }
 
@@ -899,11 +928,11 @@ export default function DocumentosPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">TÃ­tulo do Modelo *</label>
+                    <label className="text-sm font-medium text-gray-700">Título do Modelo *</label>
                     <Input
                       value={tituloModelo}
                       onChange={(e) => setTituloModelo(e.target.value)}
-                      placeholder="Ex: PetiÃ§Ã£o Inicial - AÃ§Ã£o Trabalhista"
+                      placeholder="Ex: Petição Inicial - Ação Trabalhista"
                     />
                   </div>
                   <div>
@@ -924,22 +953,22 @@ export default function DocumentosPage() {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">DescriÃ§Ã£o</label>
+                  <label className="text-sm font-medium text-gray-700">Descrição</label>
                   <Textarea
                     value={descricaoModelo}
                     onChange={(e) => setDescricaoModelo(e.target.value)}
-                    placeholder="Breve descriÃ§Ã£o sobre este modelo"
+                    placeholder="Breve descrição sobre este modelo"
                     rows={2}
                   />
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-gray-700 mb-2 block">ConteÃºdo do Modelo *</label>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">Conteúdo do Modelo *</label>
                   <AdvancedRichTextEditor
                     ref={templateEditorRef}
                     content={editorContent}
                     onChange={(html) => setEditorContent(html)}
-                    placeholder="Digite o conteÃºdo do modelo. Use {{ variavel }} para campos dinÃ¢micos."
+                    placeholder="Digite o conteúdo do modelo. Use {{ variavel }} para campos dinâmicos."
                     minHeight="500px"
                   />
                 </div>
@@ -1023,7 +1052,7 @@ export default function DocumentosPage() {
           {/* Document Creation Tab */}
           {activeTab === 'documents' && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-              {/* Sidebar - SeleÃ§Ã£o de Modelo */}
+              {/* Sidebar - Seleção de Modelo */}
               <div className="lg:col-span-1 space-y-4">
                 <Card>
                   <CardHeader>
@@ -1071,7 +1100,7 @@ export default function DocumentosPage() {
                         ))
                       ) : (
                         <p className="text-sm text-gray-500 text-center py-4">
-                          Nenhum modelo disponÃ­vel
+                          Nenhum modelo disponível
                         </p>
                       )}
                     </div>
@@ -1079,9 +1108,9 @@ export default function DocumentosPage() {
                 </Card>
               </div>
 
-              {/* Main Content - ConfiguraÃ§Ã£o e Editor */}
+              {/* Main Content - Configuração e Editor */}
               <div className="lg:col-span-3 space-y-4">
-                {/* ConfiguraÃ§Ã£o do Documento */}
+                {/* Configuração do Documento */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -1092,7 +1121,7 @@ export default function DocumentosPage() {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1 block">TÃ­tulo do Documento</label>
+                        <label className="text-sm font-medium text-gray-700 mb-1 block">Título do Documento</label>
                         <Input
                           value={tituloDocumento}
                           onChange={(e) => setTituloDocumento(e.target.value)}
@@ -1116,8 +1145,10 @@ export default function DocumentosPage() {
                         onChange={(id, cliente) => {
                           setClienteId(id);
                           setClienteSelecionado(cliente as any);
+                          setProcessoId('');
                           setProcessoSelecionado(null);
                           setProcessoDetalhado(null);
+                          setDocumentoProcessoId('');
                           if (id) {
                             carregarClienteDetalhado(id);
                           } else {
@@ -1132,6 +1163,7 @@ export default function DocumentosPage() {
                           setProcessoId(id);
                           setProcessoSelecionado(processo as any);
                           setProcessoDetalhado(null);
+                          setDocumentoProcessoId('');
                           if (id) {
                             carregarProcessoDetalhado(id);
                           }
@@ -1142,10 +1174,10 @@ export default function DocumentosPage() {
                     <div className="flex gap-3 pt-2">
                       <Button
                         onClick={handleGerarDocumento}
-                        disabled={!modeloSelecionado}
+                        disabled={!modeloSelecionado || isSavingDocumento}
                       >
                         <FileText className="h-4 w-4 mr-2" />
-                        Gerar Documento
+                        {isSavingDocumento ? 'Salvando...' : 'Gerar Documento'}
                       </Button>
 
                       {documentoConteudo && (
@@ -1193,13 +1225,13 @@ export default function DocumentosPage() {
                       <>
                         <p className="text-sm text-gray-600 mb-3">
                           {documentoConteudo
-                            ? 'Edite o documento gerado conforme necessÃ¡rio antes de exportar.'
+                            ? 'Edite o documento gerado conforme necessário antes de exportar.'
                             : 'Clique em "Gerar Documento" para preencher o modelo com os dados do cliente e processo.'}
                         </p>
                         <AdvancedRichTextEditor
                           content={documentoConteudo}
                           onChange={(html) => setDocumentoConteudo(html)}
-                          placeholder="O documento gerado aparecerÃ¡ aqui..."
+                          placeholder="O documento gerado aparecerá aqui..."
                           minHeight="500px"
                           editable={!!documentoConteudo}
                         />
@@ -1207,7 +1239,7 @@ export default function DocumentosPage() {
                     ) : (
                       <div className="text-center py-12 text-gray-500">
                         <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                        <p>Selecione um modelo ao lado para comeÃ§ar</p>
+                        <p>Selecione um modelo ao lado para começar</p>
                       </div>
                     )}
                   </CardContent>
@@ -1220,4 +1252,7 @@ export default function DocumentosPage() {
     </div>
   );
 }
+
+
+
 
