@@ -50,8 +50,7 @@ class PuppeteerPool {
               '--disable-accelerated-2d-canvas',
               '--disable-webgl',
               '--disable-webgl2',
-              '--disable-crash-reporter',
-              '--crash-dumps-dir=/tmp'
+              '--disable-breakpad'
             ],
             timeout: 30000,
           });

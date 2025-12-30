@@ -13,55 +13,42 @@ export interface PDFOptions {
 export class PDFService {
   async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
-    const startTime = Date.now();
     let browser: Browser | null = null;
     let usandoPool = false;
 
-    logger.info({ msg: '[PDF] Iniciando geração de PDF', titulo, uploadsDir });
-
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
-      logger.info({ msg: '[PDF] Criando diretório', uploadsDir });
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
     const filename = buildTempFilename(titulo, 'pdf');
     const filepath = path.join(uploadsDir, filename);
 
-    logger.info({ msg: '[PDF] Arquivo será salvo', filepath });
-
     try {
       // Montar HTML completo com estilos
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
-      logger.debug({ msg: '[PDF] HTML montado', size: htmlCompleto.length });
 
       // Tentar usar pool de browsers (fallback para criação manual se pool não disponível)
       try {
         browser = await puppeteerPool.acquire();
         usandoPool = true;
-        logger.debug('[PDF] Browser adquirido do pool');
       } catch (poolError) {
-        logger.warn({ msg: '[PDF] Pool não disponível, usando browser standalone', error: poolError });
-        // Fallback será tratado pelo código original se necessário
+        // Pool não disponível, usar browser standalone
       }
 
       if (!browser) {
-        logger.info('[PDF] Iniciando browser standalone');
         browser = await this.launchStandaloneBrowser();
       }
 
-      logger.info('[PDF] Criando nova página');
       const page = await browser.newPage();
 
       // Carregar HTML com timeout
-      logger.info('[PDF] Carregando HTML na página');
       await page.setContent(htmlCompleto, {
         waitUntil: 'domcontentloaded',
-        timeout: 30000 // Timeout de 30s para carregar conteúdo
+        timeout: 30000
       });
 
       // Gerar PDF
-      logger.info('[PDF] Gerando PDF');
       await page.pdf({
         path: filepath,
         format: 'A4',
@@ -75,46 +62,33 @@ export class PDFService {
         displayHeaderFooter: true,
         headerTemplate: this.montarCabecalho(options),
         footerTemplate: this.montarRodape(options),
-        timeout: 30000 // Timeout de 30s para gerar PDF
+        timeout: 30000
       });
 
       // Fechar página para liberar memória
       await page.close();
 
-      const duration = Date.now() - startTime;
-      logger.info({
-        msg: '[PDF] PDF gerado com sucesso',
-        filepath,
-        duration: `${duration}ms`,
-        usandoPool
-      });
-
       return filepath;
-    } catch (error) {
-      const duration = Date.now() - startTime;
-      logger.error({
-        msg: '[PDF] Erro ao gerar PDF',
-        error,
-        titulo,
-        duration: `${duration}ms`
-      });
-      throw error;
+    } catch (error: any) {
+      // Melhorar mensagem de erro
+      const errorMessage = error.message || 'Erro desconhecido ao gerar PDF';
+      const newError = new Error(`Falha ao gerar PDF: ${errorMessage}. Verifique se o Chromium está instalado no servidor.`);
+      (newError as any).originalError = error;
+      throw newError;
     } finally {
       // Liberar browser de volta ao pool (ou fechar se não veio do pool)
       if (browser) {
         if (usandoPool) {
           try {
             await puppeteerPool.release(browser);
-            logger.debug('[PDF] Browser devolvido ao pool');
           } catch (releaseError) {
-            logger.error({ msg: '[PDF] Erro ao devolver browser ao pool', error: releaseError });
+            // Ignorar erro de release
           }
         } else {
           try {
             await browser.close();
-            logger.debug('[PDF] Browser standalone fechado');
           } catch (closeError) {
-            logger.error({ msg: '[PDF] Erro ao fechar browser standalone', error: closeError });
+            // Ignorar erro de close
           }
         }
       }
@@ -262,8 +236,7 @@ export class PDFService {
         '--disable-accelerated-2d-canvas',
         '--disable-webgl',
         '--disable-webgl2',
-        '--disable-crash-reporter',
-        '--crash-dumps-dir=/tmp'
+        '--disable-breakpad'
       ],
       timeout: 30000,
     });
