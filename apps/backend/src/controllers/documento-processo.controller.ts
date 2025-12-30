@@ -30,7 +30,6 @@ export class DocumentoProcessoController {
     try {
       const { processoId, clienteId, templateId, titulo, conteudoHTML } = req.body;
       const userId = req.user!.userId;
-      const formatoNormalizado = typeof formato === 'string' ? formato.toLowerCase() : '';
 
       if (!processoId || !clienteId || !titulo || !conteudoHTML) {
         return res.status(400).json({ error: 'processoId, clienteId, titulo e conteudoHTML sÃ£o obrigatÃ³rios' });
@@ -277,8 +276,9 @@ export class DocumentoProcessoController {
       const { id } = req.params;
       const { formato } = req.body; // pdf, docx, txt, rtf
       const userId = req.user!.userId;
+      const formatoNormalizado = typeof formato === 'string' ? formato.toLowerCase() : '';
 
-      logger.info({ msg: '[EXPORT] Iniciando exportaÃ§Ã£o', id, formato, userId });
+      logger.info({ msg: '[EXPORT] Iniciando exportaÃ§Ã£o', id, formato: formatoNormalizado, userId });
 
       if (!formatoNormalizado || !['pdf', 'docx', 'txt', 'rtf'].includes(formatoNormalizado)) {
         return res.status(400).json({ error: 'Formato invÃ¡lido. Use: pdf, docx, txt ou rtf' });
@@ -323,7 +323,7 @@ export class DocumentoProcessoController {
 
       // Gerar arquivo com retry automÃ¡tico
       const filepath = await retry(async () => {
-        logger.info({ msg: '[EXPORT] Gerando arquivo', formato });
+        logger.info({ msg: '[EXPORT] Gerando arquivo', formato: formatoNormalizado });
 
         switch (formatoNormalizado) {
           case 'pdf':
@@ -341,7 +341,7 @@ export class DocumentoProcessoController {
         maxTentativas: 3,
         delayBase: 1000,
         onRetry: (tentativa, error) => {
-          logger.warn({ msg: '[EXPORT] Retry de exportaÃ§Ã£o', tentativa, error: error.message, formato });
+          logger.warn({ msg: '[EXPORT] Retry de exportaÃ§Ã£o', tentativa, error: error.message, formato: formatoNormalizado });
         }
       });
 
@@ -359,15 +359,15 @@ export class DocumentoProcessoController {
           logger.info({ msg: '[EXPORT] Arquivo enviado com sucesso', filepath });
         }
 
-        // Deletar arquivo apÃ³s download (mesmo em caso de erro)
+        // Deletar arquivo apos download (mesmo em caso de erro)
         try {
           if (fs.existsSync(filepath)) {
             fs.unlinkSync(filepath);
-            logger.debug({ msg: '[EXPORT] Arquivo temporÃ¡rio deletado', filepath });
-            }
-          } catch (deleteErr) {
-            logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporÃ¡rio', error: deleteErr, filepath });
+            logger.debug({ msg: '[EXPORT] Arquivo temporario deletado', filepath });
           }
+        } catch (deleteErr) {
+          logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporario', error: deleteErr, filepath });
+        }
       });
     } catch (error: any) {
       logger.error({ msg: '[EXPORT] Erro ao exportar documento', error: error.message, stack: error.stack });
@@ -417,6 +417,11 @@ export class DocumentoProcessoController {
     }
   }
 }
+
+
+
+
+
 
 
 
