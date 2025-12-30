@@ -17,7 +17,7 @@ export class ParteController {
         });
 
         if (!advogado) {
-          return res.status(403).json({ error: 'Advogado não encontrado' });
+          return res.status(403).json({ error: 'Advogado nǜo encontrado' });
         }
 
         // Buscar partes de processos do advogado
@@ -62,8 +62,75 @@ export class ParteController {
           },
           distinct: ['cpf', 'cnpj', 'nomeCompleto'],
         });
+      } else if (userRole === 'ADMIN_ESCRITORIO') {
+        const advogadoAdmin = await prisma.advogado.findUnique({
+          where: { userId },
+          include: {
+            escritoriosAdmin: true,
+            escritorioVinculado: true
+          }
+        });
+
+        let escritorioId =
+          advogadoAdmin?.escritoriosAdmin?.[0]?.id ||
+          advogadoAdmin?.escritorioVinculado?.id;
+
+        if (!escritorioId) {
+          const membro = await prisma.membroEscritorio.findUnique({
+            where: { userId }
+          });
+          escritorioId = membro?.escritorioId;
+        }
+
+        if (!escritorioId) {
+          return res.status(403).json({ error: 'Escritório não configurado' });
+        }
+
+        partes = await prisma.parteProcessual.findMany({
+          where: {
+            processo: {
+              advogado: {
+                escritorioId
+              }
+            }
+          },
+          select: {
+            id: true,
+            tipoParte: true,
+            tipoPessoa: true,
+            nomeCompleto: true,
+            cpf: true,
+            cnpj: true,
+            rg: true,
+            orgaoEmissor: true,
+            nacionalidade: true,
+            estadoCivil: true,
+            profissao: true,
+            dataNascimento: true,
+            razaoSocial: true,
+            nomeFantasia: true,
+            inscricaoEstadual: true,
+            representanteLegal: true,
+            cargoRepresentante: true,
+            email: true,
+            telefone: true,
+            celular: true,
+            cep: true,
+            logradouro: true,
+            numero: true,
+            complemento: true,
+            bairro: true,
+            cidade: true,
+            uf: true,
+            clienteId: true,
+          },
+          orderBy: {
+            nomeCompleto: 'asc'
+          },
+          distinct: ['cpf', 'cnpj', 'nomeCompleto'],
+        });
       } else {
-        // Clientes não têm acesso
+        // Clientes nǜo tǦm acesso
         return res.status(403).json({ error: 'Acesso negado' });
       }
 

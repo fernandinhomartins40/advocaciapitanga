@@ -42,17 +42,6 @@ export default function LoginPage() {
     }
   };
 
-  const fillTestCredentials = () => {
-    if (userType === 'advogado') {
-      setEmail('admin@pitanga.com');
-      setPassword('Pitanga@2024!Admin');
-    } else {
-      setEmail('maria@email.com');
-      setPassword('Pitanga@2024!Cliente');
-    }
-    setError('');
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-primary-50 to-white flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
@@ -118,33 +107,6 @@ export default function LoginPage() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p className="mb-3">Usar credenciais de teste:</p>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={fillTestCredentials}
-            >
-              Preencher com credenciais de {userType === 'advogado' ? 'Advogado' : 'Cliente'}
-            </Button>
-            <div className="mt-3 bg-gray-50 p-3 rounded text-xs">
-              {userType === 'advogado' ? (
-                <>
-                  <p><strong>Advogado:</strong></p>
-                  <p>Email: admin@pitanga.com</p>
-                  <p>Senha: Pitanga@2024!Admin</p>
-                </>
-              ) : (
-                <>
-                  <p><strong>Cliente:</strong></p>
-                  <p>Email: maria@email.com</p>
-                  <p>Senha: Pitanga@2024!Cliente</p>
-                </>
-              )}
-            </div>
-          </div>
 
           <div className="mt-6 text-center">
             <Link href="/" className="text-sm text-primary-600 hover:underline">

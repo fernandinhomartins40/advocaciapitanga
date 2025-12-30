@@ -56,7 +56,7 @@ export class PDFService {
       // Carregar HTML com timeout
       logger.info('[PDF] Carregando HTML na página');
       await page.setContent(htmlCompleto, {
-        waitUntil: 'networkidle0',
+        waitUntil: 'domcontentloaded',
         timeout: 30000 // Timeout de 30s para carregar conteúdo
       });
 
@@ -267,4 +267,5 @@ export class PDFService {
     });
   }
 }
+
 

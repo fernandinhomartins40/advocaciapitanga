@@ -87,6 +87,7 @@ app.use(cookieParser());
 app.use('/api/auth', authRoutes);
 app.use('/api/clientes', clienteRoutes);
 app.use('/api/advogado', advogadoRoutes);
+app.use('/api/advogados', advogadoRoutes);
 app.use('/api/processos', processoRoutes);
 app.use('/api/documentos', documentoRoutes);
 app.use('/api/mensagens', mensagemRoutes);
