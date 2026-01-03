@@ -101,36 +101,19 @@ app.use('/api/partes', parteRoutes);
 
 // Rota de health check com monitoramento
 app.get('/api/health', async (req, res) => {
-  try {
-    const { puppeteerPool } = await import('./utils/puppeteer-pool');
-    const poolStats = puppeteerPool.getStats();
+  const memUsage = process.memoryUsage();
+  const uptime = process.uptime();
 
-    const memUsage = process.memoryUsage();
-    const uptime = process.uptime();
-
-    res.json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      uptime: `${Math.floor(uptime / 60)}min`,
-      memory: {
-        rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
-        heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
-        heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
-      },
-      puppeteerPool: {
-        size: poolStats.size,
-        available: poolStats.available,
-        pending: poolStats.pending,
-        initialized: poolStats.initialized
-      }
-    });
-  } catch (error) {
-    res.json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      error: 'Could not fetch detailed stats'
-    });
-  }
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: `${Math.floor(uptime / 60)}min`,
+    memory: {
+      rss: `${Math.round(memUsage.rss / 1024 / 1024)}MB`,
+      heapUsed: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+      heapTotal: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+    }
+  });
 });
 
 // Middleware de tratamento de erros (deve ser o último)

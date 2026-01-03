@@ -1,20 +1,25 @@
-import puppeteer, { Browser } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
-import { logger } from '../utils/logger';
-import { puppeteerPool } from '../utils/puppeteer-pool';
+import pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { buildTempFilename } from '../utils/file-utils';
+
+// Configurar fontes
+(pdfMake as any).vfs = pdfFonts;
 
 export interface PDFOptions {
   cabecalho?: string;
   rodape?: string;
 }
 
+/**
+ * Serviço de geração de PDF usando PDFMake
+ * Não depende de browsers headless, funciona em qualquer ambiente
+ */
 export class PDFService {
   async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
-    let browser: Browser | null = null;
-    let usandoPool = false;
 
     // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
@@ -25,222 +30,213 @@ export class PDFService {
     const filepath = path.join(uploadsDir, filename);
 
     try {
-      // Montar HTML completo com estilos
-      const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
+      // Converter HTML para estrutura do PDFMake
+      const content = this.htmlToContent(conteudoHTML);
 
-      // Tentar usar pool de browsers (fallback para criação manual se pool não disponível)
-      try {
-        browser = await puppeteerPool.acquire();
-        usandoPool = true;
-      } catch (poolError) {
-        // Pool não disponível, usar browser standalone
-      }
+      // Definir documento
+      const docDefinition: TDocumentDefinitions = {
+        pageSize: 'A4',
+        pageMargins: [56.7, 56.7, 56.7, 56.7], // 2cm em pontos
+        header: options?.cabecalho ? {
+          text: options.cabecalho,
+          alignment: 'center',
+          margin: [0, 20, 0, 0],
+          fontSize: 9
+        } : undefined,
+        footer: (currentPage: number, pageCount: number) => {
+          const footerContent: any[] = [];
 
-      if (!browser) {
-        browser = await this.launchStandaloneBrowser();
-      }
+          if (options?.rodape) {
+            footerContent.push({
+              text: options.rodape,
+              alignment: 'center',
+              fontSize: 9,
+              margin: [0, 0, 0, 5]
+            });
+          }
 
-      const page = await browser.newPage();
+          footerContent.push({
+            text: `Página ${currentPage} de ${pageCount}`,
+            alignment: 'center',
+            fontSize: 9
+          });
 
-      // Carregar HTML com timeout
-      await page.setContent(htmlCompleto, {
-        waitUntil: 'domcontentloaded',
-        timeout: 30000
-      });
-
-      // Gerar PDF
-      await page.pdf({
-        path: filepath,
-        format: 'A4',
-        printBackground: true,
-        margin: {
-          top: '2cm',
-          right: '2cm',
-          bottom: '2cm',
-          left: '2cm'
+          return footerContent;
         },
-        displayHeaderFooter: true,
-        headerTemplate: this.montarCabecalho(options),
-        footerTemplate: this.montarRodape(options),
-        timeout: 30000
-      });
-
-      // Fechar página para liberar memória
-      await page.close();
-
-      return filepath;
-    } catch (error: any) {
-      // Melhorar mensagem de erro
-      const errorMessage = error.message || 'Erro desconhecido ao gerar PDF';
-      const newError = new Error(`Falha ao gerar PDF: ${errorMessage}. Verifique se o Chromium está instalado no servidor.`);
-      (newError as any).originalError = error;
-      throw newError;
-    } finally {
-      // Liberar browser de volta ao pool (ou fechar se não veio do pool)
-      if (browser) {
-        if (usandoPool) {
-          try {
-            await puppeteerPool.release(browser);
-          } catch (releaseError) {
-            // Ignorar erro de release
+        content: [
+          {
+            text: titulo,
+            style: 'header',
+            alignment: 'center',
+            margin: [0, 0, 0, 20]
+          },
+          ...content
+        ],
+        styles: {
+          header: {
+            fontSize: 18,
+            bold: true
+          },
+          subheader: {
+            fontSize: 16,
+            bold: true,
+            margin: [0, 15, 0, 10]
+          },
+          subsubheader: {
+            fontSize: 14,
+            bold: true,
+            margin: [0, 10, 0, 8]
+          },
+          paragraph: {
+            fontSize: 12,
+            alignment: 'justify',
+            lineHeight: 1.5,
+            margin: [0, 5, 0, 5]
+          },
+          bold: {
+            bold: true
+          },
+          italic: {
+            italics: true
           }
-        } else {
-          try {
-            await browser.close();
-          } catch (closeError) {
-            // Ignorar erro de close
-          }
+        },
+        defaultStyle: {
+          fontSize: 12
         }
+      };
+
+      // Gerar PDF usando createPdf
+      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
+
+      // Salvar em arquivo
+      return new Promise<string>((resolve, reject) => {
+        pdfDocGenerator.getBuffer((buffer: Buffer) => {
+          try {
+            fs.writeFileSync(filepath, buffer);
+            resolve(filepath);
+          } catch (error) {
+            reject(error);
+          }
+        });
+      });
+    } catch (error: any) {
+      const errorMessage = error.message || 'Erro desconhecido ao gerar PDF';
+      throw new Error(`Falha ao gerar PDF: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Converte HTML básico para estrutura de conteúdo do PDFMake
+   */
+  private htmlToContent(html: string): any[] {
+    const content: any[] = [];
+
+    // Remover tags HTML e processar o texto
+    const cleanHtml = html
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<p[^>]*>/gi, '')
+      .replace(/<\/div>/gi, '\n')
+      .replace(/<div[^>]*>/gi, '');
+
+    // Processar títulos
+    const lines = cleanHtml.split('\n');
+
+    for (let line of lines) {
+      line = line.trim();
+      if (!line) continue;
+
+      // H1
+      if (line.match(/<h1[^>]*>/i)) {
+        const text = line.replace(/<\/?h1[^>]*>/gi, '').trim();
+        if (text) {
+          content.push({
+            text,
+            style: 'header',
+            margin: [0, 15, 0, 10]
+          });
+        }
+        continue;
+      }
+
+      // H2
+      if (line.match(/<h2[^>]*>/i)) {
+        const text = line.replace(/<\/?h2[^>]*>/gi, '').trim();
+        if (text) {
+          content.push({
+            text,
+            style: 'subheader'
+          });
+        }
+        continue;
+      }
+
+      // H3
+      if (line.match(/<h3[^>]*>/i)) {
+        const text = line.replace(/<\/?h3[^>]*>/gi, '').trim();
+        if (text) {
+          content.push({
+            text,
+            style: 'subsubheader'
+          });
+        }
+        continue;
+      }
+
+      // Processar texto com formatação básica (bold, italic)
+      const processedText = this.processInlineFormatting(line);
+
+      if (processedText) {
+        content.push({
+          text: processedText,
+          style: 'paragraph'
+        });
       }
     }
+
+    return content.length > 0 ? content : [{ text: html, style: 'paragraph' }];
   }
 
-  private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
-    return `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <style>
-            @page {
-              size: A4;
-              margin: 2cm;
-            }
-            body {
-              font-family: 'Times New Roman', Times, serif;
-              font-size: 12pt;
-              line-height: 1.5;
-              color: #000;
-              margin: 0;
-              padding: 20px 0;
-            }
-            h1, h2, h3, h4, h5, h6 {
-              font-family: Arial, sans-serif;
-              margin-top: 1.5em;
-              margin-bottom: 0.75em;
-              font-weight: bold;
-            }
-            h1 {
-              font-size: 18pt;
-              text-align: center;
-              margin-bottom: 1.5em;
-            }
-            h2 { font-size: 16pt; }
-            h3 { font-size: 14pt; }
-            p {
-              margin: 0.5em 0;
-              text-align: justify;
-            }
-            ul, ol {
-              margin: 0.5em 0;
-              padding-left: 2em;
-            }
-            li {
-              margin: 0.25em 0;
-            }
-            strong, b {
-              font-weight: bold;
-            }
-            em, i {
-              font-style: italic;
-            }
-            u {
-              text-decoration: underline;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 1em 0;
-            }
-            table, th, td {
-              border: 1px solid #000;
-            }
-            th, td {
-              padding: 8px;
-              text-align: left;
-            }
-            th {
-              background-color: #f0f0f0;
-              font-weight: bold;
-            }
-            .titulo-principal {
-              text-align: center;
-              font-size: 18pt;
-              font-weight: bold;
-              margin-bottom: 2em;
-              margin-top: 1em;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="titulo-principal">${titulo}</div>
-          ${conteudo}
-        </body>
-      </html>
-    `;
-  }
+  /**
+   * Processa formatação inline (bold, italic)
+   */
+  private processInlineFormatting(text: string): any {
+    // Remove todas as tags HTML exceto strong, b, em, i
+    const cleaned = text
+      .replace(/<(?!\/?(strong|b|em|i)\b)[^>]+>/gi, '')
+      .trim();
 
-  private montarCabecalho(options?: PDFOptions): string {
-    const cabecalhoTexto = options?.cabecalho || 'Advocacia Pitanga';
-    return `
-      <div style="width: 100%; font-size: 9pt; text-align: center; padding: 10px 0; border-bottom: 1px solid #ccc;">
-        ${cabecalhoTexto}
-      </div>
-    `;
-  }
+    if (!cleaned) return null;
 
-  private montarRodape(options?: PDFOptions): string {
-    const rodapeTexto = options?.rodape || '';
-    return `
-      <div style="width: 100%; font-size: 9pt; text-align: center; padding: 10px 40px;">
-        ${rodapeTexto ? `<div style="margin-bottom: 5px;">${rodapeTexto}</div>` : ''}
-        <div>
-          Página <span class="pageNumber"></span> de <span class="totalPages"></span>
-        </div>
-      </div>
-    `;
-  }
-
-  private getExecutablePath(): string {
-    const configuredPath = process.env.PUPPETEER_EXECUTABLE_PATH;
-    if (configuredPath) {
-      return configuredPath;
+    // Se não tem tags de formatação, retorna texto simples
+    if (!cleaned.match(/<(strong|b|em|i)>/i)) {
+      return cleaned;
     }
 
-    const bundledPath = path.join(__dirname, '../../chrome/win64-145.0.7569.0/chrome-win64/chrome.exe');
-    if (fs.existsSync(bundledPath)) {
-      return bundledPath;
+    // Processar formatação
+    const result: any[] = [];
+    const parts = cleaned.split(/(<\/?(?:strong|b|em|i)>)/gi);
+
+    let currentBold = false;
+    let currentItalic = false;
+
+    for (const part of parts) {
+      if (part.match(/<(strong|b)>/i)) {
+        currentBold = true;
+      } else if (part.match(/<\/(strong|b)>/i)) {
+        currentBold = false;
+      } else if (part.match(/<(em|i)>/i)) {
+        currentItalic = true;
+      } else if (part.match(/<\/(em|i)>/i)) {
+        currentItalic = false;
+      } else if (part.trim()) {
+        const style: any = { text: part };
+        if (currentBold) style.bold = true;
+        if (currentItalic) style.italics = true;
+        result.push(style);
+      }
     }
 
-    return puppeteer.executablePath();
-  }
-
-  private async launchStandaloneBrowser(): Promise<Browser> {
-    const executablePath = this.getExecutablePath();
-    return puppeteer.launch({
-      headless: true,
-      executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-software-rasterizer',
-        '--disable-gl-drawing-for-tests',
-        '--disable-features=VizDisplayCompositor',
-        '--no-zygote',
-        '--single-process',
-        '--disable-features=HttpsFirstBalancedModeAutoEnable',
-        '--use-gl=swiftshader',
-        '--disable-vulkan',
-        '--disable-accelerated-2d-canvas',
-        '--disable-webgl',
-        '--disable-webgl2',
-        '--disable-breakpad'
-      ],
-      timeout: 30000,
-    });
+    return result.length > 0 ? result : cleaned;
   }
 }
-
-
