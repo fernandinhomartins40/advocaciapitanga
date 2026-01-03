@@ -108,26 +108,21 @@ export class PDFService {
       // Gerar PDF usando createPdf
       const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
-      // Salvar em arquivo usando stream
+      // Gerar buffer e salvar em arquivo
       return new Promise<string>((resolve, reject) => {
-        const writeStream = fs.createWriteStream(filepath);
-
-        writeStream.on('finish', () => {
-          resolve(filepath);
-        });
-
-        writeStream.on('error', (error) => {
+        try {
+          pdfDocGenerator.getBase64((base64Data: string) => {
+            try {
+              const buffer = Buffer.from(base64Data, 'base64');
+              fs.writeFileSync(filepath, buffer);
+              resolve(filepath);
+            } catch (error) {
+              reject(error);
+            }
+          });
+        } catch (error) {
           reject(error);
-        });
-
-        // Gerar PDF e fazer pipe para o arquivo
-        const pdfStream = pdfDocGenerator.getStream();
-        pdfStream.pipe(writeStream);
-
-        pdfStream.on('error', (error) => {
-          writeStream.end();
-          reject(error);
-        });
+        }
       });
     } catch (error: any) {
       const errorMessage = error.message || 'Erro desconhecido ao gerar PDF';
