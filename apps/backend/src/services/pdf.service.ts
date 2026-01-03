@@ -108,15 +108,25 @@ export class PDFService {
       // Gerar PDF usando createPdf
       const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
-      // Salvar em arquivo
+      // Salvar em arquivo usando stream
       return new Promise<string>((resolve, reject) => {
-        pdfDocGenerator.getBuffer((buffer: Buffer) => {
-          try {
-            fs.writeFileSync(filepath, buffer);
-            resolve(filepath);
-          } catch (error) {
-            reject(error);
-          }
+        const writeStream = fs.createWriteStream(filepath);
+
+        writeStream.on('finish', () => {
+          resolve(filepath);
+        });
+
+        writeStream.on('error', (error) => {
+          reject(error);
+        });
+
+        // Gerar PDF e fazer pipe para o arquivo
+        const pdfStream = pdfDocGenerator.getStream();
+        pdfStream.pipe(writeStream);
+
+        pdfStream.on('error', (error) => {
+          writeStream.end();
+          reject(error);
         });
       });
     } catch (error: any) {
