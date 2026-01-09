@@ -55,7 +55,7 @@ export class PDFService {
 
     const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
     const browser = await puppeteer.launch({
-      headless: 'new',
+      headless: true,
       executablePath,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
@@ -76,7 +76,7 @@ export class PDFService {
 
       const footerTemplate = `<div style="width:100%;font-size:9px;text-align:center;">${footerParts}</div>`;
 
-      const pdfBuffer = await page.pdf({
+      const pdfBytes = await page.pdf({
         format: 'A4',
         printBackground: true,
         displayHeaderFooter,
@@ -87,7 +87,7 @@ export class PDFService {
           : { top: '2cm', bottom: '2cm', left: '2cm', right: '2cm' }
       });
 
-      return pdfBuffer;
+      return Buffer.from(pdfBytes);
     } finally {
       await browser.close();
     }
