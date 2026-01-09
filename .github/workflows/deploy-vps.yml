@@ -59,6 +59,7 @@ jobs:
         uses: appleboy/ssh-action@master
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
         with:
           host: 72.60.10.112
           username: root
@@ -66,7 +67,7 @@ jobs:
           port: 22
           timeout: 600s
           command_timeout: 600s
-          envs: OPENAI_API_KEY
+          envs: OPENAI_API_KEY,CERTBOT_EMAIL
           script: |
             set -e
 
@@ -459,30 +460,21 @@ jobs:
             docker logs advocacia-vps --tail=100
 
             # ===== CONFIGURAR NGINX =====
-            echo "=== Configurando Nginx para porta 3190 ==="
+            echo "=== Configurando Nginx (HTTP-only inicial) ==="
 
-            # Criar configuração do Nginx
+            # Criar configuração HTTP-only (sem listen 443 ssl)
             cat > /etc/nginx/sites-available/advocaciapitanga.conf << 'NGINX_EOF'
-            # HTTP - Advocacia Pitanga
+            # HTTP - Advocacia Pitanga (config inicial)
             server {
                 listen 80;
                 listen [::]:80;
 
                 server_name advocaciapitanga.com.br www.advocaciapitanga.com.br;
 
-                # Redirecionar HTTP para HTTPS
-                return 301 https://$server_name$request_uri;
-            }
-
-            # HTTPS - Advocacia Pitanga
-            server {
-                listen 443 ssl http2;
-                listen [::]:443 ssl http2;
-
-                server_name advocaciapitanga.com.br www.advocaciapitanga.com.br;
-
-                # SSL Configuration (certbot irá adicionar certificados)
-                # ssl_certificate e ssl_certificate_key serão configurados pelo certbot
+                # Certbot challenge
+                location /.well-known/acme-challenge/ {
+                    root /var/www/certbot;
+                }
 
                 # Logs
                 access_log /var/log/nginx/advocaciapitanga-access.log;
@@ -542,9 +534,40 @@ jobs:
             # Habilitar site
             ln -sf /etc/nginx/sites-available/advocaciapitanga.conf /etc/nginx/sites-enabled/
 
+            # Garantir diretório do certbot
+            mkdir -p /var/www/certbot
+
             # Testar e recarregar Nginx
             nginx -t && systemctl reload nginx
-            echo "✅ Nginx configurado com sucesso na porta 3190"
+            echo "✅ Nginx configurado (HTTP-only)"
+
+            # ===== CONFIGURAR SSL =====
+            echo "=== Configurando SSL com certbot (se necessário) ==="
+            CERT_DIR="/etc/letsencrypt/live/advocaciapitanga.com.br"
+
+            if [ -f "${CERT_DIR}/fullchain.pem" ] && [ -f "${CERT_DIR}/privkey.pem" ]; then
+              echo "✅ Certificados SSL encontrados, aplicando configuração HTTPS existente"
+              if [ -f "${APP_DIR}/nginx.vps-ssl.conf" ]; then
+                cp "${APP_DIR}/nginx.vps-ssl.conf" /etc/nginx/sites-available/advocaciapitanga.conf
+                nginx -t && systemctl reload nginx
+                echo "✅ HTTPS habilitado com certificados existentes"
+              else
+                echo "⚠️ Arquivo nginx.vps-ssl.conf não encontrado, mantendo HTTP-only"
+              fi
+            else
+              if [ -n "${CERTBOT_EMAIL:-}" ]; then
+                echo "✅ Certificados não encontrados, solicitando via certbot"
+                certbot --nginx \
+                  -d advocaciapitanga.com.br \
+                  -d www.advocaciapitanga.com.br \
+                  --non-interactive \
+                  --agree-tos \
+                  --email "${CERTBOT_EMAIL}" \
+                  --redirect || echo "⚠️ AVISO: certbot falhou, mantendo HTTP-only"
+              else
+                echo "⚠️ CERTBOT_EMAIL não configurado, SSL não será instalado"
+              fi
+            fi
 
             # Aguardar Nginx iniciar
             sleep 3
@@ -579,8 +602,8 @@ jobs:
                 echo "   - postgres_data: PostgreSQL database"
 
                 echo ""
-                echo "⚠️ IMPORTANTE: Configure SSL com certbot:"
-                echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br"
+                echo "⚠️ IMPORTANTE: Se SSL não foi configurado automaticamente, execute:"
+                echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br --non-interactive --agree-tos --email seu@email.com --redirect"
 
                 # MELHORIA 3: Notificar sucesso do deploy
                 bash ${APP_DIR}/scripts/notify.sh \
@@ -618,5 +641,5 @@ jobs:
           echo "   - advocacia-vps (aplicação)"
           echo "   - advocacia-postgres (banco de dados)"
           echo ""
-          echo "⚠️ PRÓXIMO PASSO: Configure SSL executando na VPS:"
-          echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br"
+          echo "⚠️ PRÓXIMO PASSO: Se SSL não foi configurado automaticamente, execute na VPS:"
+          echo "   sudo certbot --nginx -d advocaciapitanga.com.br -d www.advocaciapitanga.com.br --non-interactive --agree-tos --email seu@email.com --redirect"
