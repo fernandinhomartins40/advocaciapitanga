@@ -12,6 +12,7 @@ import { formatDate } from '@/lib/utils';
 import api from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import { useQueryClient } from '@tanstack/react-query';
+import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 
 interface DocumentoProcesso {
   id: string;
@@ -203,7 +204,11 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                       onClick={() => handleExport(doc.id, 'PDF', doc.titulo)}
                       disabled={isExporting}
                     >
-                      <Download className="h-4 w-4" />
+                      {isExporting ? (
+                        <LoadingSpinner size="sm" />
+                      ) : (
+                        <Download className="h-4 w-4" />
+                      )}
                     </Button>
                     <Button
                       variant="destructive"
@@ -257,7 +262,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   onClick={() => handleExport(documentoEdit!.id, 'PDF', documentoEdit!.titulo)}
                   disabled={isExporting}
                 >
-                  Exportar PDF
+                  {isExporting ? 'Exportando...' : 'Exportar PDF'}
                 </Button>
                 <Button
                   variant="outline"
@@ -265,7 +270,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   onClick={() => handleExport(documentoEdit!.id, 'DOCX', documentoEdit!.titulo)}
                   disabled={isExporting}
                 >
-                  Exportar DOCX
+                  {isExporting ? 'Exportando...' : 'Exportar DOCX'}
                 </Button>
                 <Button
                   variant="outline"
@@ -273,7 +278,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   onClick={() => handleExport(documentoEdit!.id, 'TXT', documentoEdit!.titulo)}
                   disabled={isExporting}
                 >
-                  Exportar TXT
+                  {isExporting ? 'Exportando...' : 'Exportar TXT'}
                 </Button>
                 <Button
                   variant="outline"
@@ -281,7 +286,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   onClick={() => handleExport(documentoEdit!.id, 'RTF', documentoEdit!.titulo)}
                   disabled={isExporting}
                 >
-                  Exportar RTF
+                  {isExporting ? 'Exportando...' : 'Exportar RTF'}
                 </Button>
               </div>
 

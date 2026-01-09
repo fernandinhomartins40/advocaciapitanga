@@ -100,16 +100,16 @@ export default function RegisterPage() {
           <div className="flex justify-center mb-4">
             <Scale className="h-12 w-12 text-primary-600" />
           </div>
-          <CardTitle className="text-2xl">Criar Conta</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Criar Conta</CardTitle>
           <CardDescription>Cadastre-se no Advocacia Pitanga</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Toggle de tipo de usuário */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
             <Button
               type="button"
               variant={userType === 'ADVOGADO' ? 'default' : 'outline'}
-              className="flex-1"
+              className="flex-1 w-full"
               onClick={() => setUserType('ADVOGADO')}
             >
               Advogado
@@ -117,7 +117,7 @@ export default function RegisterPage() {
             <Button
               type="button"
               variant={userType === 'CLIENTE' ? 'default' : 'outline'}
-              className="flex-1"
+              className="flex-1 w-full"
               onClick={() => setUserType('CLIENTE')}
             >
               Cliente

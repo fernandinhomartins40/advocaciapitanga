@@ -1,12 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
-import { TDocumentDefinitions } from 'pdfmake/interfaces';
+import puppeteer from 'puppeteer';
 import { buildTempFilename } from '../utils/file-utils';
-
-// Configurar fontes
-(pdfMake as any).vfs = pdfFonts;
+import { createContextLogger, logError, startTimer } from '../utils/logger';
 
 export interface PDFOptions {
   cabecalho?: string;
@@ -14,14 +10,16 @@ export interface PDFOptions {
 }
 
 /**
- * Serviço de geração de PDF usando PDFMake
- * Não depende de browsers headless, funciona em qualquer ambiente
+ * Servico de geracao de PDF usando Puppeteer/Chromium.
+ * Mantem fidelidade visual do HTML e funciona em producao via Chromium.
  */
 export class PDFService {
+  private logger = createContextLogger({ service: 'PDFService' });
+
   async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
+    const timer = startTimer();
     const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
 
-    // Criar diretório se não existir
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
@@ -30,218 +28,156 @@ export class PDFService {
     const filepath = path.join(uploadsDir, filename);
 
     try {
-      // Converter HTML para estrutura do PDFMake
-      const content = this.htmlToContent(conteudoHTML);
+      const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
+      const pdfBuffer = await this.renderizarPDF(htmlCompleto, options);
+      fs.writeFileSync(filepath, pdfBuffer);
 
-      // Definir documento
-      const docDefinition: TDocumentDefinitions = {
-        pageSize: 'A4',
-        pageMargins: [56.7, 56.7, 56.7, 56.7], // 2cm em pontos
-        header: options?.cabecalho ? {
-          text: options.cabecalho,
-          alignment: 'center',
-          margin: [0, 20, 0, 0],
-          fontSize: 9
-        } : undefined,
-        footer: (currentPage: number, pageCount: number) => {
-          const footerContent: any[] = [];
-
-          if (options?.rodape) {
-            footerContent.push({
-              text: options.rodape,
-              alignment: 'center',
-              fontSize: 9,
-              margin: [0, 0, 0, 5]
-            });
-          }
-
-          footerContent.push({
-            text: `Página ${currentPage} de ${pageCount}`,
-            alignment: 'center',
-            fontSize: 9
-          });
-
-          return footerContent;
-        },
-        content: [
-          {
-            text: titulo,
-            style: 'header',
-            alignment: 'center',
-            margin: [0, 0, 0, 20]
-          },
-          ...content
-        ],
-        styles: {
-          header: {
-            fontSize: 18,
-            bold: true
-          },
-          subheader: {
-            fontSize: 16,
-            bold: true,
-            margin: [0, 15, 0, 10]
-          },
-          subsubheader: {
-            fontSize: 14,
-            bold: true,
-            margin: [0, 10, 0, 8]
-          },
-          paragraph: {
-            fontSize: 12,
-            alignment: 'justify',
-            lineHeight: 1.5,
-            margin: [0, 5, 0, 5]
-          },
-          bold: {
-            bold: true
-          },
-          italic: {
-            italics: true
-          }
-        },
-        defaultStyle: {
-          fontSize: 12
-        }
-      };
-
-      // Gerar PDF usando createPdf
-      const pdfDocGenerator = pdfMake.createPdf(docDefinition);
-
-      // Gerar buffer e salvar em arquivo
-      return new Promise<string>((resolve, reject) => {
-        try {
-          pdfDocGenerator.getBase64((base64Data: string) => {
-            try {
-              const buffer = Buffer.from(base64Data, 'base64');
-              fs.writeFileSync(filepath, buffer);
-              resolve(filepath);
-            } catch (error) {
-              reject(error);
-            }
-          });
-        } catch (error) {
-          reject(error);
-        }
+      this.logger.info({
+        msg: 'PDF gerado com sucesso',
+        filepath,
+        duration_ms: timer()
       });
-    } catch (error: any) {
-      const errorMessage = error.message || 'Erro desconhecido ao gerar PDF';
-      throw new Error(`Falha ao gerar PDF: ${errorMessage}`);
+
+      return filepath;
+    } catch (error) {
+      logError(this.logger, 'Erro ao gerar PDF', error, {
+        titulo,
+        duration_ms: timer()
+      });
+      throw error;
     }
   }
 
-  /**
-   * Converte HTML básico para estrutura de conteúdo do PDFMake
-   */
-  private htmlToContent(html: string): any[] {
-    const content: any[] = [];
+  private async renderizarPDF(html: string, options?: PDFOptions): Promise<Buffer> {
+    const headerText = options?.cabecalho?.trim() || '';
+    const footerText = options?.rodape?.trim() || '';
+    const displayHeaderFooter = Boolean(headerText || footerText);
 
-    // Remover tags HTML e processar o texto
-    const cleanHtml = html
-      .replace(/<br\s*\/?>/gi, '\n')
-      .replace(/<\/p>/gi, '\n\n')
-      .replace(/<p[^>]*>/gi, '')
-      .replace(/<\/div>/gi, '\n')
-      .replace(/<div[^>]*>/gi, '');
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
+    const browser = await puppeteer.launch({
+      headless: 'new',
+      executablePath,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
 
-    // Processar títulos
-    const lines = cleanHtml.split('\n');
+    try {
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.emulateMediaType('screen');
 
-    for (let line of lines) {
-      line = line.trim();
-      if (!line) continue;
+      const headerTemplate = headerText
+        ? `<div style="width:100%;font-size:9px;text-align:center;">${this.escapeHtml(headerText)}</div>`
+        : '<span></span>';
 
-      // H1
-      if (line.match(/<h1[^>]*>/i)) {
-        const text = line.replace(/<\/?h1[^>]*>/gi, '').trim();
-        if (text) {
-          content.push({
-            text,
-            style: 'header',
-            margin: [0, 15, 0, 10]
-          });
-        }
-        continue;
-      }
+      const footerParts = [
+        footerText ? `<span>${this.escapeHtml(footerText)} - </span>` : '',
+        'Pagina <span class="pageNumber"></span> de <span class="totalPages"></span>'
+      ].join('');
 
-      // H2
-      if (line.match(/<h2[^>]*>/i)) {
-        const text = line.replace(/<\/?h2[^>]*>/gi, '').trim();
-        if (text) {
-          content.push({
-            text,
-            style: 'subheader'
-          });
-        }
-        continue;
-      }
+      const footerTemplate = `<div style="width:100%;font-size:9px;text-align:center;">${footerParts}</div>`;
 
-      // H3
-      if (line.match(/<h3[^>]*>/i)) {
-        const text = line.replace(/<\/?h3[^>]*>/gi, '').trim();
-        if (text) {
-          content.push({
-            text,
-            style: 'subsubheader'
-          });
-        }
-        continue;
-      }
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter,
+        headerTemplate,
+        footerTemplate,
+        margin: displayHeaderFooter
+          ? { top: '2.5cm', bottom: '2.5cm', left: '2cm', right: '2cm' }
+          : { top: '2cm', bottom: '2cm', left: '2cm', right: '2cm' }
+      });
 
-      // Processar texto com formatação básica (bold, italic)
-      const processedText = this.processInlineFormatting(line);
-
-      if (processedText) {
-        content.push({
-          text: processedText,
-          style: 'paragraph'
-        });
-      }
+      return pdfBuffer;
+    } finally {
+      await browser.close();
     }
-
-    return content.length > 0 ? content : [{ text: html, style: 'paragraph' }];
   }
 
-  /**
-   * Processa formatação inline (bold, italic)
-   */
-  private processInlineFormatting(text: string): any {
-    // Remove todas as tags HTML exceto strong, b, em, i
-    const cleaned = text
-      .replace(/<(?!\/?(strong|b|em|i)\b)[^>]+>/gi, '')
-      .trim();
+  private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
+    const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
+    const rodape = options?.rodape || '';
 
-    if (!cleaned) return null;
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="UTF-8">
+          <style>
+            body {
+              font-family: 'Times New Roman', Times, serif;
+              font-size: 12pt;
+              line-height: 1.6;
+              color: #111;
+            }
+            h1 {
+              font-size: 18pt;
+              text-align: center;
+              margin-bottom: 1.5em;
+              font-weight: bold;
+            }
+            h2 {
+              font-size: 16pt;
+              font-weight: bold;
+            }
+            h3 {
+              font-size: 14pt;
+              font-weight: bold;
+            }
+            p {
+              margin: 0.6em 0;
+              text-align: justify;
+            }
+            ul, ol {
+              margin: 0.6em 0;
+              padding-left: 2em;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 1em 0;
+            }
+            table, th, td {
+              border: 1px solid #000;
+            }
+            th, td {
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f0f0f0;
+              font-weight: bold;
+            }
+          </style>
+        </head>
+        <body>
+          <div style="text-align: center; font-size: 10pt; margin-bottom: 20px;">
+            <strong>${this.escapeHtml(cabecalho)}</strong>
+          </div>
 
-    // Se não tem tags de formatação, retorna texto simples
-    if (!cleaned.match(/<(strong|b|em|i)>/i)) {
-      return cleaned;
-    }
+          <h1>${this.escapeHtml(titulo)}</h1>
 
-    // Processar formatação
-    const result: any[] = [];
-    const parts = cleaned.split(/(<\/?(?:strong|b|em|i)>)/gi);
+          ${conteudo}
 
-    let currentBold = false;
-    let currentItalic = false;
+          ${rodape ? `
+          <div style="text-align: center; font-size: 10pt; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px;">
+            ${this.escapeHtml(rodape)}
+          </div>
+          ` : ''}
 
-    for (const part of parts) {
-      if (part.match(/<(strong|b)>/i)) {
-        currentBold = true;
-      } else if (part.match(/<\/(strong|b)>/i)) {
-        currentBold = false;
-      } else if (part.match(/<(em|i)>/i)) {
-        currentItalic = true;
-      } else if (part.match(/<\/(em|i)>/i)) {
-        currentItalic = false;
-      } else if (part.trim()) {
-        const style: any = { text: part };
-        if (currentBold) style.bold = true;
-        if (currentItalic) style.italics = true;
-        result.push(style);
-      }
-    }
+          <div style="text-align: center; font-size: 9pt; margin-top: 20px; color: #666;">
+            Documento gerado em: ${new Date().toLocaleString('pt-BR')}
+          </div>
+        </body>
+      </html>
+    `;
+  }
 
-    return result.length > 0 ? result : cleaned;
+  private escapeHtml(value: string): string {
+    return value
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 }

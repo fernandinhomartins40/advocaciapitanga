@@ -167,6 +167,7 @@ export default function DocumentosPage() {
   const [clienteDetalhado, setClienteDetalhado] = useState<ClienteDetalhado | null>(null);
   const [processoSelecionado, setProcessoSelecionado] = useState<ProcessoDetalhado | null>(null);
   const [processoDetalhado, setProcessoDetalhado] = useState<ProcessoDetalhado | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: biblioteca, isLoading } = useQuery({
     queryKey: ['documentos', 'biblioteca'],
@@ -192,6 +193,7 @@ export default function DocumentosPage() {
 
   const formatDate = (value?: string | Date | null) => {
     if (!value) return '';
+    setIsExporting(true);
     try {
       return new Date(value).toLocaleDateString('pt-BR');
     } catch {
@@ -611,6 +613,8 @@ export default function DocumentosPage() {
       toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
     } catch (error) {
       toast({ title: 'Erro', description: 'Erro ao exportar documento', variant: 'error' });
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -1185,16 +1189,30 @@ export default function DocumentosPage() {
                           <Button
                             variant="outline"
                             onClick={() => handleExportarDocumento('pdf')}
+                            disabled={isExporting}
                           >
-                            <Download className="h-4 w-4 mr-2" />
-                            Exportar PDF
+                            {isExporting ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Exportar PDF
+                              </>
+                            )}
                           </Button>
                           <Button
                             variant="outline"
                             onClick={() => handleExportarDocumento('docx')}
+                            disabled={isExporting}
                           >
-                            <Download className="h-4 w-4 mr-2" />
-                            Exportar DOCX
+                            {isExporting ? (
+                              <LoadingSpinner size="sm" />
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Exportar DOCX
+                              </>
+                            )}
                           </Button>
                         </>
                       )}

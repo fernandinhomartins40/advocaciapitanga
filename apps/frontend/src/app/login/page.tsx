@@ -49,16 +49,16 @@ export default function LoginPage() {
           <div className="flex justify-center mb-4">
             <Scale className="h-12 w-12 text-primary-600" />
           </div>
-          <CardTitle className="text-2xl">Advocacia Pitanga</CardTitle>
+          <CardTitle className="text-xl sm:text-2xl">Advocacia Pitanga</CardTitle>
           <CardDescription>Faça login para acessar o sistema</CardDescription>
         </CardHeader>
         <CardContent>
           {/* Toggle de tipo de usuário */}
-          <div className="flex gap-2 mb-6">
+          <div className="flex flex-col sm:flex-row gap-2 mb-6">
             <Button
               type="button"
               variant={userType === 'advogado' ? 'default' : 'outline'}
-              className="flex-1"
+              className="flex-1 w-full"
               onClick={() => setUserType('advogado')}
             >
               Advogado
@@ -66,7 +66,7 @@ export default function LoginPage() {
             <Button
               type="button"
               variant={userType === 'cliente' ? 'default' : 'outline'}
-              className="flex-1"
+              className="flex-1 w-full"
               onClick={() => setUserType('cliente')}
             >
               Cliente
