@@ -104,9 +104,14 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
         variant: 'success',
       });
     } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Erro ao exportar documento';
       toast({
         title: 'Erro',
-        description: error.response?.data?.error || 'Erro ao exportar documento',
+        description: errorMessage,
         variant: 'error',
       });
     } finally {

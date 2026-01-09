@@ -611,8 +611,13 @@ export default function DocumentosPage() {
       window.URL.revokeObjectURL(url);
 
       toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
-    } catch (error) {
-      toast({ title: 'Erro', description: 'Erro ao exportar documento', variant: 'error' });
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'Erro ao exportar documento';
+      toast({ title: 'Erro', description: errorMessage, variant: 'error' });
     } finally {
       setIsExporting(false);
     }
