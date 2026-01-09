@@ -93,13 +93,13 @@ export default function EquipePage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Gestão da Equipe</h1>
           <p className="text-gray-500">Gerencie os membros do seu escritório</p>
         </div>
         {podeGerenciar && (
-          <Button onClick={() => setShowConviteDialog(true)}>
+          <Button onClick={() => setShowConviteDialog(true)} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Novo Membro
           </Button>
@@ -108,7 +108,7 @@ export default function EquipePage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -118,7 +118,7 @@ export default function EquipePage() {
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" onClick={carregarMembros}>
+            <Button variant="outline" onClick={carregarMembros} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
@@ -133,7 +133,7 @@ export default function EquipePage() {
               {membrosFiltrados.map((membro) => (
                 <div
                   key={membro.id}
-                  className={`flex items-center justify-between p-4 border rounded-lg ${
+                  className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg ${
                     !membro.ativo ? 'bg-gray-50 opacity-60' : 'bg-white'
                   }`}
                 >
@@ -147,7 +147,7 @@ export default function EquipePage() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
+                    <div className="flex flex-wrap items-center gap-4 mt-1 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Mail className="h-4 w-4" />
                         {membro.user?.email}
@@ -170,7 +170,7 @@ export default function EquipePage() {
                   </div>
 
                   {podeGerenciar && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 sm:justify-end">
                       {membro.ativo ? (
                         <Button
                           variant="outline"

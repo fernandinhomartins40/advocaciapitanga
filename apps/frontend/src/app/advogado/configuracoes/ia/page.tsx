@@ -103,7 +103,7 @@ export default function ConfiguracaoIAPage() {
         <CardContent className="space-y-4">
           <div>
             <Label htmlFor="apiKey">API Key OpenAI *</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Input
                 id="apiKey"
                 type="password"
@@ -112,7 +112,7 @@ export default function ConfiguracaoIAPage() {
                 placeholder="sk-..."
                 className="flex-1"
               />
-              <Button onClick={handleTestarConexao} disabled={testing} variant="outline">
+              <Button onClick={handleTestarConexao} disabled={testing} variant="outline" className="w-full sm:w-auto">
                 {testing ? <LoadingSpinner size="sm" /> : 'Testar'}
               </Button>
             </div>

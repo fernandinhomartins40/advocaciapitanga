@@ -60,9 +60,9 @@ export default function ProcessoClienteDetalhesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/cliente/meus-processos">
-          <Button variant="outline" size="sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <Link href="/cliente/meus-processos" className="w-full sm:w-auto">
+          <Button variant="outline" size="sm" className="w-full sm:w-auto">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar
           </Button>
@@ -71,7 +71,7 @@ export default function ProcessoClienteDetalhesPage() {
           <h1 className="text-3xl font-bold text-gray-900">{processo.numero}</h1>
           <p className="text-gray-500">{processo.advogado.user.nome}</p>
         </div>
-        <Badge variant={statusColors[processo.status]}>
+        <Badge variant={statusColors[processo.status]} className="w-fit">
           {processo.status.replace('_', ' ')}
         </Badge>
       </div>
@@ -93,7 +93,7 @@ export default function ProcessoClienteDetalhesPage() {
               <CardTitle>Informações do Processo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold">Número do Processo</label>
                   <Input value={processo.numero} disabled />
@@ -104,7 +104,7 @@ export default function ProcessoClienteDetalhesPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-semibold">Advogado Responsável</label>
                   <Input value={processo.advogado.user.nome} disabled />
@@ -132,7 +132,7 @@ export default function ProcessoClienteDetalhesPage() {
               {processo.documentos && processo.documentos.length > 0 ? (
                 <div className="space-y-3">
                   {processo.documentos.map((doc: any) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{doc.titulo}</p>
                         <p className="text-sm text-gray-500">
@@ -152,6 +152,7 @@ export default function ProcessoClienteDetalhesPage() {
                           link.download = doc.titulo;
                           link.click();
                         }}
+                        className="w-full sm:w-auto"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -178,11 +179,11 @@ export default function ProcessoClienteDetalhesPage() {
                       key={msg.id}
                       className={`p-4 rounded-lg ${
                         msg.remetente === 'Cliente'
-                          ? 'bg-primary-50 ml-12'
-                          : 'bg-gray-100 mr-12'
+                          ? 'bg-primary-50 ml-0 sm:ml-12'
+                          : 'bg-gray-100 mr-0 sm:mr-12'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-2">
                         <span className="font-semibold text-sm">{msg.remetente}</span>
                         <span className="text-xs text-gray-500">{formatDate(msg.createdAt)}</span>
                       </div>
@@ -194,14 +195,14 @@ export default function ProcessoClienteDetalhesPage() {
                 )}
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Textarea
                   placeholder="Digite sua mensagem..."
                   value={mensagem}
                   onChange={(e) => setMensagem(e.target.value)}
                   rows={3}
                 />
-                <Button onClick={handleSendMessage}>
+                <Button onClick={handleSendMessage} className="w-full sm:w-auto">
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

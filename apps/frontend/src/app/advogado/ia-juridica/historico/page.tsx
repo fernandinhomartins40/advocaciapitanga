@@ -63,8 +63,8 @@ export default function HistoricoIAPage() {
   if (documentoSelecionado) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" onClick={() => setDocumentoSelecionado(null)}>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <Button variant="outline" onClick={() => setDocumentoSelecionado(null)} className="w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -135,13 +135,13 @@ export default function HistoricoIAPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Histórico de Documentos IA</h1>
           <p className="text-gray-500">Todos os documentos gerados pela Inteligência Artificial</p>
         </div>
-        <Link href="/advogado/ia-juridica">
-          <Button variant="outline">
+        <Link href="/advogado/ia-juridica" className="w-full sm:w-auto">
+          <Button variant="outline" className="w-full sm:w-auto">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Voltar
           </Button>
@@ -167,12 +167,12 @@ export default function HistoricoIAPage() {
             {documentos.map((doc) => (
               <Card key={doc.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5 text-blue-600" />
                       <span>{doc.tipoPeca}</span>
                     </CardTitle>
-                    <Button size="sm" onClick={() => visualizarDocumento(doc.id)}>
+                    <Button size="sm" onClick={() => visualizarDocumento(doc.id)} className="w-full sm:w-auto">
                       <Eye className="h-4 w-4 mr-1" />
                       Visualizar
                     </Button>
@@ -180,7 +180,7 @@ export default function HistoricoIAPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="mb-3">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                       {doc.cliente && (
                         <div>
                           <span className="text-gray-500 font-semibold">Cliente:</span>

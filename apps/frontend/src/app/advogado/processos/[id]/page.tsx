@@ -578,7 +578,7 @@ export default function ProcessoDetalhesPage() {
               <CardTitle>Informações do Processo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Número do Processo</Label>
                   <Input value={processo.numero} disabled />
@@ -589,7 +589,7 @@ export default function ProcessoDetalhesPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Cliente</Label>
                   <Input value={processo.cliente.user.nome} disabled />
@@ -601,7 +601,7 @@ export default function ProcessoDetalhesPage() {
               </div>
 
               {/* FASE 1.2: Campos read-only */}
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Tipo de Ação</Label>
                   <Input value={processo.tipoAcao || '-'} disabled />
@@ -612,7 +612,7 @@ export default function ProcessoDetalhesPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Justiça</Label>
                   <Input value={processo.justica || '-'} disabled />
@@ -623,7 +623,7 @@ export default function ProcessoDetalhesPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div>
                   <Label>Comarca</Label>
                   <Input value={processo.comarca || '-'} disabled />
@@ -638,7 +638,7 @@ export default function ProcessoDetalhesPage() {
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Status</Label>
                   <Input value={processo.status.replace('_', ' ')} disabled />
@@ -666,7 +666,7 @@ export default function ProcessoDetalhesPage() {
         <TabsContent value="partes">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Partes do Processo</CardTitle>
                 <div className="flex gap-2">
                   <Button
@@ -709,7 +709,7 @@ export default function ProcessoDetalhesPage() {
         <TabsContent value="documentos">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <CardTitle>Documentos</CardTitle>
                 <div>
                   <input
@@ -730,7 +730,7 @@ export default function ProcessoDetalhesPage() {
               {processo.documentos && processo.documentos.length > 0 ? (
                 <div className="space-y-3">
                   {processo.documentos.map((doc: any) => (
-                    <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={doc.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg">
                       <div>
                         <p className="font-medium">{doc.titulo}</p>
                         <p className="text-sm text-gray-500">
@@ -792,7 +792,7 @@ export default function ProcessoDetalhesPage() {
                           : 'bg-gray-100 mr-12'
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-2">
                         <span className="font-semibold text-sm">{msg.remetente}</span>
                         <span className="text-xs text-gray-500">{formatDate(msg.createdAt)}</span>
                       </div>
@@ -911,7 +911,7 @@ export default function ProcessoDetalhesPage() {
 
               {/* Aba 2: Localização Judicial */}
               <TabsContent value="localizacao" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="justica">Justiça *</Label>
                     <Select
@@ -994,7 +994,7 @@ export default function ProcessoDetalhesPage() {
 
               {/* Aba 3: Partes Processuais */}
               <TabsContent value="partes" className="space-y-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
                     <h3 className="font-semibold">Partes do Processo</h3>
                     {!validatePartes() && (
@@ -1048,7 +1048,7 @@ export default function ProcessoDetalhesPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="valorCausa">Valor da Causa</Label>
                     <Input
@@ -1073,7 +1073,7 @@ export default function ProcessoDetalhesPage() {
 
               {/* Aba 5: Controle e Prazos */}
               <TabsContent value="controle" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="dataDistribuicao">Data de Distribuição</Label>
                     <Input

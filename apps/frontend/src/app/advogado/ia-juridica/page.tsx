@@ -230,20 +230,20 @@ export default function IAJuridicaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">IA Jurídica</h1>
           <p className="text-gray-500">Geração automática de peças jurídicas com Inteligência Artificial</p>
         </div>
-        <div className="flex gap-2">
-          <Link href="/advogado/ia-juridica/historico">
-            <Button variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link href="/advogado/ia-juridica/historico" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto">
               <History className="h-4 w-4 mr-2" />
               Histórico
             </Button>
           </Link>
-          <Link href="/advogado/configuracoes/ia">
-            <Button variant="outline">
+          <Link href="/advogado/configuracoes/ia" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Settings className="h-4 w-4 mr-2" />
               Configurações
             </Button>
@@ -380,7 +380,7 @@ export default function IAJuridicaPage() {
         {/* Editor */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
                 {tipoPeca}

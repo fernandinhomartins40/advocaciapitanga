@@ -749,7 +749,7 @@ export default function DocumentosPage() {
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+        <nav className="-mb-px flex gap-6 overflow-x-auto">
           <button
             onClick={() => setActiveTab('templates')}
             className={`

@@ -234,7 +234,7 @@ export default function PerfilPage() {
             </div>
             <div>
               <Label htmlFor="email">Email</Label>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Input
                   id="email"
                   value={profile.email}
@@ -248,6 +248,7 @@ export default function PerfilPage() {
                     setNewEmail(profile.email);
                     setShowEmailDialog(true);
                   }}
+                  className="w-full sm:w-auto"
                 >
                   <Edit2 className="h-4 w-4 mr-2" />
                   Alterar

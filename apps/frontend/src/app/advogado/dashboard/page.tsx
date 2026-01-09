@@ -110,10 +110,10 @@ export default function DashboardPage() {
       {/* Processos Recentes */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <CardTitle>Processos Recentes</CardTitle>
-            <Link href="/advogado/processos">
-              <Button variant="outline" size="sm">Ver todos</Button>
+            <Link href="/advogado/processos" className="w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="w-full sm:w-auto">Ver todos</Button>
             </Link>
           </div>
         </CardHeader>
@@ -125,7 +125,7 @@ export default function DashboardPage() {
               {processosData.processos.slice(0, 5).map((processo: any) => (
                 <div
                   key={processo.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
@@ -139,8 +139,8 @@ export default function DashboardPage() {
                       {formatDate(processo.dataInicio)}
                     </p>
                   </div>
-                  <Link href={`/advogado/processos/${processo.id}`}>
-                    <Button variant="outline" size="sm">Ver detalhes</Button>
+                  <Link href={`/advogado/processos/${processo.id}`} className="w-full sm:w-auto">
+                    <Button variant="outline" size="sm" className="w-full sm:w-auto">Ver detalhes</Button>
                   </Link>
                 </div>
               ))}

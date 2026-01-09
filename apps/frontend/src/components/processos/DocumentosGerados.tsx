@@ -192,7 +192,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="outline"
                     size="sm"
@@ -202,27 +202,45 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
                     Editar
                   </Button>
 
-                  <div className="flex gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleExport(doc.id, 'PDF', doc.titulo)}
-                      disabled={isExporting}
-                    >
-                      {isExporting ? (
-                        <LoadingSpinner size="sm" />
-                      ) : (
-                        <Download className="h-4 w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(doc.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(doc.id, 'PDF', doc.titulo)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <LoadingSpinner size="sm" /> : 'Exportar PDF'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(doc.id, 'DOCX', doc.titulo)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <LoadingSpinner size="sm" /> : 'Exportar DOCX'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(doc.id, 'TXT', doc.titulo)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <LoadingSpinner size="sm" /> : 'Exportar TXT'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(doc.id, 'RTF', doc.titulo)}
+                    disabled={isExporting}
+                  >
+                    {isExporting ? <LoadingSpinner size="sm" /> : 'Exportar RTF'}
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(doc.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -259,42 +277,7 @@ export function DocumentosGerados({ processoId, documentos }: DocumentosGeradosP
               </p>
             </div>
 
-            <div className="flex justify-between items-center">
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(documentoEdit!.id, 'PDF', documentoEdit!.titulo)}
-                  disabled={isExporting}
-                >
-                  {isExporting ? 'Exportando...' : 'Exportar PDF'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(documentoEdit!.id, 'DOCX', documentoEdit!.titulo)}
-                  disabled={isExporting}
-                >
-                  {isExporting ? 'Exportando...' : 'Exportar DOCX'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(documentoEdit!.id, 'TXT', documentoEdit!.titulo)}
-                  disabled={isExporting}
-                >
-                  {isExporting ? 'Exportando...' : 'Exportar TXT'}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleExport(documentoEdit!.id, 'RTF', documentoEdit!.titulo)}
-                  disabled={isExporting}
-                >
-                  {isExporting ? 'Exportando...' : 'Exportar RTF'}
-                </Button>
-              </div>
-
+            <div className="flex justify-end items-center">
               <div className="flex gap-2">
                 <Button
                   variant="outline"

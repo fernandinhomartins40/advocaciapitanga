@@ -96,12 +96,12 @@ export default function ClientesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Clientes</h1>
           <p className="text-gray-500">Gerencie seus clientes</p>
         </div>
-        <Button onClick={handleOpenCreate}>
+        <Button onClick={handleOpenCreate} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Novo Cliente
         </Button>
@@ -131,7 +131,8 @@ export default function ClientesPage() {
           {isLoading ? (
             <LoadingSpinner />
           ) : data?.clientes?.length > 0 ? (
-            <Table>
+            <div className="w-full overflow-x-auto">
+              <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>Tipo</TableHead>
@@ -182,7 +183,8 @@ export default function ClientesPage() {
                   </TableRow>
                 ))}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           ) : (
             <p className="text-center text-gray-500 py-8">Nenhum cliente encontrado</p>
           )}

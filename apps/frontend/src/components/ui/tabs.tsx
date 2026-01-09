@@ -33,7 +33,7 @@ const Tabs = ({ defaultValue, value, onValueChange, children, className }: {
 };
 
 const TabsList = ({ children, activeTab, setActiveTab, className }: any) => (
-  <div className={cn("flex border-b border-gray-200 relative z-20", className)}>
+  <div className={cn(className, "flex border-b border-gray-200 relative z-20 overflow-x-auto whitespace-nowrap")}>
     {React.Children.map(children, child => {
       if (React.isValidElement(child)) {
         return React.cloneElement(child, { activeTab, setActiveTab } as any);
@@ -56,7 +56,7 @@ const TabsTrigger = ({ value, children, activeTab, setActiveTab, className, ...p
       type="button"
       onClick={handleClick}
       className={cn(
-        "px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer relative z-10",
+        "px-4 py-2 text-sm font-medium transition-colors border-b-2 cursor-pointer relative z-10 shrink-0 whitespace-nowrap",
         activeTab === value
           ? "border-primary-600 text-primary-600"
           : "border-transparent text-gray-500 hover:text-gray-700",

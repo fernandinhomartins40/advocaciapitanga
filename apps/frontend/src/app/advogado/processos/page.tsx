@@ -555,7 +555,7 @@ export default function ProcessosPage() {
 
               {/* Aba 2: Localização Judicial */}
               <TabsContent value="localizacao" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="justica">Justiça *</Label>
                     <Select
@@ -641,7 +641,7 @@ export default function ProcessosPage() {
 
               {/* Aba 3: Partes Processuais */}
               <TabsContent value="partes" className="space-y-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
                   <div>
                     <h3 className="font-semibold">Partes do Processo</h3>
                     {!validatePartes() && (
@@ -696,7 +696,7 @@ export default function ProcessosPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="valorCausa">Valor da Causa</Label>
                     <Input
@@ -721,7 +721,7 @@ export default function ProcessosPage() {
 
               {/* Aba 5: Controle e Prazos */}
               <TabsContent value="controle" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="dataDistribuicao">Data de Distribuição</Label>
                     <Input

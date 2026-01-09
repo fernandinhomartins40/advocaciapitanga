@@ -62,7 +62,7 @@ export default function ClienteMensagensPage() {
         <p className="text-gray-500">Converse com seu advogado</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+      <div className="grid lg:grid-cols-3 gap-6 h-auto lg:h-[calc(100vh-200px)]">
         {/* Sidebar - Lista de Processos */}
         <Card className="lg:col-span-1">
           <CardHeader>
@@ -111,11 +111,11 @@ export default function ClienteMensagensPage() {
                         key={msg.id}
                         className={`p-4 rounded-lg ${
                           msg.remetente === 'Cliente'
-                            ? 'bg-primary-50 ml-12'
-                            : 'bg-gray-100 mr-12'
+                            ? 'bg-primary-50 ml-0 sm:ml-12'
+                            : 'bg-gray-100 mr-0 sm:mr-12'
                         }`}
                       >
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between mb-2">
                           <span className="font-semibold text-sm">{msg.remetente}</span>
                           <span className="text-xs text-gray-500">
                             {formatDate(msg.createdAt)}
@@ -131,14 +131,14 @@ export default function ClienteMensagensPage() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Textarea
                     placeholder="Digite sua mensagem..."
                     value={mensagem}
                     onChange={(e) => setMensagem(e.target.value)}
                     rows={3}
                   />
-                  <Button onClick={handleSendMessage}>
+                  <Button onClick={handleSendMessage} className="w-full sm:w-auto">
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
