@@ -1,4 +1,4 @@
-﻿import { Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { AuthRequest } from '../types';
 import { PDFService } from '../services/pdf.service';
 import { DOCXService } from '../services/docx.service';
@@ -31,7 +31,7 @@ export class DocumentoProcessoController {
       const userId = req.user!.userId;
 
       if (!processoId || !clienteId || !titulo || !conteudoHTML) {
-        return res.status(400).json({ error: 'processoId, clienteId, titulo e conteudoHTML sÃ£o obrigatÃ³rios' });
+        return res.status(400).json({ error: 'processoId, clienteId, titulo e conteudoHTML são obrigatórios' });
       }
 
       const { prisma } = await import('database');
@@ -54,7 +54,7 @@ export class DocumentoProcessoController {
       });
 
       if (!processo) {
-        return res.status(404).json({ error: 'Processo nÃ£o encontrado' });
+        return res.status(404).json({ error: 'Processo não encontrado' });
       }
 
       // Criar documento
@@ -141,7 +141,7 @@ export class DocumentoProcessoController {
   }
 
   /**
-   * Buscar um documento especÃ­fico
+   * Buscar um documento específico
    */
   async buscar(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -160,7 +160,7 @@ export class DocumentoProcessoController {
       }
 
       // Buscar documento
-      const documento = await prisma.documentoProcesso.findFirst({
+      let documento = await prisma.documentoProcesso.findFirst({
         where: {
           id,
           advogadoId: advogado.id
@@ -189,7 +189,7 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
+        return res.status(404).json({ error: 'Documento nǜo encontrado' });
       }
 
       res.json(documento);
@@ -227,10 +227,10 @@ export class DocumentoProcessoController {
       });
 
       if (!documentoExistente) {
-        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
+        return res.status(404).json({ error: 'Documento não encontrado' });
       }
 
-      // Atualizar documento (incrementar versÃ£o)
+      // Atualizar documento (incrementar versão)
       const documento = await prisma.documentoProcesso.update({
         where: { id },
         data: {
@@ -277,10 +277,10 @@ export class DocumentoProcessoController {
       const userId = req.user!.userId;
       const formatoNormalizado = typeof formato === 'string' ? formato.toLowerCase() : '';
 
-      logger.info({ msg: '[EXPORT] Iniciando exportaÃ§Ã£o', id, formato: formatoNormalizado, userId });
+      logger.info({ msg: '[EXPORT] Iniciando exportação', id, formato: formatoNormalizado, userId });
 
       if (!formatoNormalizado || !['pdf', 'docx', 'txt', 'rtf'].includes(formatoNormalizado)) {
-        return res.status(400).json({ error: 'Formato invÃ¡lido. Use: pdf, docx, txt ou rtf' });
+        return res.status(400).json({ error: 'Formato inválido. Use: pdf, docx, txt ou rtf' });
       }
 
       const { prisma } = await import('database');
@@ -294,14 +294,14 @@ export class DocumentoProcessoController {
       });
 
       if (!advogado) {
-        logger.error({ msg: '[EXPORT] Advogado nÃ£o encontrado', userId });
+        logger.error({ msg: '[EXPORT] Advogado não encontrado', userId });
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
       logger.debug({ msg: '[EXPORT] Advogado encontrado', advogadoId: advogado.id });
 
       // Buscar documento
-      const documento = await prisma.documentoProcesso.findFirst({
+      let documento = await prisma.documentoProcesso.findFirst({
         where: {
           id,
           advogadoId: advogado.id
@@ -309,8 +309,7 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        logger.error({ msg: '[EXPORT] Documento nÃ£o encontrado', id, advogadoId: advogado.id });
-        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
+        return res.status(404).json({ error: 'Documento nǜo encontrado' });
       }
 
       logger.info({ msg: '[EXPORT] Documento encontrado', titulo: documento.titulo });
@@ -320,7 +319,7 @@ export class DocumentoProcessoController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      // Gerar arquivo com retry automÃ¡tico
+      // Gerar arquivo com retry automático
       const buffer = await retry(async () => {
         logger.info({ msg: '[EXPORT] Gerando arquivo', formato: formatoNormalizado });
 
@@ -334,20 +333,20 @@ export class DocumentoProcessoController {
           case 'rtf':
             return await rtfService.gerarRTF(documento.conteudoHTML, documento.titulo, options);
           default:
-            throw new Error('Formato nÃ£o suportado');
+            throw new Error('Formato não suportado');
         }
       }, {
         maxTentativas: 3,
         delayBase: 1000,
         onRetry: (tentativa, error) => {
-          logger.warn({ msg: '[EXPORT] Retry de exportaÃ§Ã£o', tentativa, error: error.message, formato: formatoNormalizado });
+          logger.warn({ msg: '[EXPORT] Retry de exportação', tentativa, error: error.message, formato: formatoNormalizado });
         }
       });
 
       logger.info({ msg: '[EXPORT] Arquivo gerado com sucesso', formato: formatoNormalizado });
       const downloadName = buildDownloadFilename(documento.titulo, formatoNormalizado);
 
-      // Definir Content-Type explÃ­cito
+      // Definir Content-Type explícito
       res.setHeader('Content-Type', MIME_TYPES[formatoNormalizado]);
 
       res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
@@ -386,7 +385,27 @@ export class DocumentoProcessoController {
       });
 
       if (!documento) {
-        return res.status(404).json({ error: 'Documento nÃ£o encontrado' });
+        const fallback = await prisma.documentoProcesso.findFirst({
+          where: {
+            processoId: id,
+            advogadoId: advogado.id
+          },
+          orderBy: {
+            createdAt: 'desc'
+          }
+        });
+
+        if (!fallback) {
+          logger.error({ msg: '[EXPORT] Documento nuo encontrado', id, advogadoId: advogado.id });
+          return res.status(404).json({ error: 'Documento nuo encontrado' });
+        }
+
+        logger.warn({
+          msg: '[EXPORT] ID de processo recebido, exportando documento mais recente',
+          processoId: id,
+          documentoId: fallback.id
+        });
+        documento = fallback;
       }
 
       // Deletar documento
@@ -400,6 +419,7 @@ export class DocumentoProcessoController {
     }
   }
 }
+
 
 
 
