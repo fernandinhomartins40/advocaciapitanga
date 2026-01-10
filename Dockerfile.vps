@@ -1,8 +1,10 @@
 # Multi-stage Dockerfile otimizado para VPS
 # Build único que serve backend e frontend via Nginx interno
 
-FROM node:20-alpine AS base
-RUN apk add --no-cache libc6-compat openssl
+FROM node:20-bookworm-slim AS base
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # ============================================
 # STAGE 1: Instalar dependências
@@ -64,30 +66,26 @@ FROM base AS runner
 WORKDIR /app
 
 # Instalar Nginx, Supervisor, PostgreSQL client (pg_dump) e dependências do Chromium/Puppeteer
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    postgresql-client \
-    wget \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-  && apk add --no-cache \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
-    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing \
-    wkhtmltopdf
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      nginx \
+      supervisor \
+      postgresql-client \
+      wget \
+      chromium \
+      wkhtmltopdf \
+      fontconfig \
+      fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Criar usuário não-root
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 appuser
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs --create-home appuser
 
 # Copiar node_modules de produção
 COPY --from=deps /tmp/prod_node_modules ./node_modules
@@ -227,5 +225,3 @@ EXPOSE 80
 
 # Iniciar Supervisor
 CMD ["/app/scripts/entrypoint.sh"]
-
-

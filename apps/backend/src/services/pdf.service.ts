@@ -36,7 +36,7 @@ export class PDFService {
   }
 
   private async renderizarPDF(html: string, options?: PDFOptions): Promise<Buffer> {
-    const headerText = options?.cabecalho?.trim() || '';
+    const headerText = (options?.cabecalho ?? 'Advocacia Pitanga').trim();
     const footerText = options?.rodape?.trim() || '';
     const binPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
 
@@ -90,10 +90,7 @@ export class PDFService {
   }
 
   private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
-    const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
     const rodape = options?.rodape || '';
-    const includeCabecalho = !options?.cabecalho;
-    const includeRodape = !options?.rodape;
 
     return `
       <!DOCTYPE html>
@@ -148,17 +145,11 @@ export class PDFService {
           </style>
         </head>
         <body>
-          ${includeCabecalho ? `
-          <div style="text-align: center; font-size: 10pt; margin-bottom: 20px;">
-            <strong>${this.escapeHtml(cabecalho)}</strong>
-          </div>
-          ` : ''}
-
           <h1>${this.escapeHtml(titulo)}</h1>
 
           ${conteudo}
 
-          ${includeRodape && rodape ? `
+          ${rodape ? `
           <div style="text-align: center; font-size: 10pt; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px;">
             ${this.escapeHtml(rodape)}
           </div>
