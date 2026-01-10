@@ -1,4 +1,4 @@
-import { spawn } from 'child_process';
+import puppeteer from 'puppeteer';
 import { createContextLogger, logError, startTimer } from '../utils/logger';
 
 export interface PDFOptions {
@@ -7,8 +7,8 @@ export interface PDFOptions {
 }
 
 /**
- * Servico de geracao de PDF usando wkhtmltopdf.
- * Funciona em ambientes Docker sem precisar de headless browser.
+ * Servico de geracao de PDF usando Puppeteer/Chromium.
+ * Mantem fidelidade visual do HTML e funciona em producao via Chromium.
  */
 export class PDFService {
   private logger = createContextLogger({ service: 'PDFService' });
@@ -36,70 +36,87 @@ export class PDFService {
   }
 
   private async renderizarPDF(html: string, options?: PDFOptions): Promise<Buffer> {
-    const headerText = (options?.cabecalho ?? 'Advocacia Pitanga').trim();
+    const headerText = options?.cabecalho?.trim() || '';
     const footerText = options?.rodape?.trim() || '';
-    const binPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
-    const useXvfb = process.env.WKHTMLTOPDF_USE_XVFB !== 'false';
+    const displayHeaderFooter = Boolean(headerText || footerText);
 
-    const args = [
-      '--encoding', 'utf-8',
-      '--page-size', 'A4',
-      '--margin-top', '25mm',
-      '--margin-bottom', '25mm',
-      '--margin-left', '20mm',
-      '--margin-right', '20mm',
-      '--quiet',
-    ];
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
 
-    if (headerText) {
-      args.push('--header-center', headerText);
-    }
-
-    if (footerText) {
-      args.push('--footer-center', `${footerText} - Pagina [page] de [topage]`);
-    } else {
-      args.push('--footer-center', 'Pagina [page] de [topage]');
-    }
-
-    args.push('-', '-');
-
-    return new Promise<Buffer>((resolve, reject) => {
-      const command = useXvfb ? 'xvfb-run' : binPath;
-      const commandArgs = useXvfb ? ['-a', binPath, ...args] : args;
-      const child = spawn(command, commandArgs);
-      const stdoutChunks: Buffer[] = [];
-      const stderrChunks: Buffer[] = [];
-
-      child.stdout.on('data', (chunk) => stdoutChunks.push(Buffer.from(chunk)));
-      child.stderr.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)));
-
-      child.on('error', (error) => {
-        reject(error);
-      });
-
-      child.on('close', (code) => {
-        const output = Buffer.concat(stdoutChunks);
-        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
-
-        if (code === 0 && output.length > 0) {
-          resolve(output);
-          return;
-        }
-
-        if (code === 0 && output.length === 0) {
-          reject(new Error(stderr || 'wkhtmltopdf gerou PDF vazio'));
-          return;
-        }
-
-        reject(new Error(stderr || `wkhtmltopdf falhou com codigo ${code}`));
-      });
-
-      child.stdin.write(html);
-      child.stdin.end();
+    this.logger.debug({
+      msg: 'Iniciando Puppeteer',
+      executablePath: executablePath || 'default'
     });
+
+    const browser = await puppeteer.launch({
+      headless: true,
+      executablePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
+        '--no-first-run',
+        '--no-zygote',
+        '--single-process',
+        '--disable-background-networking',
+        '--disable-default-apps',
+        '--disable-sync',
+        '--disable-translate',
+        '--hide-scrollbars',
+        '--metrics-recording-only',
+        '--mute-audio',
+        '--no-default-browser-check',
+        '--safebrowsing-disable-auto-update',
+        '--disable-breakpad'
+      ]
+    });
+
+    try {
+      const page = await browser.newPage();
+
+      this.logger.debug('Carregando HTML na página');
+      await page.setContent(html, {
+        waitUntil: 'networkidle0',
+        timeout: 30000
+      });
+
+      await page.emulateMediaType('screen');
+
+      const headerTemplate = headerText
+        ? `<div style="width:100%;font-size:9px;text-align:center;padding:5px 0;">${this.escapeHtml(headerText)}</div>`
+        : '<span></span>';
+
+      const footerParts = [
+        footerText ? `<span>${this.escapeHtml(footerText)} - </span>` : '',
+        'Página <span class="pageNumber"></span> de <span class="totalPages"></span>'
+      ].join('');
+
+      const footerTemplate = `<div style="width:100%;font-size:9px;text-align:center;padding:5px 0;">${footerParts}</div>`;
+
+      this.logger.debug('Gerando PDF');
+      const pdfBytes = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        displayHeaderFooter,
+        headerTemplate,
+        footerTemplate,
+        margin: displayHeaderFooter
+          ? { top: '2.5cm', bottom: '2.5cm', left: '2cm', right: '2cm' }
+          : { top: '2cm', bottom: '2cm', left: '2cm', right: '2cm' },
+        timeout: 30000
+      });
+
+      await page.close();
+      return Buffer.from(pdfBytes);
+    } finally {
+      await browser.close();
+    }
   }
 
   private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
+    const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
     const rodape = options?.rodape || '';
 
     return `
@@ -155,6 +172,10 @@ export class PDFService {
           </style>
         </head>
         <body>
+          <div style="text-align: center; font-size: 10pt; margin-bottom: 20px;">
+            <strong>${this.escapeHtml(cabecalho)}</strong>
+          </div>
+
           <h1>${this.escapeHtml(titulo)}</h1>
 
           ${conteudo}
