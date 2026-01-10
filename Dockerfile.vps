@@ -74,6 +74,7 @@ RUN apt-get update \
       wget \
       wkhtmltopdf \
       xvfb \
+      xauth \
       fontconfig \
       fonts-freefont-ttf \
     && rm -rf /var/lib/apt/lists/*
