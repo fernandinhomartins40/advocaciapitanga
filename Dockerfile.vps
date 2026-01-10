@@ -69,13 +69,16 @@ RUN apk add --no-cache \
     supervisor \
     postgresql-client \
     wget \
-    wkhtmltopdf \
     chromium \
     nss \
     freetype \
     harfbuzz \
     ca-certificates \
-    ttf-freefont
+    ttf-freefont \
+  && apk add --no-cache \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community \
+    --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing \
+    wkhtmltopdf
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -224,6 +227,5 @@ EXPOSE 80
 
 # Iniciar Supervisor
 CMD ["/app/scripts/entrypoint.sh"]
-
 
 
