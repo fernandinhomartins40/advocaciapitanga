@@ -377,7 +377,7 @@ export class DocumentoProcessoController {
       }
 
       // Verificar se documento existe e pertence ao advogado
-      const documento = await prisma.documentoProcesso.findFirst({
+      let documento = await prisma.documentoProcesso.findFirst({
         where: {
           id,
           advogadoId: advogado.id
@@ -396,8 +396,8 @@ export class DocumentoProcessoController {
         });
 
         if (!fallback) {
-          logger.error({ msg: '[EXPORT] Documento nuo encontrado', id, advogadoId: advogado.id });
-          return res.status(404).json({ error: 'Documento nuo encontrado' });
+          logger.error({ msg: '[EXPORT] Documento não encontrado', id, advogadoId: advogado.id });
+          return res.status(404).json({ error: 'Documento não encontrado' });
         }
 
         logger.warn({
