@@ -69,6 +69,7 @@ RUN apk add --no-cache \
     supervisor \
     postgresql-client \
     wget \
+    wkhtmltopdf \
     chromium \
     nss \
     freetype \
@@ -223,7 +224,6 @@ EXPOSE 80
 
 # Iniciar Supervisor
 CMD ["/app/scripts/entrypoint.sh"]
-
 
 
 

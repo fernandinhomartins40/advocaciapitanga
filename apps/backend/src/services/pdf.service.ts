@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { spawn } from 'child_process';
 import { createContextLogger, logError, startTimer } from '../utils/logger';
 
 export interface PDFOptions {
@@ -7,8 +7,8 @@ export interface PDFOptions {
 }
 
 /**
- * Servico de geracao de PDF usando Puppeteer/Chromium.
- * Mantem fidelidade visual do HTML e funciona em producao via Chromium.
+ * Servico de geracao de PDF usando wkhtmltopdf.
+ * Funciona em ambientes Docker sem precisar de headless browser.
  */
 export class PDFService {
   private logger = createContextLogger({ service: 'PDFService' });
@@ -38,59 +38,62 @@ export class PDFService {
   private async renderizarPDF(html: string, options?: PDFOptions): Promise<Buffer> {
     const headerText = options?.cabecalho?.trim() || '';
     const footerText = options?.rodape?.trim() || '';
-    const displayHeaderFooter = Boolean(headerText || footerText);
+    const binPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
 
-    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || undefined;
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-crashpad',
-        '--disable-gpu',
-        '--no-zygote',
-        '--single-process'
-      ]
-    });
+    const args = [
+      '--encoding', 'utf-8',
+      '--page-size', 'A4',
+      '--margin-top', '25mm',
+      '--margin-bottom', '25mm',
+      '--margin-left', '20mm',
+      '--margin-right', '20mm',
+      '--quiet',
+    ];
 
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      await page.emulateMediaType('screen');
+    if (headerText) {
+      args.push('--header-center', headerText);
+    }
 
-      const headerTemplate = headerText
-        ? `<div style="width:100%;font-size:9px;text-align:center;">${this.escapeHtml(headerText)}</div>`
-        : '<span></span>';
+    if (footerText) {
+      args.push('--footer-center', `${footerText} - Pagina [page] de [topage]`);
+    } else {
+      args.push('--footer-center', 'Pagina [page] de [topage]');
+    }
 
-      const footerParts = [
-        footerText ? `<span>${this.escapeHtml(footerText)} - </span>` : '',
-        'Pagina <span class="pageNumber"></span> de <span class="totalPages"></span>'
-      ].join('');
+    args.push('-', '-');
 
-      const footerTemplate = `<div style="width:100%;font-size:9px;text-align:center;">${footerParts}</div>`;
+    return new Promise<Buffer>((resolve, reject) => {
+      const child = spawn(binPath, args);
+      const stdoutChunks: Buffer[] = [];
+      const stderrChunks: Buffer[] = [];
 
-      const pdfBytes = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        displayHeaderFooter,
-        headerTemplate,
-        footerTemplate,
-        margin: displayHeaderFooter
-          ? { top: '2.5cm', bottom: '2.5cm', left: '2cm', right: '2cm' }
-          : { top: '2cm', bottom: '2cm', left: '2cm', right: '2cm' }
+      child.stdout.on('data', (chunk) => stdoutChunks.push(Buffer.from(chunk)));
+      child.stderr.on('data', (chunk) => stderrChunks.push(Buffer.from(chunk)));
+
+      child.on('error', (error) => {
+        reject(error);
       });
 
-      return Buffer.from(pdfBytes);
-    } finally {
-      await browser.close();
-    }
+      child.on('close', (code) => {
+        if (code === 0) {
+          resolve(Buffer.concat(stdoutChunks));
+          return;
+        }
+
+        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
+        reject(new Error(stderr || `wkhtmltopdf falhou com codigo ${code}`));
+      });
+
+      child.stdin.write(html);
+      child.stdin.end();
+    });
   }
 
   private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
     const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
     const rodape = options?.rodape || '';
+    const includeCabecalho = !options?.cabecalho;
+    const includeRodape = !options?.rodape;
 
     return `
       <!DOCTYPE html>
@@ -145,15 +148,17 @@ export class PDFService {
           </style>
         </head>
         <body>
+          ${includeCabecalho ? `
           <div style="text-align: center; font-size: 10pt; margin-bottom: 20px;">
             <strong>${this.escapeHtml(cabecalho)}</strong>
           </div>
+          ` : ''}
 
           <h1>${this.escapeHtml(titulo)}</h1>
 
           ${conteudo}
 
-          ${rodape ? `
+          ${includeRodape && rodape ? `
           <div style="text-align: center; font-size: 10pt; margin-top: 40px; border-top: 1px solid #ccc; padding-top: 10px;">
             ${this.escapeHtml(rodape)}
           </div>
