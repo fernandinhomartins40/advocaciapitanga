@@ -44,7 +44,15 @@ export class PDFService {
     const browser = await puppeteer.launch({
       headless: true,
       executablePath,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-crashpad',
+        '--disable-gpu',
+        '--no-zygote',
+        '--single-process'
+      ]
     });
 
     try {
