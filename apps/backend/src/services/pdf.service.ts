@@ -39,6 +39,7 @@ export class PDFService {
     const headerText = (options?.cabecalho ?? 'Advocacia Pitanga').trim();
     const footerText = options?.rodape?.trim() || '';
     const binPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
+    const useXvfb = process.env.WKHTMLTOPDF_USE_XVFB !== 'false';
 
     const args = [
       '--encoding', 'utf-8',
@@ -63,7 +64,9 @@ export class PDFService {
     args.push('-', '-');
 
     return new Promise<Buffer>((resolve, reject) => {
-      const child = spawn(binPath, args);
+      const command = useXvfb ? 'xvfb-run' : binPath;
+      const commandArgs = useXvfb ? ['-a', binPath, ...args] : args;
+      const child = spawn(command, commandArgs);
       const stdoutChunks: Buffer[] = [];
       const stderrChunks: Buffer[] = [];
 
@@ -75,12 +78,19 @@ export class PDFService {
       });
 
       child.on('close', (code) => {
-        if (code === 0) {
-          resolve(Buffer.concat(stdoutChunks));
+        const output = Buffer.concat(stdoutChunks);
+        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
+
+        if (code === 0 && output.length > 0) {
+          resolve(output);
           return;
         }
 
-        const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
+        if (code === 0 && output.length === 0) {
+          reject(new Error(stderr || 'wkhtmltopdf gerou PDF vazio'));
+          return;
+        }
+
         reject(new Error(stderr || `wkhtmltopdf falhou com codigo ${code}`));
       });
 
