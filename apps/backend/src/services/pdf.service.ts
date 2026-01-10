@@ -1,7 +1,4 @@
-import fs from 'fs';
-import path from 'path';
 import puppeteer from 'puppeteer';
-import { buildTempFilename } from '../utils/file-utils';
 import { createContextLogger, logError, startTimer } from '../utils/logger';
 
 export interface PDFOptions {
@@ -16,29 +13,19 @@ export interface PDFOptions {
 export class PDFService {
   private logger = createContextLogger({ service: 'PDFService' });
 
-  async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<string> {
+  async gerarPDF(conteudoHTML: string, titulo: string, options?: PDFOptions): Promise<Buffer> {
     const timer = startTimer();
-    const uploadsDir = path.join(__dirname, '../../uploads/documentos-gerados');
-
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const filename = buildTempFilename(titulo, 'pdf');
-    const filepath = path.join(uploadsDir, filename);
 
     try {
       const htmlCompleto = this.montarHTMLCompleto(conteudoHTML, titulo, options);
       const pdfBuffer = await this.renderizarPDF(htmlCompleto, options);
-      fs.writeFileSync(filepath, pdfBuffer);
 
       this.logger.info({
         msg: 'PDF gerado com sucesso',
-        filepath,
         duration_ms: timer()
       });
 
-      return filepath;
+      return pdfBuffer;
     } catch (error) {
       logError(this.logger, 'Erro ao gerar PDF', error, {
         titulo,

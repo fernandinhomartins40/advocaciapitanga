@@ -5,7 +5,6 @@ import { PDFService } from '../services/pdf.service';
 import { DOCXService } from '../services/docx.service';
 import { TXTService } from '../services/txt.service';
 import { RTFService } from '../services/rtf.service';
-import fs from 'fs';
 import { buildDownloadFilename } from '../utils/file-utils';
 
 const iaService = new IAService();
@@ -151,22 +150,12 @@ export class IAController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      const filepath = await pdfService.gerarPDF(conteudo, titulo, options);
+      const buffer = await pdfService.gerarPDF(conteudo, titulo, options);
 
       const downloadName = buildDownloadFilename(titulo, 'pdf');
       res.setHeader('Content-Type', MIME_TYPES.pdf);
-      res.download(filepath, downloadName, (err) => {
-        if (err) {
-          console.error('Erro ao enviar arquivo:', err);
-        }
-        try {
-          if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-          }
-        } catch (deleteErr) {
-          console.error('Erro ao deletar arquivo:', deleteErr);
-        }
-      });
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.send(buffer);
     } catch (error: any) {
       next(error);
     }
@@ -195,22 +184,12 @@ export class IAController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      const filepath = await docxService.gerarDOCX(conteudo, titulo, options);
+      const buffer = await docxService.gerarDOCX(conteudo, titulo, options);
 
       const downloadName = buildDownloadFilename(titulo, 'docx');
       res.setHeader('Content-Type', MIME_TYPES.docx);
-      res.download(filepath, downloadName, (err) => {
-        if (err) {
-          console.error('Erro ao enviar arquivo:', err);
-        }
-        try {
-          if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-          }
-        } catch (deleteErr) {
-          console.error('Erro ao deletar arquivo:', deleteErr);
-        }
-      });
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.send(buffer);
     } catch (error: any) {
       next(error);
     }
@@ -376,22 +355,12 @@ export class IAController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      const filepath = await txtService.gerarTXT(conteudo, titulo, options);
+      const buffer = await txtService.gerarTXT(conteudo, titulo, options);
 
       const downloadName = buildDownloadFilename(titulo, 'txt');
       res.setHeader('Content-Type', MIME_TYPES.txt);
-      res.download(filepath, downloadName, (err) => {
-        if (err) {
-          console.error('Erro ao enviar arquivo:', err);
-        }
-        try {
-          if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-          }
-        } catch (deleteErr) {
-          console.error('Erro ao deletar arquivo:', deleteErr);
-        }
-      });
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.send(buffer);
     } catch (error: any) {
       next(error);
     }
@@ -420,22 +389,12 @@ export class IAController {
         rodape: advogado.configuracaoIA.rodape || undefined
       } : undefined;
 
-      const filepath = await rtfService.gerarRTF(conteudo, titulo, options);
+      const buffer = await rtfService.gerarRTF(conteudo, titulo, options);
 
       const downloadName = buildDownloadFilename(titulo, 'rtf');
       res.setHeader('Content-Type', MIME_TYPES.rtf);
-      res.download(filepath, downloadName, (err) => {
-        if (err) {
-          console.error('Erro ao enviar arquivo:', err);
-        }
-        try {
-          if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-          }
-        } catch (deleteErr) {
-          console.error('Erro ao deletar arquivo:', deleteErr);
-        }
-      });
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.send(buffer);
     } catch (error: any) {
       next(error);
     }

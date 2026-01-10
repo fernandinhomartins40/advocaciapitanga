@@ -6,7 +6,6 @@ import { TXTService } from '../services/txt.service';
 import { RTFService } from '../services/rtf.service';
 import { retry } from '../utils/retry';
 import { logger } from '../utils/logger';
-import fs from 'fs';
 import { buildDownloadFilename } from '../utils/file-utils';
 
 const pdfService = new PDFService();
@@ -322,7 +321,7 @@ export class DocumentoProcessoController {
       } : undefined;
 
       // Gerar arquivo com retry automÃ¡tico
-      const filepath = await retry(async () => {
+      const buffer = await retry(async () => {
         logger.info({ msg: '[EXPORT] Gerando arquivo', formato: formatoNormalizado });
 
         switch (formatoNormalizado) {
@@ -345,30 +344,14 @@ export class DocumentoProcessoController {
         }
       });
 
-      logger.info({ msg: '[EXPORT] Arquivo gerado com sucesso', filepath });
+      logger.info({ msg: '[EXPORT] Arquivo gerado com sucesso', formato: formatoNormalizado });
       const downloadName = buildDownloadFilename(documento.titulo, formatoNormalizado);
 
       // Definir Content-Type explÃ­cito
       res.setHeader('Content-Type', MIME_TYPES[formatoNormalizado]);
 
-      // Enviar arquivo para download
-      res.download(filepath, downloadName, (err) => {
-        if (err) {
-          logger.error({ msg: '[EXPORT] Erro ao enviar arquivo', error: err, filepath });
-        } else {
-          logger.info({ msg: '[EXPORT] Arquivo enviado com sucesso', filepath });
-        }
-
-        // Deletar arquivo apos download (mesmo em caso de erro)
-        try {
-          if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-            logger.debug({ msg: '[EXPORT] Arquivo temporario deletado', filepath });
-          }
-        } catch (deleteErr) {
-          logger.error({ msg: '[EXPORT] Erro ao deletar arquivo temporario', error: deleteErr, filepath });
-        }
-      });
+      res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`);
+      res.send(buffer);
     } catch (error: any) {
       logger.error({ msg: '[EXPORT] Erro ao exportar documento', error: error.message, stack: error.stack });
       next(error);
