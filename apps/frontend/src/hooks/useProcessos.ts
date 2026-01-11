@@ -87,20 +87,6 @@ export function useDashboardStats() {
 // ====================
 
 /**
- * Hook para verificar status da integração PROJUDI
- */
-export function useProjudiStatus() {
-  return useQuery({
-    queryKey: ['projudi-status'],
-    queryFn: async () => {
-      const response = await api.get('/projudi/status');
-      return response.data;
-    },
-    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
-  });
-}
-
-/**
  * Hook para iniciar consulta PROJUDI e obter CAPTCHA
  */
 export function useIniciarCaptchaProjudi() {
@@ -142,36 +128,6 @@ export function useConsultarComCaptcha() {
   });
 }
 
-/**
- * Hook para sincronizar via API oficial PROJUDI
- */
-export function useSincronizarViaAPI() {
-  const queryClient = useQueryClient();
 
-  return useMutation({
-    mutationFn: async (processoId: string) => {
-      const response = await api.post(`/projudi/processos/${processoId}/sincronizar-api`);
-      return response.data;
-    },
-    onSuccess: (data, processoId) => {
-      // Invalidar queries do processo atualizado
-      queryClient.invalidateQueries({ queryKey: ['processo', processoId] });
-      queryClient.invalidateQueries({ queryKey: ['processos'] });
-    },
-  });
-}
 
-/**
- * Hook para verificar alterações no processo
- */
-export function useVerificarAlteracoesProjudi(processoId: string) {
-  return useQuery({
-    queryKey: ['projudi-alteracoes', processoId],
-    queryFn: async () => {
-      const response = await api.get(`/projudi/processos/${processoId}/verificar-alteracoes`);
-      return response.data;
-    },
-    enabled: !!processoId,
-    refetchInterval: false, // Não refetch automático
-  });
-}
+

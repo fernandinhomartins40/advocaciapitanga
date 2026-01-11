@@ -1,4 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
+import { existsSync } from 'fs';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -157,6 +158,18 @@ export class ProjudiScraperService {
         return (puppeteer as any).executablePath();
       } catch {
         return undefined;
+      }
+    }
+
+    const fallbackPaths = [
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/google-chrome'
+    ];
+
+    for (const path of fallbackPaths) {
+      if (existsSync(path)) {
+        return path;
       }
     }
 

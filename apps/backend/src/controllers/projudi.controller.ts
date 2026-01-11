@@ -1,41 +1,26 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { ProjudiScraperService } from '../services/projudi-scraper.service';
-import { ProjudiApiService } from '../services/projudi-api.service';
 import { ProcessoService } from '../services/processo.service';
 import { AuthRequest } from '../types';
 import { AuditService, AuditAction } from '../services/audit.service';
 
 const projudiScraperService = new ProjudiScraperService();
-const projudiApiService = new ProjudiApiService();
 const processoService = new ProcessoService();
 
 export class ProjudiController {
   /**
-   * Verifica status da integração PROJUDI
+   * Verifica status da integracao PROJUDI
    */
   async getStatus(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const scraperEnabled = true; // Scraper sempre disponível
-      const apiEnabled = projudiApiService.isEnabled();
-
-      let apiStatus = null;
-      if (apiEnabled) {
-        apiStatus = await projudiApiService.testarConexao();
-      }
+      const scraperEnabled = true; // Scraper sempre disponivel
 
       res.json({
         scraper: {
           enabled: scraperEnabled,
           disponivel: true,
           metodo: 'SCRAPING_ASSISTIDO',
-          descricao: 'Consulta manual com resolução de CAPTCHA pelo usuário'
-        },
-        api: {
-          enabled: apiEnabled,
-          disponivel: apiStatus?.sucesso || false,
-          metodo: 'API_OFICIAL',
-          descricao: 'Integração oficial via SCMPP (requer credenciais)',
-          mensagem: apiStatus?.mensagem
+          descricao: 'Consulta manual com resolucao de CAPTCHA pelo usuario'
         }
       });
     } catch (error: any) {
@@ -44,7 +29,7 @@ export class ProjudiController {
   }
 
   /**
-   * ESTRATÉGIA 1 (SCRAPING): Inicia consulta e retorna CAPTCHA
+   * ESTRATEGIA 1 (SCRAPING): Inicia consulta e retorna CAPTCHA
    */
   async iniciarCaptcha(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -60,10 +45,10 @@ export class ProjudiController {
         throw err;
       }
 
-      // Validar se é processo do Paraná
+      // Validar se e processo do Parana
       if (processo.uf !== 'PR') {
         return res.status(400).json({
-          error: 'Consulta PROJUDI disponível apenas para processos do Paraná (PR)'
+          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (PR)'
         });
       }
 
@@ -89,7 +74,7 @@ export class ProjudiController {
   }
 
   /**
-   * ESTRATÉGIA 1 (SCRAPING): Consulta com CAPTCHA resolvido
+   * ESTRATEGIA 1 (SCRAPING): Consulta com CAPTCHA resolvido
    */
   async consultarComCaptcha(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -99,7 +84,7 @@ export class ProjudiController {
 
       if (!sessionId || !captchaResposta) {
         return res.status(400).json({
-          error: 'SessionId e captchaResposta são obrigatórios'
+          error: 'SessionId e captchaResposta sao obrigatorios'
         });
       }
 
@@ -114,7 +99,7 @@ export class ProjudiController {
 
       if (processo.uf !== 'PR') {
         return res.status(400).json({
-          error: 'Consulta PROJUDI disponível apenas para processos do Paraná (PR)'
+          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (PR)'
         });
       }
 
@@ -125,7 +110,7 @@ export class ProjudiController {
         userId
       );
 
-      // Preparar dados para atualização
+      // Preparar dados para atualizacao
       const dadosAtualizacao: any = {};
 
       if (dadosProjudi.comarca) dadosAtualizacao.comarca = dadosProjudi.comarca;
@@ -139,7 +124,7 @@ export class ProjudiController {
           const [dia, mes, ano] = dadosProjudi.dataDistribuicao.split('/');
           dadosAtualizacao.dataDistribuicao = new Date(`${ano}-${mes}-${dia}`);
         } catch {
-          // Ignora se data inválida
+          // Ignora se data invalida
         }
       }
       if (dadosProjudi.valorCausa) {
@@ -153,7 +138,7 @@ export class ProjudiController {
       // Atualizar processo
       const processoAtualizado = await processoService.update(id, dadosAtualizacao);
 
-      // Atualizar partes se disponíveis
+      // Atualizar partes se disponiveis
       if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
         const partesMapeadas = dadosProjudi.partes.map(parte => ({
           tipoParte: this.mapearTipoParte(parte.tipo),
@@ -197,118 +182,6 @@ export class ProjudiController {
   }
 
   /**
-   * ESTRATÉGIA 2 (API OFICIAL): Sincronizar via API SCMPP
-   */
-  async sincronizarViaAPI(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const userId = req.user!.userId;
-
-      // Verificar se API está habilitada
-      if (!projudiApiService.isEnabled()) {
-        return res.status(403).json({
-          error: 'API PROJUDI não está habilitada. Configure as credenciais SCMPP.',
-          comoHabilitar: 'Entre em contato com o TJPR para obter credenciais de acesso ao SCMPP'
-        });
-      }
-
-      // Buscar processo com tratamento de erros controlado
-      let processo;
-      try {
-        processo = await processoService.getById(id, userId, req.user!.role);
-      } catch (err: any) {
-        if (this.handleProcessoErro(err, res)) return;
-        throw err;
-      }
-
-      // Validar se é processo do Paraná
-      if (processo.uf !== 'PR') {
-        return res.status(400).json({
-          error: 'API PROJUDI disponível apenas para processos do Paraná (PR)'
-        });
-      }
-
-      // Consultar via API oficial
-      const dadosMNI = await projudiApiService.consultarProcesso(processo.numero);
-
-      // Mapear dados MNI para formato do sistema
-      const dadosAtualizacao = projudiApiService.mapearDadosMNI(dadosMNI);
-
-      // Atualizar processo
-      const processoAtualizado = await processoService.update(id, dadosAtualizacao);
-
-      // Atualizar partes se disponíveis
-      if (dadosAtualizacao.partes && dadosAtualizacao.partes.length > 0) {
-        await processoService.updatePartes(id, dadosAtualizacao.partes);
-      }
-
-      // Registrar sucesso
-      await AuditService.createLog({
-        entityType: 'Processo',
-        entityId: id,
-        action: AuditAction.PROFILE_UPDATED,
-        userId,
-        oldValue: JSON.stringify(processo),
-        newValue: JSON.stringify(processoAtualizado)
-      });
-
-      res.json({
-        sucesso: true,
-        processo: processoAtualizado,
-        dadosExtraidos: dadosMNI,
-        camposAtualizados: Object.keys(dadosAtualizacao)
-      });
-    } catch (error: any) {
-      // Registrar falha
-      await AuditService.createLog({
-        entityType: 'Processo',
-        entityId: req.params.id,
-        action: AuditAction.PROFILE_UPDATED,
-        userId: req.user!.userId,
-        newValue: JSON.stringify({ erro: error.message, fonte: 'PROJUDI_API_OFICIAL' })
-      });
-
-      next(error);
-    }
-  }
-
-  /**
-   * Verifica se há alterações no processo (hash)
-   */
-  async verificarAlteracoes(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const userId = req.user!.userId;
-
-      if (!projudiApiService.isEnabled()) {
-        return res.status(403).json({
-          error: 'API PROJUDI não está habilitada'
-        });
-      }
-
-      let processo;
-      try {
-        processo = await processoService.getById(id, userId, req.user!.role);
-      } catch (err: any) {
-        if (this.handleProcessoErro(err, res)) return;
-        throw err;
-      }
-
-      if (!processo || processo.uf !== 'PR') {
-        return res.status(400).json({
-          error: 'Verificação disponível apenas para processos do PR com API habilitada'
-        });
-      }
-
-      const resultado = await projudiApiService.consultarAlteracao(processo.numero);
-
-      res.json(resultado);
-    } catch (error: any) {
-      next(error);
-    }
-  }
-
-  /**
    * Mapeia tipo de parte do PROJUDI para enum do sistema
    */
   private mapearTipoParte(tipo: string): string {
@@ -334,7 +207,7 @@ export class ProjudiController {
   }
 
   /**
-   * Endpoint para testar configuração
+   * Endpoint para testar configuracao
    */
   async testarConfiguracao(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -343,14 +216,11 @@ export class ProjudiController {
         return res.status(403).json({ error: 'Acesso negado' });
       }
 
-      const resultadoAPI = await projudiApiService.testarConexao();
-
       res.json({
         scraper: {
           disponivel: true,
           status: 'OK'
-        },
-        api: resultadoAPI
+        }
       });
     } catch (error: any) {
       next(error);
@@ -358,7 +228,7 @@ export class ProjudiController {
   }
 
   /**
-   * Obtém informações sobre o limite de consultas do usuário
+   * Obtem informacoes sobre o limite de consultas do usuario
    */
   async obterInfoLimite(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -376,7 +246,7 @@ export class ProjudiController {
   }
 
   /**
-   * Reseta o limite de consultas do usuário (apenas para desenvolvimento/admin)
+   * Reseta o limite de consultas do usuario (apenas para desenvolvimento/admin)
    */
   async resetarLimite(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -402,7 +272,7 @@ export class ProjudiController {
   private handleProcessoErro(err: any, res: Response): boolean {
     const mensagem = (err?.message || '').toLowerCase();
     if (mensagem.includes('processo') && mensagem.includes('encontr')) {
-      res.status(404).json({ error: 'Processo não encontrado' });
+      res.status(404).json({ error: 'Processo nao encontrado' });
       return true;
     }
     if (mensagem.includes('acesso negado')) {

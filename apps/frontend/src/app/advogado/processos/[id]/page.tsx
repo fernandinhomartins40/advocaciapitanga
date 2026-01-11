@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -27,19 +27,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ModalCaptchaProjudi } from '@/components/processos/ModalCaptchaProjudi';
 import {
   useIniciarCaptchaProjudi,
-  useConsultarComCaptcha,
-  useSincronizarViaAPI,
-  useProjudiStatus
+  useConsultarComCaptcha
 } from '@/hooks/useProcessos';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { Zap, UserCheck, ChevronDown } from 'lucide-react';
 
 interface ProcessoFormData {
   tipoAcao: string;
@@ -66,7 +55,6 @@ interface ProcessoFormData {
 
 export default function ProcessoDetalhesPage() {
   const params = useParams();
-  const router = useRouter();
   const id = params.id as string;
   const { data: processo, isLoading } = useProcesso(id);
   const { data: clientesData } = useClientes({ limit: 100 });
@@ -122,8 +110,6 @@ export default function ProcessoDetalhesPage() {
   // Hooks PROJUDI
   const iniciarCaptchaMutation = useIniciarCaptchaProjudi();
   const consultarCaptchaMutation = useConsultarComCaptcha();
-  const sincronizarAPIMutation = useSincronizarViaAPI();
-  const { data: projudiStatus } = useProjudiStatus();
 
   // FASE 1.4: Reset correto do formulário quando modal fechar
   useEffect(() => {
@@ -343,7 +329,7 @@ export default function ProcessoDetalhesPage() {
   };
 
   // =========================
-  // FUNÇÕES PROJUDI
+  // FUNCOES PROJUDI
   // =========================
 
   /**
@@ -352,8 +338,8 @@ export default function ProcessoDetalhesPage() {
   const handleAtualizarManual = async () => {
     if (!processo || processo.uf !== 'PR') {
       toast({
-        title: 'Não disponível',
-        description: 'Atualização PROJUDI disponível apenas para processos do Paraná (PR)',
+        title: 'Nao disponivel',
+        description: 'Atualizacao PROJUDI disponivel apenas para processos do Parana (PR)',
         variant: 'error'
       });
       return;
@@ -395,7 +381,7 @@ export default function ProcessoDetalhesPage() {
 
       toast({
         title: 'Sucesso!',
-        description: `Processo atualizado com ${resultado.camposAtualizados?.length || 0} campos`,
+        description: Processo atualizado com  campos,
         variant: 'success'
       });
 
@@ -405,9 +391,8 @@ export default function ProcessoDetalhesPage() {
       const mensagemErro = error.response?.data?.error || error.message || 'Erro ao consultar';
       setCaptchaError(mensagemErro);
 
-      // Não fecha o modal em caso de erro de CAPTCHA
+      // Nao fecha o modal em caso de erro de CAPTCHA
       if (mensagemErro.toLowerCase().includes('captcha')) {
-        // Permite tentar novamente
         return;
       }
 
@@ -419,51 +404,7 @@ export default function ProcessoDetalhesPage() {
     }
   };
 
-  /**
-   * Sincroniza via API oficial PROJUDI
-   */
-  const handleAtualizarAPI = async () => {
-    if (!processo || processo.uf !== 'PR') {
-      toast({
-        title: 'Não disponível',
-        description: 'Sincronização API disponível apenas para processos do Paraná (PR)',
-        variant: 'error'
-      });
-      return;
-    }
-
-    try {
-      const resultado = await sincronizarAPIMutation.mutateAsync(id);
-
-      toast({
-        title: 'Sucesso!',
-        description: `Processo sincronizado com ${resultado.camposAtualizados?.length || 0} campos atualizados`,
-        variant: 'success'
-      });
-    } catch (error: any) {
-      const mensagemErro = error.response?.data?.error || error.message || 'Erro ao sincronizar';
-      toast({
-        title: 'Erro',
-        description: mensagemErro,
-        variant: 'error'
-      });
-    }
-  };
-
-  /**
-   * Decide qual método usar automaticamente
-   */
-  const handleAtualizarProcesso = async () => {
-    // Se API está habilitada e disponível, usa API; senão cai para scraping assistido
-    if (projudiStatus?.api?.enabled && projudiStatus.api.disponivel) {
-      await handleAtualizarAPI();
-    } else {
-      // Caso contrário, usa scraping assistido
-      await handleAtualizarManual();
-    }
-  };
-
-  const statusColors: Record<string, any> = {
+  const statusColors: Record<string, any> = {: Record<string, any> = {
     EM_ANDAMENTO: 'info',
     SUSPENSO: 'warning',
     CONCLUIDO: 'success',
@@ -496,61 +437,24 @@ export default function ProcessoDetalhesPage() {
           {processo.status.replace('_', ' ')}
         </Badge>
 
-        {/* Botões de ação */}
+                {/* Botoes de acao */}
         <div className="flex gap-2">
-          {/* Botão Editar Processo */}
           <Button onClick={() => setIsEditOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Editar Processo
           </Button>
 
-          {/* Dropdown Atualizar PROJUDI - apenas para PR */}
           {processo.uf === 'PR' && (
-            <div className="flex gap-1">
-              <Button
-                onClick={handleAtualizarProcesso}
-                disabled={sincronizarAPIMutation.isPending || captchaLoading}
-                variant="outline"
-              >
-                <RefreshCw
-                  className={`mr-2 h-4 w-4 ${(sincronizarAPIMutation.isPending || captchaLoading) ? 'animate-spin' : ''}`}
-                />
-                Atualizar PROJUDI
-              </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <ChevronDown className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Método de Atualização</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-
-                  {/* API Oficial (se habilitada) */}
-                  {projudiStatus?.api?.enabled && (
-                    <DropdownMenuItem
-                      onClick={handleAtualizarAPI}
-                      disabled={sincronizarAPIMutation.isPending}
-                    >
-                      <Zap className="mr-2 h-4 w-4" />
-                      API Oficial (Automático)
-                      <Badge variant="success" className="ml-2">Premium</Badge>
-                    </DropdownMenuItem>
-                  )}
-
-                  {/* Scraping Assistido */}
-                  <DropdownMenuItem
-                    onClick={handleAtualizarManual}
-                    disabled={captchaLoading}
-                  >
-                    <UserCheck className="mr-2 h-4 w-4" />
-                    Consulta Manual (CAPTCHA)
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <Button
+              onClick={handleAtualizarManual}
+              disabled={captchaLoading}
+              variant="outline"
+            >
+              <RefreshCw
+                className={mr-2 h-4 w-4 }
+              />
+              Atualizar PROJUDI
+            </Button>
           )}
         </div>
       </div>
@@ -1197,3 +1101,12 @@ export default function ProcessoDetalhesPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
