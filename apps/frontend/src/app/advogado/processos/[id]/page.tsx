@@ -437,7 +437,7 @@ export default function ProcessoDetalhesPage() {
           {processo.status.replace('_', ' ')}
         </Badge>
 
-                {/* Botoes de acao */}
+        {/* Botoes de acao */}
         <div className="flex gap-2">
           <Button onClick={() => setIsEditOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
@@ -451,7 +451,7 @@ export default function ProcessoDetalhesPage() {
               variant="outline"
             >
               <RefreshCw
-                className={mr-2 h-4 w-4 }
+                className={`mr-2 h-4 w-4 ${captchaLoading ? 'animate-spin' : ''}`}
               />
               Atualizar PROJUDI
             </Button>
