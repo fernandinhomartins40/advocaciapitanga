@@ -381,7 +381,7 @@ export default function ProcessoDetalhesPage() {
 
       toast({
         title: 'Sucesso!',
-        description: Processo atualizado com  campos,
+        description: `Processo atualizado com ${resultado.camposAtualizados?.length || 0} campos`,
         variant: 'success'
       });
 
@@ -404,7 +404,7 @@ export default function ProcessoDetalhesPage() {
     }
   };
 
-  const statusColors: Record<string, any> = {: Record<string, any> = {
+  const statusColors: Record<string, any> = {
     EM_ANDAMENTO: 'info',
     SUSPENSO: 'warning',
     CONCLUIDO: 'success',
