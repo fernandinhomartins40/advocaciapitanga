@@ -589,6 +589,37 @@ export default function DocumentosPage() {
     }
   };
 
+  const handleSalvarAlteracoesDocumento = async () => {
+    if (!documentoProcessoId) {
+      toast({ title: 'Atenção', description: 'Nenhum documento para salvar', variant: 'error' });
+      return;
+    }
+
+    setIsSavingDocumento(true);
+    try {
+      await api.put(`/documentos-processo/${documentoProcessoId}`, {
+        titulo: tituloDocumento,
+        conteudoHTML: documentoConteudo
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['processo', processoId] });
+
+      toast({
+        title: 'Sucesso',
+        description: 'Alterações salvas com sucesso!',
+        variant: 'success',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: error.response?.data?.error || 'Erro ao salvar alterações',
+        variant: 'error',
+      });
+    } finally {
+      setIsSavingDocumento(false);
+    }
+  };
+
   const handleExportarDocumento = async (formato: 'pdf' | 'docx') => {
     if (!documentoConteudo) {
       toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
@@ -1180,7 +1211,7 @@ export default function DocumentosPage() {
                       />
                     </div>
 
-                    <div className="flex gap-3 pt-2">
+                    <div className="flex flex-wrap gap-3 pt-2">
                       <Button
                         onClick={handleGerarDocumento}
                         disabled={!modeloSelecionado || isSavingDocumento}
@@ -1188,6 +1219,17 @@ export default function DocumentosPage() {
                         <FileText className="h-4 w-4 mr-2" />
                         {isSavingDocumento ? 'Salvando...' : 'Gerar Documento'}
                       </Button>
+
+                      {documentoConteudo && documentoProcessoId && (
+                        <Button
+                          variant="outline"
+                          onClick={handleSalvarAlteracoesDocumento}
+                          disabled={isSavingDocumento}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          {isSavingDocumento ? 'Salvando...' : 'Salvar Alterações'}
+                        </Button>
+                      )}
 
                       {documentoConteudo && (
                         <>
