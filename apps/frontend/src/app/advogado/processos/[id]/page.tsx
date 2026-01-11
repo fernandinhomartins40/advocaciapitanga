@@ -332,6 +332,20 @@ export default function ProcessoDetalhesPage() {
   // FUNCOES PROJUDI
   // =========================
 
+  const getProjudiErrorMessage = (error: any, fallback: string) => {
+    const errorPayload = error?.response?.data?.error;
+    if (typeof errorPayload === 'string') {
+      return errorPayload;
+    }
+    if (errorPayload?.message) {
+      return errorPayload.message;
+    }
+    if (error?.message) {
+      return error.message;
+    }
+    return fallback;
+  };
+
   /**
    * Inicia consulta PROJUDI (scraping assistido)
    */
@@ -353,7 +367,7 @@ export default function ProcessoDetalhesPage() {
       setCaptchaData(resultado);
       setIsCaptchaModalOpen(true);
     } catch (error: any) {
-      const mensagemErro = error.response?.data?.error || error.message || 'Erro ao iniciar consulta';
+      const mensagemErro = getProjudiErrorMessage(error, 'Erro ao iniciar consulta');
       toast({
         title: 'Erro',
         description: mensagemErro,
@@ -388,7 +402,7 @@ export default function ProcessoDetalhesPage() {
       setIsCaptchaModalOpen(false);
       setCaptchaData(null);
     } catch (error: any) {
-      const mensagemErro = error.response?.data?.error || error.message || 'Erro ao consultar';
+      const mensagemErro = getProjudiErrorMessage(error, 'Erro ao consultar');
       setCaptchaError(mensagemErro);
 
       // Nao fecha o modal em caso de erro de CAPTCHA
