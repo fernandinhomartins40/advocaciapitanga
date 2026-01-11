@@ -137,6 +137,7 @@ export class PDFService {
         <head>
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${this.escapeHtml(titulo)}</title>
           <style>
             * {
               box-sizing: border-box;
@@ -250,8 +251,6 @@ export class PDFService {
             <strong>${this.escapeHtml(cabecalho)}</strong>
           </div>
           ` : ''}
-
-          <h1>${this.escapeHtml(titulo)}</h1>
 
           <div class="conteudo-documento">
             ${conteudo}
