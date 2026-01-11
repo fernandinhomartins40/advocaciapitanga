@@ -71,17 +71,44 @@ export class PDFService {
         const output = Buffer.concat(stdoutChunks);
         const stderr = Buffer.concat(stderrChunks).toString('utf-8').trim();
 
+        this.logger.debug({
+          msg: 'wkhtmltopdf finalizado',
+          code,
+          outputSize: output.length,
+          stderr: stderr.substring(0, 500),
+          htmlSize: html.length
+        });
+
         if (code === 0 && output.length > 0) {
           resolve(output);
           return;
         }
 
         if (code === 0 && output.length === 0) {
+          this.logger.error({
+            msg: 'wkhtmltopdf gerou PDF vazio',
+            htmlPreview: html.substring(0, 1000),
+            stderr
+          });
           reject(new Error(stderr || 'wkhtmltopdf gerou PDF vazio'));
           return;
         }
 
+        this.logger.error({
+          msg: 'wkhtmltopdf falhou',
+          code,
+          stderr,
+          htmlPreview: html.substring(0, 1000)
+        });
         reject(new Error(stderr || `wkhtmltopdf falhou com codigo ${code}`));
+      });
+
+      this.logger.debug({
+        msg: 'Enviando HTML para wkhtmltopdf',
+        htmlSize: html.length,
+        htmlPreview: html.substring(0, 500),
+        command,
+        args: commandArgs
       });
 
       child.stdin.write(html);
