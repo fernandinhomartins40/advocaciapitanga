@@ -28,33 +28,32 @@ WORKDIR /app
 
 ENV NODE_ENV production
 
-# Instalar Chromium e dependências necessárias para Puppeteer
+# Instalar dependências do Playwright
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    chromium \
-    fonts-liberation \
-    fonts-freefont-ttf \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libgdk-pixbuf2.0-0 \
-    libnspr4 \
     libnss3 \
-    libx11-xcb1 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libdbus-1-3 \
+    libxkbcommon0 \
     libxcomposite1 \
     libxdamage1 \
+    libxfixes3 \
     libxrandr2 \
-    libxss1 \
-    libxtst6 \
-    xdg-utils \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    libatspi2.0-0 \
+    fonts-liberation \
+    fonts-freefont-ttf \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Configurar Puppeteer para usar o Chromium instalado
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Playwright usa seus próprios browsers bundled
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 RUN groupadd --system --gid 1001 nodejs && \
     useradd --system --uid 1001 --gid nodejs expressuser
@@ -66,6 +65,9 @@ COPY --from=builder /app/packages/database/node_modules/.prisma ./node_modules/.
 COPY --from=builder /app/packages/database/dist ./node_modules/database/dist
 COPY --from=builder /app/packages/database/package.json ./node_modules/database/
 COPY --from=builder /app/packages/database/node_modules/@prisma ./node_modules/database/node_modules/@prisma
+
+# Instalar browsers do Playwright
+RUN npx playwright install chromium --with-deps
 
 RUN mkdir -p uploads/documentos uploads/documentos-gerados
 

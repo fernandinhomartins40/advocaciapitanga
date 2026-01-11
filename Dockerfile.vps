@@ -65,24 +65,41 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-# Instalar Nginx, Supervisor, PostgreSQL client (pg_dump) e dependências do Chromium/Puppeteer
+# Instalar Nginx, Supervisor, PostgreSQL client (pg_dump) e dependências do Playwright
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
       nginx \
       supervisor \
       postgresql-client \
       wget \
-      wkhtmltopdf \
-      xvfb \
-      xauth \
-      fontconfig \
+      # Dependências do Playwright Chromium
+      libnss3 \
+      libnspr4 \
+      libatk1.0-0 \
+      libatk-bridge2.0-0 \
+      libcups2 \
+      libdrm2 \
+      libdbus-1-3 \
+      libxkbcommon0 \
+      libxcomposite1 \
+      libxdamage1 \
+      libxfixes3 \
+      libxrandr2 \
+      libgbm1 \
+      libpango-1.0-0 \
+      libcairo2 \
+      libasound2 \
+      libatspi2.0-0 \
+      # Fontes
+      fonts-liberation \
       fonts-freefont-ttf \
+      fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV WKHTMLTOPDF_PATH=wkhtmltopdf
-ENV WKHTMLTOPDF_USE_XVFB=true
+# Playwright usa seus próprios browsers bundled
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Criar usuário não-root
 RUN groupadd --system --gid 1001 nodejs && \
@@ -90,6 +107,10 @@ RUN groupadd --system --gid 1001 nodejs && \
 
 # Copiar node_modules de produção
 COPY --from=deps /tmp/prod_node_modules ./node_modules
+
+# Copiar Playwright e instalar browsers
+COPY --from=builder /app/node_modules/playwright ./node_modules/playwright
+RUN npx playwright install chromium --with-deps
 
 # Copiar Prisma CLI (para migrate/seed em runtime) e binaries
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
