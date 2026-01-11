@@ -35,33 +35,23 @@ export class PDFService {
     }
   }
 
-  private async renderizarPDF(html: string, options?: PDFOptions): Promise<Buffer> {
-    const headerText = (options?.cabecalho ?? 'Advocacia Pitanga').trim();
-    const footerText = options?.rodape?.trim() || '';
+  private async renderizarPDF(html: string, _options?: PDFOptions): Promise<Buffer> {
     const binPath = process.env.WKHTMLTOPDF_PATH || 'wkhtmltopdf';
     const useXvfb = process.env.WKHTMLTOPDF_USE_XVFB !== 'false';
 
+    // wkhtmltopdf do Debian não suporta --header-center e --footer-center
+    // Cabeçalho e rodapé já estão incluídos no HTML
     const args = [
       '--encoding', 'utf-8',
       '--page-size', 'A4',
-      '--margin-top', '25mm',
-      '--margin-bottom', '25mm',
+      '--margin-top', '15mm',
+      '--margin-bottom', '15mm',
       '--margin-left', '20mm',
       '--margin-right', '20mm',
       '--quiet',
+      '--enable-local-file-access',
+      '-', '-'
     ];
-
-    if (headerText) {
-      args.push('--header-center', headerText);
-    }
-
-    if (footerText) {
-      args.push('--footer-center', `${footerText} - Página [page] de [topage]`);
-    } else {
-      args.push('--footer-center', 'Página [page] de [topage]');
-    }
-
-    args.push('-', '-');
 
     return new Promise<Buffer>((resolve, reject) => {
       const command = useXvfb ? 'xvfb-run' : binPath;
