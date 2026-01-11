@@ -127,7 +127,8 @@ export class PDFService {
   }
 
   private montarHTMLCompleto(conteudo: string, titulo: string, options?: PDFOptions): string {
-    const cabecalho = options?.cabecalho || 'Advocacia Pitanga';
+    // Cabeçalho e rodapé personalizados (apenas se explicitamente fornecidos)
+    const cabecalho = options?.cabecalho || '';
     const rodape = options?.rodape || '';
 
     return `
@@ -244,9 +245,11 @@ export class PDFService {
           </style>
         </head>
         <body>
+          ${cabecalho ? `
           <div style="text-align: center; font-size: 10pt; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #ccc;">
             <strong>${this.escapeHtml(cabecalho)}</strong>
           </div>
+          ` : ''}
 
           <h1>${this.escapeHtml(titulo)}</h1>
 
@@ -259,17 +262,6 @@ export class PDFService {
             ${this.escapeHtml(rodape)}
           </div>
           ` : ''}
-
-          <div style="text-align: center; font-size: 9pt; margin-top: 20px; color: #666;">
-            Documento gerado em: ${new Date().toLocaleString('pt-BR', {
-              timeZone: 'America/Sao_Paulo',
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
-          </div>
         </body>
       </html>
     `;
