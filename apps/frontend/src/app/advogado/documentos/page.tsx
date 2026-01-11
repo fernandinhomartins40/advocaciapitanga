@@ -621,27 +621,45 @@ export default function DocumentosPage() {
   };
 
   const handleExportarDocumento = async (formato: 'pdf' | 'docx') => {
-    if (!documentoConteudo) {
-      toast({ title: 'Atenção', description: 'Gere um documento primeiro', variant: 'error' });
+    // Validação: documento precisa estar salvo no banco para exportar
+    if (!documentoProcessoId) {
+      toast({
+        title: 'Atenção',
+        description: 'Salve o documento antes de exportar',
+        variant: 'error'
+      });
       return;
     }
 
+    setIsExporting(true);
+    let url: string | null = null;
+
     try {
-      const endpoint = `/ia/exportar-${formato}`;
+      const formatoNormalizado = formato.toUpperCase();
+
+      // Usar o mesmo endpoint robusto do DocumentosGerados.tsx
       const response = await api.post(
-        endpoint,
-        { conteudo: documentoConteudo, titulo: tituloDocumento },
+        `/documentos-processo/${documentoProcessoId}/exportar`,
+        { formato: formatoNormalizado },
         { responseType: 'blob' }
       );
 
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      // Criar URL do blob
+      url = window.URL.createObjectURL(new Blob([response.data]));
+
+      // Criar link temporário e simular clique
       const link = document.createElement('a');
       link.href = url;
       link.download = `${tituloDocumento}.${formato}`;
+      document.body.appendChild(link);
       link.click();
-      window.URL.revokeObjectURL(url);
+      document.body.removeChild(link);
 
-      toast({ title: 'Sucesso', description: `Documento exportado em ${formato.toUpperCase()}`, variant: 'success' });
+      toast({
+        title: 'Sucesso',
+        description: `Documento exportado em ${formato.toUpperCase()}`,
+        variant: 'success'
+      });
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.error?.message ||
@@ -650,6 +668,10 @@ export default function DocumentosPage() {
         'Erro ao exportar documento';
       toast({ title: 'Erro', description: errorMessage, variant: 'error' });
     } finally {
+      // SEMPRE revogar URL para liberar memória
+      if (url) {
+        window.URL.revokeObjectURL(url);
+      }
       setIsExporting(false);
     }
   };
@@ -1231,7 +1253,7 @@ export default function DocumentosPage() {
                         </Button>
                       )}
 
-                      {documentoConteudo && (
+                      {documentoConteudo && documentoProcessoId && (
                         <>
                           <Button
                             variant="outline"
