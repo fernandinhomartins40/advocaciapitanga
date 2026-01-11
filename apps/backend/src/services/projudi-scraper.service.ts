@@ -1,4 +1,4 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import { chromium, Browser, Page, BrowserContext } from 'playwright';
 import { existsSync } from 'fs';
 import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
@@ -145,36 +145,6 @@ export class ProjudiScraperService {
     }
   }
 
-  /**
-   * Resolve caminho executável do Chromium/Puppeteer considerando ambientes distintos
-   */
-  private getExecutablePath(): string | undefined {
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-      return process.env.PUPPETEER_EXECUTABLE_PATH;
-    }
-
-    if (typeof (puppeteer as any).executablePath === 'function') {
-      try {
-        return (puppeteer as any).executablePath();
-      } catch {
-        return undefined;
-      }
-    }
-
-    const fallbackPaths = [
-      '/usr/bin/chromium',
-      '/usr/bin/chromium-browser',
-      '/usr/bin/google-chrome'
-    ];
-
-    for (const path of fallbackPaths) {
-      if (existsSync(path)) {
-        return path;
-      }
-    }
-
-    return undefined;
-  }
 
   /**
    * FASE 1: Inicia consulta e captura CAPTCHA
@@ -195,19 +165,16 @@ export class ProjudiScraperService {
     this.validarUsoResponsavel(userId);
 
     let browser: Browser | null = null;
+    let context: BrowserContext | null = null;
 
     try {
-      const executablePath = this.getExecutablePath();
-
-      // Iniciar browser headless
-      browser = await puppeteer.launch({
+      // Iniciar browser headless com Playwright
+      browser = await chromium.launch({
         headless: true,
-        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
           '--disable-gpu',
           '--disable-software-rasterizer',
           '--disable-dev-tools',
@@ -219,20 +186,18 @@ export class ProjudiScraperService {
           '--disable-features=VizDisplayCompositor',
           '--temp-dir=/tmp'
         ],
-        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
-        dumpio: false
+        timeout: 30000
       });
 
-      const page = await browser.newPage();
+      context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      });
 
-      // Configurar user agent realista
-      await page.setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      );
+      const page = await context.newPage();
 
       // Navegar para consulta pública
       await page.goto('https://consulta.tjpr.jus.br/projudi_consulta/processo/consultaPublica.do?actionType=iniciar', {
-        waitUntil: 'networkidle2',
+        waitUntil: 'networkidle',
         timeout: 30000
       });
 
@@ -240,15 +205,16 @@ export class ProjudiScraperService {
       await page.waitForSelector('#captchaImg', { timeout: 10000 });
 
       // Capturar cookies da sessão
-      const cookies = await page.cookies();
+      const cookies = await context.cookies();
 
       // Extrair imagem CAPTCHA
-      const captchaElement = await page.$('#captchaImg');
-      if (!captchaElement) {
+      const captchaElement = await page.locator('#captchaImg');
+      if (!(await captchaElement.count())) {
         throw new Error('CAPTCHA não encontrado na página');
       }
 
-      const captchaBase64 = await captchaElement.screenshot({ encoding: 'base64' });
+      const captchaBase64 = await captchaElement.screenshot({ type: 'png' });
+      const captchaBase64String = captchaBase64.toString('base64');
 
       // Gerar ID único da sessão
       const sessionId = uuidv4();
@@ -264,7 +230,7 @@ export class ProjudiScraperService {
 
       return {
         sessionId,
-        captchaImage: `data:image/png;base64,${captchaBase64}`,
+        captchaImage: `data:image/png;base64,${captchaBase64String}`,
         numeroProcesso: numeroFormatado
       };
     } catch (error: any) {
@@ -297,18 +263,15 @@ export class ProjudiScraperService {
     }
 
     let browser: Browser | null = null;
+    let context: BrowserContext | null = null;
 
     try {
-      const executablePath = this.getExecutablePath();
-
-      browser = await puppeteer.launch({
+      browser = await chromium.launch({
         headless: true,
-        executablePath,
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
           '--disable-dev-shm-usage',
-          '--disable-accelerated-2d-canvas',
           '--disable-gpu',
           '--disable-software-rasterizer',
           '--disable-dev-tools',
@@ -320,35 +283,34 @@ export class ProjudiScraperService {
           '--disable-features=VizDisplayCompositor',
           '--temp-dir=/tmp'
         ],
-        ignoreDefaultArgs: ['--enable-automation', '--enable-blink-features=IdleDetection'],
-        dumpio: false
+        timeout: 30000
       });
 
-      const page = await browser.newPage();
-
-      // Configurar user agent
-      await page.setUserAgent(
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      );
+      context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      });
 
       // Restaurar cookies da sessão
-      await page.setCookie(...session.cookies);
+      await context.addCookies(session.cookies);
+
+      const page = await context.newPage();
 
       // Navegar para página de consulta
       await page.goto('https://consulta.tjpr.jus.br/projudi_consulta/processo/consultaPublica.do?actionType=iniciar', {
-        waitUntil: 'networkidle2'
+        waitUntil: 'networkidle',
+        timeout: 30000
       });
 
       // Preencher formulário - usa o número normalizado
-      await page.waitForSelector('#numeroProcesso');
-      await page.type('#numeroProcesso', session.numeroProcesso);
+      await page.waitForSelector('#numeroProcesso', { timeout: 10000 });
+      await page.fill('#numeroProcesso', session.numeroProcesso);
 
-      await page.waitForSelector('#captcha');
-      await page.type('#captcha', captchaResposta.toUpperCase());
+      await page.waitForSelector('#captcha', { timeout: 10000 });
+      await page.fill('#captcha', captchaResposta.toUpperCase());
 
       // Submeter formulário
       await Promise.all([
-        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }),
+        page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
         page.click('input[type="submit"]')
       ]);
 
