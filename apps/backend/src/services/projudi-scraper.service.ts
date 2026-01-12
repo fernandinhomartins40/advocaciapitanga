@@ -364,16 +364,12 @@ export class ProjudiScraperService {
 
       console.log('[PROJUDI SUBMIT] Form info:', JSON.stringify(formInfo));
 
+      // Clicar no botão "Pesquisar" ao invés de fazer form.submit()
+      // Isso garante que eventos onclick do botão sejam executados
+      console.log('[PROJUDI SUBMIT] Clicando no botão Pesquisar...');
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
-        page.evaluate(() => {
-          // @ts-ignore - document is available in browser context
-          const form = document.querySelector('form');
-          if (form) {
-            // @ts-ignore - form.submit() is valid in browser
-            form.submit();
-          }
-        })
+        page.click('input[type="submit"][value="Pesquisar"]')
       ]);
 
       // Verificar se CAPTCHA foi aceito
