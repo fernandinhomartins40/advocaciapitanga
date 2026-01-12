@@ -38,6 +38,10 @@ interface DadosProcessoProjudi {
     descricao?: string;
     movimentadoPor?: string;
     tipoMovimento?: string;
+    documentos?: Array<{
+      titulo: string;
+      url: string;
+    }>;
   }>;
 }
 
