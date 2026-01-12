@@ -353,6 +353,7 @@ export class ProjudiScraperService {
       await page.fill('input[name="answer"]', captchaResposta);
 
       // Submeter formulário
+      console.log('[PROJUDI SUBMIT] Clicando no botão submit...');
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
         page.click('input[type="submit"]')
@@ -361,6 +362,16 @@ export class ProjudiScraperService {
       // Verificar se CAPTCHA foi aceito
       const urlAtual = page.url();
       const conteudoPagina = await page.content();
+
+      console.log('[PROJUDI SUBMIT] URL após submit:', urlAtual);
+      console.log('[PROJUDI SUBMIT] HTML length após submit:', conteudoPagina.length);
+      console.log('[PROJUDI SUBMIT] Contém "captcha inválido":', conteudoPagina.includes('captcha inválido'));
+      console.log('[PROJUDI SUBMIT] Contém "Processo não encontrado":', conteudoPagina.includes('Processo não encontrado'));
+      console.log('[PROJUDI SUBMIT] Contém "Consulta Pública":', conteudoPagina.includes('Consulta Pública'));
+
+      // Salvar HTML para debug (primeiros 2000 chars)
+      const htmlPreview = conteudoPagina.substring(0, 2000);
+      console.log('[PROJUDI SUBMIT] HTML preview:', htmlPreview);
 
       // Verificar erros comuns
       if (conteudoPagina.includes('captcha inválido') ||
