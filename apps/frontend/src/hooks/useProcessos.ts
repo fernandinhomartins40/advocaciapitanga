@@ -87,13 +87,57 @@ export function useDashboardStats() {
 // ====================
 
 /**
- * Hook para iniciar consulta PROJUDI e obter CAPTCHA
+ * Hook para iniciar consulta PROJUDI e obter CAPTCHA (processo existente)
  */
 export function useIniciarCaptchaProjudi() {
   return useMutation({
     mutationFn: async (processoId: string) => {
       const response = await api.post(`/projudi/processos/${processoId}/iniciar-captcha`);
       return response.data;
+    },
+  });
+}
+
+/**
+ * Hook para iniciar CAPTCHA no auto-cadastro (processo novo)
+ */
+export function useIniciarCaptchaAutoCadastro() {
+  return useMutation({
+    mutationFn: async (numeroProcesso: string) => {
+      // Cria um ID temporário baseado no número do processo
+      const tempId = 'temp_' + numeroProcesso.replace(/[^0-9]/g, '');
+      const response = await api.post(`/projudi/processos/${tempId}/iniciar-captcha`);
+      return response.data;
+    },
+  });
+}
+
+/**
+ * Hook para auto-cadastrar processo via PROJUDI
+ */
+export function useAutoCadastrarProcesso() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      numeroProcesso,
+      sessionId,
+      captchaResposta
+    }: {
+      numeroProcesso: string;
+      sessionId: string;
+      captchaResposta: string;
+    }) => {
+      const response = await api.post('/projudi/processos/auto-cadastrar', {
+        numeroProcesso,
+        sessionId,
+        captchaResposta
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      // Invalidar lista de processos
+      queryClient.invalidateQueries({ queryKey: ['processos'] });
     },
   });
 }

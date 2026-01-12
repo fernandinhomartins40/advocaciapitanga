@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, FileText, Check, AlertCircle, Trash2 } from 'lucide-react';
-import { useProcessos, useCreateProcesso, useDeleteProcesso } from '@/hooks/useProcessos';
+import { Plus, FileText, Check, AlertCircle, Trash2, RefreshCw } from 'lucide-react';
+import { useProcessos, useCreateProcesso, useDeleteProcesso, useIniciarCaptchaAutoCadastro, useAutoCadastrarProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
 import { useAdvogados } from '@/hooks/useAdvogados';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
@@ -21,6 +21,8 @@ import { useToast } from '@/components/ui/toast';
 import { ModalParteProcessual, ParteProcessualData } from '@/components/processos/ModalParteProcessual';
 import { ListaPartes } from '@/components/processos/ListaPartes';
 import { usePartesExistentes } from '@/hooks/usePartes';
+import { ModalAutoCadastroProcesso } from '@/components/processos/ModalAutoCadastroProcesso';
+import { useRouter } from 'next/navigation';
 
 interface ProcessoFormData {
   numero: string;
@@ -85,6 +87,7 @@ const INITIAL_FORM_DATA: ProcessoFormData = {
 };
 
 export default function ProcessosPage() {
+  const router = useRouter();
   const [statusFilter, setStatusFilter] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [formData, setFormData] = useState<ProcessoFormData>(INITIAL_FORM_DATA);
@@ -99,12 +102,25 @@ export default function ProcessosPage() {
     controle: false,
   });
 
+  // Estados do auto-cadastro PROJUDI
+  const [isAutoCadastroOpen, setIsAutoCadastroOpen] = useState(false);
+  const [captchaData, setCaptchaData] = useState<{
+    sessionId: string;
+    captchaImage: string;
+    numeroProcesso: string;
+  } | null>(null);
+  const [autoCadastroLoading, setAutoCadastroLoading] = useState(false);
+  const [autoCadastroError, setAutoCadastroError] = useState<string | null>(null);
+  const [autoCadastroSucesso, setAutoCadastroSucesso] = useState(false);
+
   const { data, isLoading } = useProcessos({ status: statusFilter as any });
   const { data: clientesData } = useClientes({ limit: 100 });
   const { data: advogadosData } = useAdvogados();
   const { data: partesData } = usePartesExistentes();
   const createMutation = useCreateProcesso();
   const deleteMutation = useDeleteProcesso();
+  const iniciarCaptchaMutation = useIniciarCaptchaAutoCadastro();
+  const autoCadastrarMutation = useAutoCadastrarProcesso();
   const { toast } = useToast();
 
   // FASE 1.4: Reset correto do formulário quando modal fechar
@@ -115,6 +131,16 @@ export default function ProcessosPage() {
       setParteEditIndex(null);
     }
   }, [isCreateOpen]);
+
+  // Reset auto-cadastro ao fechar modal
+  useEffect(() => {
+    if (!isAutoCadastroOpen) {
+      setCaptchaData(null);
+      setAutoCadastroLoading(false);
+      setAutoCadastroError(null);
+      setAutoCadastroSucesso(false);
+    }
+  }, [isAutoCadastroOpen]);
 
   // FASE 1.3: Validação em tempo real
   useEffect(() => {
@@ -250,6 +276,69 @@ export default function ProcessosPage() {
     }
   };
 
+  // ========================================
+  // HANDLERS AUTO-CADASTRO PROJUDI
+  // ========================================
+
+  const handleIniciarCaptchaAutoCadastro = async (numeroProcesso: string) => {
+    setAutoCadastroLoading(true);
+    setAutoCadastroError(null);
+
+    try {
+      const response = await iniciarCaptchaMutation.mutateAsync(numeroProcesso);
+
+      setCaptchaData({
+        sessionId: response.sessionId,
+        captchaImage: response.captchaImage,
+        numeroProcesso: numeroProcesso,
+      });
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || 'Erro ao iniciar consulta PROJUDI';
+      setAutoCadastroError(errorMsg);
+      console.error('Erro ao iniciar CAPTCHA:', error);
+    } finally {
+      setAutoCadastroLoading(false);
+    }
+  };
+
+  const handleAutoCadastrar = async (captchaResposta: string) => {
+    if (!captchaData) return;
+
+    setAutoCadastroLoading(true);
+    setAutoCadastroError(null);
+
+    try {
+      const response = await autoCadastrarMutation.mutateAsync({
+        numeroProcesso: captchaData.numeroProcesso,
+        sessionId: captchaData.sessionId,
+        captchaResposta,
+      });
+
+      setAutoCadastroSucesso(true);
+
+      toast({
+        title: 'Processo cadastrado!',
+        description: `Processo ${captchaData.numeroProcesso} cadastrado com sucesso`,
+        variant: 'success',
+      });
+
+      // Aguardar 2 segundos e redirecionar para o processo criado
+      setTimeout(() => {
+        setIsAutoCadastroOpen(false);
+        if (response.processo?.id) {
+          router.push(`/advogado/processos/${response.processo.id}`);
+        }
+      }, 2000);
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.error || 'Erro ao cadastrar processo';
+      setAutoCadastroError(errorMsg);
+      console.error('Erro ao auto-cadastrar:', error);
+      setAutoCadastroSucesso(false);
+    } finally {
+      setAutoCadastroLoading(false);
+    }
+  };
+
   // FASE 3.1: Debounce para formatação de moeda
   const debounce = <T extends (...args: any[]) => any>(func: T, wait: number) => {
     let timeout: NodeJS.Timeout;
@@ -300,10 +389,20 @@ export default function ProcessosPage() {
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Processos</h1>
           <p className="text-sm lg:text-base text-gray-500">Gerencie todos os processos</p>
         </div>
-        <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
-          <Plus className="mr-2 h-4 w-4" />
-          Novo Processo
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button
+            onClick={() => setIsAutoCadastroOpen(true)}
+            variant="outline"
+            className="w-full sm:w-auto"
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Cadastrar via PROJUDI
+          </Button>
+          <Button onClick={() => setIsCreateOpen(true)} className="w-full sm:w-auto">
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Processo
+          </Button>
+        </div>
       </div>
 
       {/* Filtros */}
@@ -813,6 +912,18 @@ export default function ProcessosPage() {
         parteEdit={parteEditIndex !== null ? formData.partes[parteEditIndex] : undefined}
         clientes={clientesData?.clientes || []}
         partesExistentes={partesData?.partes || []}
+      />
+
+      {/* Modal Auto-Cadastro PROJUDI */}
+      <ModalAutoCadastroProcesso
+        open={isAutoCadastroOpen}
+        onOpenChange={setIsAutoCadastroOpen}
+        onIniciarCaptcha={handleIniciarCaptchaAutoCadastro}
+        onCadastrar={handleAutoCadastrar}
+        captchaData={captchaData}
+        loading={autoCadastroLoading}
+        error={autoCadastroError}
+        sucesso={autoCadastroSucesso}
       />
     </div>
   );
