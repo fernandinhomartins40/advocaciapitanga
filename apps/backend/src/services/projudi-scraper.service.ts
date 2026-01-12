@@ -39,8 +39,14 @@ interface DadosProcessoProjudi {
     movimentadoPor?: string;
     tipoMovimento?: string;
     documentos?: Array<{
-      titulo: string;
-      url: string;
+      numeroDocumento: string;        // Ex: "285.1"
+      tipoArquivo: string;            // Ex: "Despacho"
+      assinatura?: string;            // Ex: "PARANA TRIBUNAL DE JUSTICA:77821841000194 (Gabriel Ribeiro de Souza Lima)"
+      nivelAcesso?: string;           // Ex: "Público", "Sigiloso"
+      versoes: Array<{
+        titulo: string;               // Ex: "Versão assinada", "Versão original"
+        url: string;
+      }>;
     }>;
   }>;
 }
@@ -622,40 +628,94 @@ export class ProjudiScraperService {
             const eventoNome = eventoElement.find('b').first().text().trim();
             const eventoDescricao = eventoElement.text().replace(eventoNome, '').trim();
 
-            // Extrair links de documentos da movimentação
-            // Documentos podem estar na próxima linha em uma div expandida
-            const documentos: Array<{ titulo: string; url: string }> = [];
+            // Extrair documentos da movimentação
+            // Documentos estão na próxima linha dentro de uma div expandida
+            const documentos: Array<{
+              numeroDocumento: string;
+              tipoArquivo: string;
+              assinatura?: string;
+              nivelAcesso?: string;
+              versoes: Array<{ titulo: string; url: string }>;
+            }> = [];
 
-            // Procurar na próxima linha por divs de arquivos
+            // Procurar na próxima linha por div de arquivos
             if (i + 1 < rowsMovimentacoes.length) {
               const nextRow = rowsMovimentacoes[i + 1];
               const divArquivos = $(nextRow).find('div[id^="divArquivosMovimentacaoProcesso"]');
 
               if (divArquivos.length > 0) {
-                // Encontrou div de arquivos, extrair links
-                divArquivos.find('a[href*="arquivo.do"]').each((linkIndex, linkEl) => {
-                  const link = $(linkEl);
-                  const href = link.attr('href');
-                  let titulo = link.text().trim();
+                // Cada documento está em uma <tr> dentro de table.form
+                divArquivos.find('table.form > tbody > tr').each((docIndex, docRow) => {
+                  const $docRow = $(docRow);
+                  const cells = $docRow.find('td');
 
-                  // Se não tiver título no link, buscar no texto anterior (pode estar em td separada)
-                  if (!titulo || titulo === '') {
-                    const tdArquivo = $(linkEl).closest('td');
-                    titulo = tdArquivo.text().replace('Arquivo:', '').trim().split('\n')[0].trim();
+                  // Célula 1: Número do documento e tipo de arquivo
+                  // Ex: "285.1 Arquivo: Despacho"
+                  const celula1 = cells.eq(0).text().trim();
+                  const numeroMatch = celula1.match(/^([\d.]+)/);
+                  const tipoMatch = celula1.match(/Arquivo:\s*(.+)$/);
+
+                  if (!numeroMatch) {
+                    return; // Não é uma linha de documento
                   }
 
-                  if (href && titulo) {
-                    // Converter URL relativa para absoluta
-                    let urlCompleta = href;
-                    if (href.startsWith('/')) {
-                      urlCompleta = `https://projudi.tjpr.jus.br${href}`;
-                    } else if (!href.startsWith('http')) {
-                      urlCompleta = `https://projudi.tjpr.jus.br/${href}`;
-                    }
+                  const numeroDocumento = numeroMatch[1].trim();
+                  const tipoArquivo = tipoMatch ? tipoMatch[1].trim() : 'Documento';
 
+                  // Célula 2: Assinatura
+                  // Ex: "Ass.: PARANA TRIBUNAL DE JUSTICA:77821841000194 (Gabriel Ribeiro de Souza Lima)"
+                  let assinatura: string | undefined;
+                  if (cells.length > 2) {
+                    const celulaAss = cells.eq(2).text().trim();
+                    if (celulaAss.startsWith('Ass.:')) {
+                      assinatura = celulaAss.replace('Ass.:', '').trim();
+                    }
+                  }
+
+                  // Célula 3: Links para download (versões)
+                  const versoes: Array<{ titulo: string; url: string }> = [];
+
+                  if (cells.length > 4) {
+                    const celulaLinks = cells.eq(4);
+
+                    // Extrair versões do menu contextual (Versão assinada, Versão original)
+                    celulaLinks.find('table.contextMenu tr[onclick*="arquivo.do"]').each((vIndex, vRow) => {
+                      const $vRow = $(vRow);
+                      const onclickAttr = $vRow.attr('onclick') || '';
+
+                      // Extrair URL: post('/projudi_consulta/arquivo.do?_tj=...', '_blank')
+                      const urlMatch = onclickAttr.match(/post\(['"]([^'"]+)['"]/);
+                      if (urlMatch && urlMatch[1]) {
+                        const url = urlMatch[1];
+                        const titulo = $vRow.find('td').first().text().trim();
+
+                        if (url && titulo) {
+                          // Converter URL relativa para absoluta
+                          let urlCompleta = url.startsWith('/')
+                            ? `https://consulta.tjpr.jus.br${url}`
+                            : url;
+
+                          versoes.push({ titulo, url: urlCompleta });
+                        }
+                      }
+                    });
+                  }
+
+                  // Célula 4: Nível de acesso (última coluna)
+                  // Ex: "Público", "Sigiloso"
+                  let nivelAcesso: string | undefined;
+                  if (cells.length > 5) {
+                    nivelAcesso = cells.eq(5).text().trim();
+                  }
+
+                  // Adicionar documento se tiver pelo menos uma versão
+                  if (versoes.length > 0) {
                     documentos.push({
-                      titulo: titulo,
-                      url: urlCompleta
+                      numeroDocumento,
+                      tipoArquivo,
+                      assinatura,
+                      nivelAcesso,
+                      versoes
                     });
                   }
                 });
@@ -675,7 +735,13 @@ export class ProjudiScraperService {
 
             // Log para debug de documentos
             if (documentos.length > 0) {
-              console.log(`[PROJUDI DOCS] Movimentação #${sequencial} tem ${documentos.length} documento(s):`, JSON.stringify(documentos));
+              console.log(`[PROJUDI DOCS] Movimentação #${sequencial} tem ${documentos.length} documento(s):`);
+              documentos.forEach(doc => {
+                console.log(`  - ${doc.numeroDocumento} - ${doc.tipoArquivo} (${doc.versoes.length} versões)`);
+                console.log(`    Assinatura: ${doc.assinatura || 'N/A'}`);
+                console.log(`    Nível: ${doc.nivelAcesso || 'N/A'}`);
+                doc.versoes.forEach(v => console.log(`    → ${v.titulo}`));
+              });
             }
 
             dados.movimentacoes?.push({
