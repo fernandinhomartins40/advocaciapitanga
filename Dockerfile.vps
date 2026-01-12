@@ -99,7 +99,8 @@ RUN apt-get update \
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+# Playwright usa seus próprios browsers bundled
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
 # Criar usuário não-root
 RUN groupadd --system --gid 1001 nodejs && \
@@ -107,6 +108,10 @@ RUN groupadd --system --gid 1001 nodejs && \
 
 # Copiar node_modules de produção
 COPY --from=deps /tmp/prod_node_modules ./node_modules
+
+# Copiar Playwright e instalar browsers
+COPY --from=builder /app/node_modules/playwright ./node_modules/playwright
+RUN npx playwright install chromium --with-deps
 
 
 # Copiar Prisma CLI (para migrate/seed em runtime) e binaries
