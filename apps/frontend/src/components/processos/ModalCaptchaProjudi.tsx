@@ -119,7 +119,7 @@ export function ModalCaptchaProjudi({
                 <Input
                   id="captchaResposta"
                   value={captchaResposta}
-                  onChange={(e) => setCaptchaResposta(e.target.value.toUpperCase())}
+                  onChange={(e) => setCaptchaResposta(e.target.value)}
                   onKeyPress={handleKeyPress}
                   placeholder="Ex: ABC123"
                   maxLength={8}
