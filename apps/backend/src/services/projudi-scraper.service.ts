@@ -201,8 +201,14 @@ export class ProjudiScraperService {
         timeout: 30000
       });
 
-      // Aguardar página carregar
-      await page.waitForSelector('#captchaImg', { timeout: 10000 });
+      // DEBUG: Capturar screenshot e HTML para diagnóstico
+      const htmlContent = await page.content();
+      console.log('[PROJUDI DEBUG] HTML length:', htmlContent.length);
+      console.log('[PROJUDI DEBUG] Contains "captcha":', htmlContent.toLowerCase().includes('captcha'));
+      console.log('[PROJUDI DEBUG] URL:', page.url());
+
+      // Aguardar página carregar (aumentar timeout para 30s)
+      await page.waitForSelector('#captchaImg', { timeout: 30000 });
 
       // Capturar cookies da sessão
       const cookies = await context.cookies();
