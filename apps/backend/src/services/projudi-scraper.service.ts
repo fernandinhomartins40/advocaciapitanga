@@ -315,19 +315,55 @@ export class ProjudiScraperService {
     try {
       console.log('[PROJUDI SESSION] Usando navegador da sessão:', sessionId);
 
+      // Verificar URL atual antes de preencher
+      console.log('[PROJUDI FILL] URL atual:', page.url());
+
       // Preencher formulário - usa o número normalizado (campo já deve estar visível)
       await page.waitForSelector('#numeroProcesso', { timeout: 10000 });
       await page.fill('#numeroProcesso', session.numeroProcesso);
+      console.log('[PROJUDI FILL] Número preenchido:', session.numeroProcesso);
 
       // Preencher resposta do CAPTCHA (case-sensitive, não converter para maiúsculas)
       await page.waitForSelector('input[name="answer"]', { timeout: 10000 });
       await page.fill('input[name="answer"]', captchaResposta);
+      console.log('[PROJUDI FILL] CAPTCHA preenchido:', captchaResposta);
+
+      // Verificar valores preenchidos
+      const numeroValue = await page.inputValue('#numeroProcesso');
+      const captchaValue = await page.inputValue('input[name="answer"]');
+      console.log('[PROJUDI FILL] Valor em #numeroProcesso:', numeroValue);
+      console.log('[PROJUDI FILL] Valor em input[name="answer"]:', captchaValue);
 
       // Aguardar um pouco para garantir que os campos foram preenchidos
       await page.waitForTimeout(500);
 
       // Submeter formulário usando JavaScript submit() em vez de clicar no botão
       console.log('[PROJUDI SUBMIT] Submetendo formulário...');
+
+      // Verificar se form existe e logar seus dados
+      const formInfo = await page.evaluate(() => {
+        // @ts-ignore
+        const form = document.querySelector('form');
+        if (!form) return { found: false };
+
+        // @ts-ignore
+        const formData = new FormData(form);
+        const data: any = {};
+        // @ts-ignore
+        for (let [key, value] of formData.entries()) {
+          data[key] = value;
+        }
+
+        return {
+          found: true,
+          action: form.action,
+          method: form.method,
+          data
+        };
+      });
+
+      console.log('[PROJUDI SUBMIT] Form info:', JSON.stringify(formInfo));
+
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
         page.evaluate(() => {
