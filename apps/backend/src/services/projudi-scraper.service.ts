@@ -480,15 +480,15 @@ export class ProjudiScraperService {
           await icones[i].click();
           // Aguardar um pouco para o conteúdo carregar
           await page.waitForTimeout(200);
-        } catch (e) {
-          console.log(`[PROJUDI EXTRACT] Erro ao clicar no ícone ${i}:`, e.message);
+        } catch (e: any) {
+          console.log(`[PROJUDI EXTRACT] Erro ao clicar no ícone ${i}:`, e?.message || e);
         }
       }
 
       console.log('[PROJUDI EXTRACT] Expansão concluída, aguardando carregamento...');
       await page.waitForTimeout(1000);
-    } catch (error) {
-      console.log('[PROJUDI EXTRACT] Erro ao expandir movimentações:', error.message);
+    } catch (error: any) {
+      console.log('[PROJUDI EXTRACT] Erro ao expandir movimentações:', error?.message || error);
     }
 
     const html = await page.content();
