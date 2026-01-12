@@ -52,7 +52,8 @@
       "Bash(.gitignore)",
       "Bash(NUL)",
       "Bash(if exist \"apps\\frontend\\.next\" rmdir /s /q \"apps\\frontend\\.next\")",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(tar:*)"
     ],
     "deny": [],
     "ask": []

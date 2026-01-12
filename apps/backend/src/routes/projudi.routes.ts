@@ -55,6 +55,16 @@ router.post(
 );
 
 /**
+ * GET /projudi/processos/:id/movimentacoes
+ * Busca movimentações do processo
+ */
+router.get(
+  '/processos/:id/movimentacoes',
+  authMiddleware,
+  projudiController.buscarMovimentacoes.bind(projudiController)
+);
+
+/**
  * GET /projudi/testar
  * Testa configuracao da integracao
  */

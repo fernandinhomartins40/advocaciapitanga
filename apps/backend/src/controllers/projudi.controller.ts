@@ -3,6 +3,7 @@ import { ProjudiScraperService } from '../services/projudi-scraper.service';
 import { ProcessoService } from '../services/processo.service';
 import { AuthRequest } from '../types';
 import { AuditService, AuditAction } from '../services/audit.service';
+import { prisma } from 'database';
 
 const projudiScraperService = new ProjudiScraperService();
 const processoService = new ProcessoService();
@@ -151,14 +152,18 @@ export class ProjudiController {
         await processoService.updatePartes(id, partesMapeadas);
       }
 
-      // Salvar movimentações do PROJUDI
-      let movimentacoesSalvas = 0;
-      if (dadosProjudi.movimentacoes && dadosProjudi.movimentacoes.length > 0) {
-        movimentacoesSalvas = await processoService.salvarMovimentacoes(
-          id,
-          dadosProjudi.movimentacoes
-        );
-      }
+      // Salvar consulta PROJUDI com movimentações em JSON
+      const consultaProjudi = await prisma.consultaProjudi.create({
+        data: {
+          processoId: id,
+          metodo: 'SCRAPING_ASSISTIDO',
+          status: 'SUCESSO',
+          dadosExtraidos: dadosProjudi,
+          movimentacoes: dadosProjudi.movimentacoes || [],
+          userId,
+          ipAddress: req.ip
+        }
+      });
 
       // Registrar sucesso
       await AuditService.createLog({
@@ -175,7 +180,8 @@ export class ProjudiController {
         processo: processoAtualizado,
         dadosExtraidos: dadosProjudi,
         camposAtualizados: Object.keys(dadosAtualizacao),
-        movimentacoesSalvas
+        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0,
+        consultaId: consultaProjudi.id
       });
     } catch (error: any) {
       // Registrar falha
@@ -214,6 +220,46 @@ export class ProjudiController {
     }
 
     return 'TERCEIRO_INTERESSADO';
+  }
+
+  /**
+   * Buscar movimentações do processo
+   */
+  async buscarMovimentacoes(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+
+      // Buscar a última consulta PROJUDI bem-sucedida do processo
+      const consulta = await prisma.consultaProjudi.findFirst({
+        where: {
+          processoId: id,
+          status: 'SUCESSO',
+          movimentacoes: {
+            not: null
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      if (!consulta || !consulta.movimentacoes) {
+        return res.json({
+          movimentacoes: [],
+          total: 0,
+          mensagem: 'Nenhuma movimentação encontrada. Faça uma consulta PROJUDI primeiro.'
+        });
+      }
+
+      res.json({
+        movimentacoes: consulta.movimentacoes,
+        total: Array.isArray(consulta.movimentacoes) ? consulta.movimentacoes.length : 0,
+        dataConsulta: consulta.createdAt
+      });
+    } catch (error: any) {
+      next(error);
+    }
   }
 
   /**

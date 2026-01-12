@@ -198,7 +198,6 @@ model Processo {
   documentosHistorico DocumentHistory[]
   documentosProcesso  DocumentoProcesso[]
   advogadosVinculados ProcessoAdvogado[]
-  movimentacoes       MovimentacaoProcesso[]
 }
 
 model ParteProcessual {
@@ -521,7 +520,8 @@ model ConsultaProjudi {
 
   metodo         MetodoConsulta
   status         StatusConsulta
-  dadosExtraidos Json?
+  dadosExtraidos Json? // Dados gerais extraídos (comarca, vara, partes, etc.)
+  movimentacoes  Json? // Array de movimentações do processo
   erroMensagem   String?
 
   userId    String
@@ -547,39 +547,4 @@ enum StatusConsulta {
   ERRO_PROCESSO_NAO_ENCONTRADO
   ERRO_TIMEOUT
   ERRO_CREDENCIAIS
-}
-
-model MovimentacaoProcesso {
-  id         String   @id @default(cuid())
-  processoId String
-  processo   Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
-
-  // Dados da movimentação
-  sequencial Int? // Número sequencial da movimentação no PROJUDI
-  data       DateTime
-  evento     String   @db.Text
-  descricao  String?  @db.Text
-
-  // Informações adicionais
-  movimentadoPor String? // Nome de quem movimentou (Juiz, Servidor, Advogado, etc.)
-  tipoMovimento  String? // JUIZ, SERVIDOR, ADVOGADO, PROMOTOR, DEFENSOR, PROCURADOR, OUTROS, AUDIENCIA
-
-  // Origem da movimentação
-  origem     OrigemMovimentacao @default(PROJUDI)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([processoId])
-  @@index([data])
-  @@index([origem])
-  @@unique([processoId, sequencial, origem]) // Evita duplicatas
-}
-
-enum OrigemMovimentacao {
-  MANUAL
-  PROJUDI
-  API_CNJ
-  ESAJ
-  PJE
 }
