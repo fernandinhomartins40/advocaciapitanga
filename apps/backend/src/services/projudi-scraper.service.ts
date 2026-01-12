@@ -378,9 +378,24 @@ export class ProjudiScraperService {
 
       console.log('[PROJUDI SUBMIT] URL após submit:', urlAtual);
       console.log('[PROJUDI SUBMIT] HTML length após submit:', conteudoPagina.length);
+
+      // Capturar screenshot após submit para debug
+      try {
+        const screenshot = await page.screenshot({ fullPage: false, type: 'png' });
+        const screenshotBase64 = screenshot.toString('base64');
+        console.log('[PROJUDI SUBMIT] Screenshot após submit (primeiros 100 chars):', screenshotBase64.substring(0, 100));
+      } catch (e) {
+        console.log('[PROJUDI SUBMIT] Erro ao capturar screenshot:', e);
+      }
+
       console.log('[PROJUDI SUBMIT] Contém "captcha inválido":', conteudoPagina.includes('captcha inválido'));
       console.log('[PROJUDI SUBMIT] Contém "Processo não encontrado":', conteudoPagina.includes('Processo não encontrado'));
       console.log('[PROJUDI SUBMIT] Contém "Consulta Pública":', conteudoPagina.includes('Consulta Pública'));
+
+      // Procurar por mensagens de erro
+      console.log('[PROJUDI SUBMIT] Contém "erro":', conteudoPagina.toLowerCase().includes('erro'));
+      console.log('[PROJUDI SUBMIT] Contém "inválido":', conteudoPagina.toLowerCase().includes('inválido'));
+      console.log('[PROJUDI SUBMIT] Contém "incorreto":', conteudoPagina.toLowerCase().includes('incorreto'));
 
       // Verificar indicadores de página de resultado
       console.log('[PROJUDI SUBMIT] Contém "Comarca":', conteudoPagina.includes('Comarca'));
