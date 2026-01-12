@@ -151,6 +151,15 @@ export class ProjudiController {
         await processoService.updatePartes(id, partesMapeadas);
       }
 
+      // Salvar movimentações do PROJUDI
+      let movimentacoesSalvas = 0;
+      if (dadosProjudi.movimentacoes && dadosProjudi.movimentacoes.length > 0) {
+        movimentacoesSalvas = await processoService.salvarMovimentacoes(
+          id,
+          dadosProjudi.movimentacoes
+        );
+      }
+
       // Registrar sucesso
       await AuditService.createLog({
         entityType: 'Processo',
@@ -165,7 +174,8 @@ export class ProjudiController {
         sucesso: true,
         processo: processoAtualizado,
         dadosExtraidos: dadosProjudi,
-        camposAtualizados: Object.keys(dadosAtualizacao)
+        camposAtualizados: Object.keys(dadosAtualizacao),
+        movimentacoesSalvas
       });
     } catch (error: any) {
       // Registrar falha

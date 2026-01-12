@@ -30,8 +30,12 @@ interface DadosProcessoProjudi {
     cpf?: string;
   }>;
   movimentacoes?: Array<{
+    sequencial?: number;
     data: string;
-    descricao: string;
+    evento: string;
+    descricao?: string;
+    movimentadoPor?: string;
+    tipoMovimento?: string;
   }>;
 }
 
@@ -499,17 +503,39 @@ export class ProjudiScraperService {
         });
       });
 
-      // Movimentações (extrair as 10 primeiras)
-      $('table.resultTable#idTableMovimentacoesmov1Grau1 tbody tr').slice(0, 10).each((i, row) => {
+      // Movimentações (extrair TODAS, não apenas 10)
+      $('table.resultTable#idTableMovimentacoesmov1Grau1 tbody tr').each((i, row) => {
         const cells = $(row).find('td');
-        if (cells.length >= 4) {
+        if (cells.length >= 5) {
+          const sequencial = cells.eq(1).text().trim(); // Coluna "Seq."
           const data = cells.eq(2).text().trim(); // Coluna "Data"
           const evento = cells.eq(3).text().trim(); // Coluna "Evento"
+          const movimentadoPor = cells.eq(4).text().trim(); // Coluna "Movimentado por"
 
           if (data && evento) {
+            // Extrair apenas o nome do evento (em negrito)
+            const eventoElement = cells.eq(3);
+            const eventoNome = eventoElement.find('b').first().text().trim();
+            const eventoDescricao = eventoElement.text().replace(eventoNome, '').trim();
+
+            // Determinar tipo de movimento baseado no ID da linha
+            const rowId = $(row).attr('id') || '';
+            let tipoMovimento = 'OUTROS';
+            if (rowId.includes('JUIZ')) tipoMovimento = 'JUIZ';
+            else if (rowId.includes('SERVIDOR')) tipoMovimento = 'SERVIDOR';
+            else if (rowId.includes('ADVOGADO')) tipoMovimento = 'ADVOGADO';
+            else if (rowId.includes('PROMOTOR')) tipoMovimento = 'PROMOTOR';
+            else if (rowId.includes('DEFENSOR')) tipoMovimento = 'DEFENSOR';
+            else if (rowId.includes('PROCURADOR')) tipoMovimento = 'PROCURADOR';
+            else if (rowId.includes('AUDIENCIA')) tipoMovimento = 'AUDIENCIA';
+
             dados.movimentacoes?.push({
+              sequencial: sequencial ? parseInt(sequencial) : undefined,
               data,
-              descricao: evento.substring(0, 500) // Limitar tamanho
+              evento: eventoNome || evento.substring(0, 200),
+              descricao: eventoDescricao || evento,
+              movimentadoPor: movimentadoPor || undefined,
+              tipoMovimento
             });
           }
         }
