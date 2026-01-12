@@ -750,6 +750,27 @@ export default function ProcessoDetalhesPage() {
                               Movimentado por: {mov.movimentadoPor}
                             </p>
                           )}
+                          {mov.documentos && mov.documentos.length > 0 && (
+                            <div className="mt-3 pt-3 border-t border-gray-200">
+                              <p className="text-xs font-semibold text-gray-700 mb-2">
+                                📎 Documentos anexados ({mov.documentos.length}):
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {mov.documentos.map((doc: any, docIndex: number) => (
+                                  <a
+                                    key={docIndex}
+                                    href={doc.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs transition-colors"
+                                  >
+                                    <Download className="h-3 w-3" />
+                                    {doc.titulo}
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {mov.tipoMovimento && (
                           <Badge variant="secondary">

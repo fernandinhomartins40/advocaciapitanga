@@ -614,6 +614,30 @@ export class ProjudiScraperService {
             const eventoNome = eventoElement.find('b').first().text().trim();
             const eventoDescricao = eventoElement.text().replace(eventoNome, '').trim();
 
+            // Extrair links de documentos da movimentação
+            const documentos: Array<{ titulo: string; url: string }> = [];
+            eventoElement.find('a').each((linkIndex, linkEl) => {
+              const link = $(linkEl);
+              const href = link.attr('href');
+              const titulo = link.text().trim();
+
+              // Verificar se é um link de documento (geralmente contém 'documento' ou 'download' no href)
+              if (href && (href.includes('documento') || href.includes('download') || href.includes('.pdf') || titulo)) {
+                // Converter URL relativa para absoluta
+                let urlCompleta = href;
+                if (href.startsWith('/')) {
+                  urlCompleta = `https://projudi.tjpr.jus.br${href}`;
+                } else if (!href.startsWith('http')) {
+                  urlCompleta = `https://projudi.tjpr.jus.br/${href}`;
+                }
+
+                documentos.push({
+                  titulo: titulo || 'Documento',
+                  url: urlCompleta
+                });
+              }
+            });
+
             // Determinar tipo de movimento baseado no ID da linha
             const rowId = $(row).attr('id') || '';
             let tipoMovimento = 'OUTROS';
@@ -631,7 +655,8 @@ export class ProjudiScraperService {
               evento: eventoNome || evento.substring(0, 200),
               descricao: eventoDescricao || evento,
               movimentadoPor: movimentadoPor || undefined,
-              tipoMovimento
+              tipoMovimento,
+              documentos: documentos.length > 0 ? documentos : undefined
             });
           }
         }
