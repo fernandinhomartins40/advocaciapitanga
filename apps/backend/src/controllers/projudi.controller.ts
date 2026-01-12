@@ -221,7 +221,7 @@ export class ProjudiController {
   /**
    * Mapeia tipo de parte do PROJUDI para enum do sistema
    */
-  private mapearTipoParte(tipo: string): string {
+  private mapearTipoParte(tipo: string): 'AUTOR' | 'REU' | 'TERCEIRO_INTERESSADO' | 'ASSISTENTE' | 'DENUNCIADO_LIDE' | 'CHAMADO_PROCESSO' {
     const tipoUpper = tipo
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -304,7 +304,19 @@ export class ProjudiController {
     try {
       const { numeroProcesso, sessionId, captchaResposta } = req.body;
       const userId = req.user!.userId;
-      const advogadoId = req.user!.advogadoId;
+
+      // Buscar advogado vinculado ao usuário
+      const advogado = await prisma.advogado.findUnique({
+        where: { userId }
+      });
+
+      if (!advogado) {
+        return res.status(403).json({
+          erro: 'Usuário não é um advogado'
+        });
+      }
+
+      const advogadoId = advogado.id;
 
       if (!numeroProcesso || !sessionId || !captchaResposta) {
         return res.status(400).json({
@@ -337,12 +349,15 @@ export class ProjudiController {
           clienteId = clienteExistente.id;
         } else {
           // Criar novo cliente
+          const bcrypt = require('bcrypt');
+          const senhaHash = await bcrypt.hash('temporaria123', 10);
+
           const novoUsuario = await prisma.user.create({
             data: {
               nome: parteAutor.nome,
               email: `cliente_${Date.now()}@temp.com`, // Email temporário
-              senha: 'temp', // Senha temporária
-              tipo: 'CLIENTE'
+              password: senhaHash, // Senha temporária hasheada
+              role: 'CLIENTE'
             }
           });
 
@@ -405,7 +420,7 @@ export class ProjudiController {
         const partesMapeadas = dadosProjudi.partes.map(parte => ({
           processoId: processoNovo.id,
           tipoParte: this.mapearTipoParte(parte.tipo),
-          tipoPessoa: parte.cpf ? 'FISICA' : 'JURIDICA',
+          tipoPessoa: (parte.cpf ? 'FISICA' : 'JURIDICA') as 'FISICA' | 'JURIDICA',
           nomeCompleto: parte.nome,
           cpf: parte.cpf || null,
           // Vincular com cliente se for o autor
