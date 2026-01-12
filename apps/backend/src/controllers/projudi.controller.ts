@@ -198,6 +198,27 @@ export class ProjudiController {
   }
 
   /**
+   * Conta quantas movimentações são novas comparando com consulta anterior
+   */
+  private contarNovasMovimentacoes(movimentacoesAtuais: any[], movimentacoesAnteriores: any[]): number {
+    if (!Array.isArray(movimentacoesAtuais) || !Array.isArray(movimentacoesAnteriores)) {
+      return 0;
+    }
+
+    // Criar set de IDs das movimentações antigas (usando sequencial + data como chave única)
+    const movimentacoesAntigasSet = new Set(
+      movimentacoesAnteriores.map(m =>
+        `${m.sequencial || 0}_${m.data}_${m.evento}`
+      )
+    );
+
+    // Contar quantas movimentações atuais não existiam antes
+    return movimentacoesAtuais.filter(m =>
+      !movimentacoesAntigasSet.has(`${m.sequencial || 0}_${m.data}_${m.evento}`)
+    ).length;
+  }
+
+  /**
    * Mapeia tipo de parte do PROJUDI para enum do sistema
    */
   private mapearTipoParte(tipo: string): string {
@@ -252,10 +273,24 @@ export class ProjudiController {
         });
       }
 
+      // Verificar se há consulta anterior para comparar
+      const consultaAnterior = consultas.find((c, index) =>
+        index > 0 && c.movimentacoes !== null
+      );
+
+      const totalNovas = consultaAnterior
+        ? this.contarNovasMovimentacoes(
+            consultaComMovimentacoes.movimentacoes as any,
+            consultaAnterior.movimentacoes as any
+          )
+        : 0;
+
       res.json({
         movimentacoes: consultaComMovimentacoes.movimentacoes,
         total: Array.isArray(consultaComMovimentacoes.movimentacoes) ? consultaComMovimentacoes.movimentacoes.length : 0,
-        dataConsulta: consultaComMovimentacoes.createdAt
+        dataConsulta: consultaComMovimentacoes.createdAt,
+        dataConsultaAnterior: consultaAnterior?.createdAt || null,
+        totalNovas: totalNovas
       });
     } catch (error: any) {
       next(error);

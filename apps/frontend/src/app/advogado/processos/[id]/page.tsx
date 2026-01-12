@@ -69,6 +69,11 @@ export default function ProcessoDetalhesPage() {
   const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
   const [loadingMovimentacoes, setLoadingMovimentacoes] = useState(false);
+  const [infoMovimentacoes, setInfoMovimentacoes] = useState<{
+    dataConsulta?: string;
+    dataConsultaAnterior?: string | null;
+    totalNovas?: number;
+  }>({});
   const [tabValidation, setTabValidation] = useState<Record<string, boolean>>({
     basico: false,
     localizacao: false,
@@ -428,6 +433,20 @@ export default function ProcessoDetalhesPage() {
     try {
       const response = await api.get(`/projudi/processos/${id}/movimentacoes`);
       setMovimentacoes(response.data.movimentacoes || []);
+      setInfoMovimentacoes({
+        dataConsulta: response.data.dataConsulta,
+        dataConsultaAnterior: response.data.dataConsultaAnterior,
+        totalNovas: response.data.totalNovas || 0
+      });
+
+      // Mostrar toast se houver novas movimentações
+      if (response.data.totalNovas > 0) {
+        toast({
+          title: 'Novas Movimentações!',
+          description: `${response.data.totalNovas} nova(s) movimentação(ões) desde a última consulta.`,
+          variant: 'success'
+        });
+      }
     } catch (error: any) {
       console.error('Erro ao carregar movimentações:', error);
       toast({
@@ -656,17 +675,40 @@ export default function ProcessoDetalhesPage() {
         <TabsContent value="movimentacoes">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Movimentações do Processo</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={carregarMovimentacoes}
-                  disabled={loadingMovimentacoes}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${loadingMovimentacoes ? 'animate-spin' : ''}`} />
-                  Atualizar
-                </Button>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle>Movimentações do Processo</CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={carregarMovimentacoes}
+                    disabled={loadingMovimentacoes}
+                  >
+                    <RefreshCw className={`mr-2 h-4 w-4 ${loadingMovimentacoes ? 'animate-spin' : ''}`} />
+                    Atualizar
+                  </Button>
+                </div>
+
+                {/* Info da última consulta */}
+                {infoMovimentacoes.dataConsulta && (
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600">
+                    <div className="flex items-center gap-1">
+                      <span className="font-medium">Última consulta:</span>
+                      <span>{formatDate(infoMovimentacoes.dataConsulta)}</span>
+                    </div>
+                    {infoMovimentacoes.dataConsultaAnterior && (
+                      <div className="flex items-center gap-1">
+                        <span className="font-medium">Consulta anterior:</span>
+                        <span>{formatDate(infoMovimentacoes.dataConsultaAnterior)}</span>
+                      </div>
+                    )}
+                    {infoMovimentacoes.totalNovas! > 0 && (
+                      <Badge variant="success" className="ml-auto">
+                        {infoMovimentacoes.totalNovas} nova(s)
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
