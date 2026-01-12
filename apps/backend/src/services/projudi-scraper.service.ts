@@ -673,6 +673,11 @@ export class ProjudiScraperService {
             else if (rowId.includes('PROCURADOR')) tipoMovimento = 'PROCURADOR';
             else if (rowId.includes('AUDIENCIA')) tipoMovimento = 'AUDIENCIA';
 
+            // Log para debug de documentos
+            if (documentos.length > 0) {
+              console.log(`[PROJUDI DOCS] Movimentação #${sequencial} tem ${documentos.length} documento(s):`, JSON.stringify(documentos));
+            }
+
             dados.movimentacoes?.push({
               sequencial: sequencial ? parseInt(sequencial) : undefined,
               data,
