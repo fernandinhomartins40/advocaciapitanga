@@ -207,20 +207,53 @@ export class ProjudiScraperService {
       console.log('[PROJUDI DEBUG] Contains "captcha":', htmlContent.toLowerCase().includes('captcha'));
       console.log('[PROJUDI DEBUG] URL:', page.url());
 
-      // Aguardar página carregar (aumentar timeout para 30s)
-      await page.waitForSelector('#captchaImg', { timeout: 30000 });
+      // Buscar todos os elementos que possam ser o CAPTCHA
+      const possibleSelectors = [
+        '#captchaImage',  // Seletor correto do PROJUDI
+        '#captchaImg',    // Fallback para versões antigas
+        'img[src*="captcha"]',
+        'img[id*="captcha"]',
+        'img[alt*="captcha"]'
+      ];
+
+      let captchaElement = null;
+      let usedSelector = '';
+
+      for (const selector of possibleSelectors) {
+        const count = await page.locator(selector).count();
+        console.log(`[PROJUDI DEBUG] Selector "${selector}" count:`, count);
+
+        if (count > 0) {
+          captchaElement = page.locator(selector).first();
+          usedSelector = selector;
+          console.log(`[PROJUDI DEBUG] Found CAPTCHA with selector: ${selector}`);
+          break;
+        }
+      }
+
+      if (!captchaElement) {
+        // Tentar encontrar qualquer imagem e logar para debug
+        const allImages = await page.locator('img').count();
+        console.log(`[PROJUDI DEBUG] Total images on page: ${allImages}`);
+
+        // Capturar HTML snippet com "captcha"
+        const captchaRegex = /<[^>]*captcha[^>]*>/gi;
+        const matches = htmlContent.match(captchaRegex);
+        console.log('[PROJUDI DEBUG] Elements with "captcha":', matches ? matches.slice(0, 3) : 'none');
+
+        throw new Error('CAPTCHA não encontrado na página com nenhum seletor');
+      }
+
+      // Aguardar elemento estar visível
+      await captchaElement.waitFor({ state: 'visible', timeout: 10000 });
 
       // Capturar cookies da sessão
       const cookies = await context.cookies();
 
-      // Extrair imagem CAPTCHA
-      const captchaElement = await page.locator('#captchaImg');
-      if (!(await captchaElement.count())) {
-        throw new Error('CAPTCHA não encontrado na página');
-      }
-
+      // Capturar screenshot do CAPTCHA
       const captchaBase64 = await captchaElement.screenshot({ type: 'png' });
       const captchaBase64String = captchaBase64.toString('base64');
+      console.log(`[PROJUDI DEBUG] CAPTCHA screenshot captured, size: ${captchaBase64String.length} chars`);
 
       // Gerar ID único da sessão
       const sessionId = uuidv4();
