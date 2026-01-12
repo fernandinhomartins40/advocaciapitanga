@@ -386,6 +386,16 @@ export class ProjudiScraperService {
       console.log('[PROJUDI SUBMIT] Contém "Processo não encontrado":', conteudoPagina.includes('Processo não encontrado'));
       console.log('[PROJUDI SUBMIT] Contém "Consulta Pública":', conteudoPagina.includes('Consulta Pública'));
 
+      // Verificar indicadores de página de resultado
+      console.log('[PROJUDI SUBMIT] Contém "Comarca":', conteudoPagina.includes('Comarca'));
+      console.log('[PROJUDI SUBMIT] Contém "Juízo":', conteudoPagina.includes('Juízo') || conteudoPagina.includes('Juizo'));
+      console.log('[PROJUDI SUBMIT] Contém "Dados do Processo":', conteudoPagina.includes('Dados do Processo'));
+
+      // Verificar se há H3 com número de processo (indicador de resultado)
+      const $temp = cheerio.load(conteudoPagina);
+      const h3Text = $temp('h3').first().text();
+      console.log('[PROJUDI SUBMIT] H3 na página:', h3Text.substring(0, 100));
+
       // Salvar HTML para debug (primeiros 2000 chars)
       const htmlPreview = conteudoPagina.substring(0, 2000);
       console.log('[PROJUDI SUBMIT] HTML preview:', htmlPreview);
