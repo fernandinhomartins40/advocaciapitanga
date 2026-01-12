@@ -4,7 +4,9 @@ import * as cheerio from 'cheerio';
 import { v4 as uuidv4 } from 'uuid';
 
 interface SessionData {
-  cookies: any[];
+  browser: Browser;
+  page: Page;
+  context: BrowserContext;
   timestamp: number;
   numeroProcesso: string;
 }
@@ -251,9 +253,6 @@ export class ProjudiScraperService {
       // Aguardar elemento estar visível
       await captchaElement.waitFor({ state: 'visible', timeout: 10000 });
 
-      // Capturar cookies da sessão
-      const cookies = await context.cookies();
-
       // Capturar screenshot do CAPTCHA
       const captchaBase64 = await captchaElement.screenshot({ type: 'png' });
       const captchaBase64String = captchaBase64.toString('base64');
@@ -262,14 +261,17 @@ export class ProjudiScraperService {
       // Gerar ID único da sessão
       const sessionId = uuidv4();
 
-      // Armazenar sessão com o número formatado
+      // Armazenar sessão com browser, page e context abertos
       this.sessions.set(sessionId, {
-        cookies,
+        browser,
+        page,
+        context,
         timestamp: Date.now(),
         numeroProcesso: numeroFormatado
       });
 
-      await browser.close();
+      // NÃO fechar o navegador - vai ser usado na fase 2
+      console.log('[PROJUDI SESSION] Navegador mantido aberto para sessão:', sessionId);
 
       return {
         sessionId,
@@ -301,50 +303,19 @@ export class ProjudiScraperService {
     // Verificar timeout
     const agora = Date.now();
     if (agora - session.timestamp > this.SESSION_TIMEOUT) {
+      // Fechar navegador antes de deletar sessão
+      await session.browser.close();
       this.sessions.delete(sessionId);
       throw new Error('Sessão expirada. Tente novamente.');
     }
 
-    let browser: Browser | null = null;
-    let context: BrowserContext | null = null;
+    // Usar browser e page da sessão existente
+    const { browser, page } = session;
 
     try {
-      browser = await chromium.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-software-rasterizer',
-          '--disable-dev-tools',
-          '--no-zygote',
-          '--single-process',
-          '--disable-breakpad',
-          '--disable-crash-reporter',
-          '--no-crash-upload',
-          '--disable-features=VizDisplayCompositor',
-          '--temp-dir=/tmp'
-        ],
-        timeout: 30000
-      });
+      console.log('[PROJUDI SESSION] Usando navegador da sessão:', sessionId);
 
-      context = await browser.newContext({
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      });
-
-      // Restaurar cookies da sessão
-      await context.addCookies(session.cookies);
-
-      const page = await context.newPage();
-
-      // Navegar para página de consulta
-      await page.goto('https://consulta.tjpr.jus.br/projudi_consulta/processo/consultaPublica.do?actionType=iniciar', {
-        waitUntil: 'networkidle',
-        timeout: 30000
-      });
-
-      // Preencher formulário - usa o número normalizado
+      // Preencher formulário - usa o número normalizado (campo já deve estar visível)
       await page.waitForSelector('#numeroProcesso', { timeout: 10000 });
       await page.fill('#numeroProcesso', session.numeroProcesso);
 
@@ -401,6 +372,7 @@ export class ProjudiScraperService {
       // Extrair dados da página
       const dadosProcesso = await this.extrairDadosProcesso(page);
 
+      // Fechar navegador
       await browser.close();
 
       // Limpar sessão
@@ -408,8 +380,14 @@ export class ProjudiScraperService {
 
       return dadosProcesso;
     } catch (error: any) {
-      if (browser) {
-        await browser.close();
+      // Fechar navegador se ainda estiver aberto
+      const session = this.sessions.get(sessionId);
+      if (session?.browser) {
+        try {
+          await session.browser.close();
+        } catch (e) {
+          console.error('Erro ao fechar navegador:', e);
+        }
       }
       this.sessions.delete(sessionId);
       throw new Error(`Erro na consulta: ${error.message}`);
