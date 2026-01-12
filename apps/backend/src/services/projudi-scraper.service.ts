@@ -352,11 +352,19 @@ export class ProjudiScraperService {
       await page.waitForSelector('input[name="answer"]', { timeout: 10000 });
       await page.fill('input[name="answer"]', captchaResposta);
 
-      // Submeter formulário
-      console.log('[PROJUDI SUBMIT] Clicando no botão submit...');
+      // Aguardar um pouco para garantir que os campos foram preenchidos
+      await page.waitForTimeout(500);
+
+      // Submeter formulário usando JavaScript submit() em vez de clicar no botão
+      console.log('[PROJUDI SUBMIT] Submetendo formulário...');
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
-        page.click('input[type="submit"]')
+        page.evaluate(() => {
+          const form = document.querySelector('form');
+          if (form) {
+            form.submit();
+          }
+        })
       ]);
 
       // Verificar se CAPTCHA foi aceito
