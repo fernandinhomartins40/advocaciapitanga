@@ -158,8 +158,8 @@ export class ProjudiController {
           processoId: id,
           metodo: 'SCRAPING_ASSISTIDO',
           status: 'SUCESSO',
-          dadosExtraidos: dadosProjudi,
-          movimentacoes: dadosProjudi.movimentacoes || [],
+          dadosExtraidos: dadosProjudi as any,
+          movimentacoes: (dadosProjudi.movimentacoes || []) as any,
           userId,
           ipAddress: req.ip
         }
@@ -235,8 +235,8 @@ export class ProjudiController {
         where: {
           processoId: id,
           status: 'SUCESSO',
-          movimentacoes: {
-            not: null
+          NOT: {
+            movimentacoes: null
           }
         },
         orderBy: {
