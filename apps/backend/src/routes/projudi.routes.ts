@@ -65,6 +65,17 @@ router.get(
 );
 
 /**
+ * POST /projudi/processos/auto-cadastrar
+ * Auto-cadastra processo consultando PROJUDI (cria Cliente, Partes e Processo)
+ */
+router.post(
+  '/processos/auto-cadastrar',
+  authMiddleware,
+  projudiRateLimiter,
+  projudiController.autoCadastrarProcessoComCaptcha.bind(projudiController)
+);
+
+/**
  * GET /projudi/testar
  * Testa configuracao da integracao
  */

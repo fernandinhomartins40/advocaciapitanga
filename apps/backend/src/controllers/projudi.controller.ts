@@ -298,6 +298,162 @@ export class ProjudiController {
   }
 
   /**
+   * Auto-cadastrar processo com CAPTCHA - Cria Cliente, Partes e Processo automaticamente
+   */
+  async autoCadastrarProcessoComCaptcha(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { numeroProcesso, sessionId, captchaResposta } = req.body;
+      const userId = req.user!.userId;
+      const advogadoId = req.user!.advogadoId;
+
+      if (!numeroProcesso || !sessionId || !captchaResposta) {
+        return res.status(400).json({
+          erro: 'Número do processo, sessionId e resposta do CAPTCHA são obrigatórios'
+        });
+      }
+
+      // Consultar PROJUDI
+      const dadosProjudi = await projudiScraperService.consultarComCaptcha(
+        sessionId,
+        captchaResposta,
+        userId
+      );
+
+      // 1. Criar ou buscar Cliente (primeira parte AUTOR/EXEQUENTE)
+      const parteAutor = dadosProjudi.partes?.find(p =>
+        this.mapearTipoParte(p.tipo) === 'AUTOR'
+      );
+
+      let clienteId: string;
+      let clienteExistente = null;
+
+      if (parteAutor) {
+        // Verificar se já existe cliente com esse CPF
+        clienteExistente = parteAutor.cpf
+          ? await prisma.cliente.findUnique({ where: { cpf: parteAutor.cpf } })
+          : null;
+
+        if (clienteExistente) {
+          clienteId = clienteExistente.id;
+        } else {
+          // Criar novo cliente
+          const novoUsuario = await prisma.user.create({
+            data: {
+              nome: parteAutor.nome,
+              email: `cliente_${Date.now()}@temp.com`, // Email temporário
+              senha: 'temp', // Senha temporária
+              tipo: 'CLIENTE'
+            }
+          });
+
+          const novoCliente = await prisma.cliente.create({
+            data: {
+              userId: novoUsuario.id,
+              tipoPessoa: parteAutor.cpf ? 'FISICA' : 'JURIDICA',
+              cpf: parteAutor.cpf || null
+            }
+          });
+
+          clienteId = novoCliente.id;
+        }
+      } else {
+        return res.status(400).json({
+          erro: 'Nenhuma parte AUTOR/EXEQUENTE encontrada para criar cliente'
+        });
+      }
+
+      // 2. Criar Processo
+      const dadosProcesso: any = {
+        numero: numeroProcesso,
+        clienteId,
+        advogadoId,
+        dataInicio: new Date(),
+        status: 'EM_ANDAMENTO'
+      };
+
+      // Preencher dados extraídos do PROJUDI
+      if (dadosProjudi.comarca) dadosProcesso.comarca = dadosProjudi.comarca;
+      if (dadosProjudi.vara) dadosProcesso.vara = dadosProjudi.vara;
+      if (dadosProjudi.foro) dadosProcesso.foro = dadosProjudi.foro;
+      if (dadosProjudi.dataDistribuicao) {
+        try {
+          const [dia, mes, ano] = dadosProjudi.dataDistribuicao.split('/');
+          dadosProcesso.dataDistribuicao = new Date(`${ano}-${mes}-${dia}`);
+        } catch (e) {
+          console.error('Erro ao parsear data de distribuição:', e);
+        }
+      }
+      if (dadosProjudi.valorCausa) dadosProcesso.valorCausa = dadosProjudi.valorCausa;
+      if (dadosProjudi.objetoAcao) dadosProcesso.objetoAcao = dadosProjudi.objetoAcao;
+      if (dadosProjudi.status) {
+        // Mapear status do PROJUDI para enum do sistema
+        if (dadosProjudi.status.toLowerCase().includes('tramitação')) {
+          dadosProcesso.status = 'EM_ANDAMENTO';
+        }
+      }
+
+      const processoNovo = await prisma.processo.create({
+        data: dadosProcesso,
+        include: {
+          cliente: { include: { user: true } },
+          advogado: { include: { user: true } }
+        }
+      });
+
+      // 3. Criar ParteProcessual para todas as partes
+      if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
+        const partesMapeadas = dadosProjudi.partes.map(parte => ({
+          processoId: processoNovo.id,
+          tipoParte: this.mapearTipoParte(parte.tipo),
+          tipoPessoa: parte.cpf ? 'FISICA' : 'JURIDICA',
+          nomeCompleto: parte.nome,
+          cpf: parte.cpf || null,
+          // Vincular com cliente se for o autor
+          clienteId: parte.nome === parteAutor?.nome ? clienteId : null
+        }));
+
+        await prisma.parteProcessual.createMany({
+          data: partesMapeadas
+        });
+      }
+
+      // 4. Salvar consulta PROJUDI
+      await prisma.consultaProjudi.create({
+        data: {
+          processoId: processoNovo.id,
+          metodo: 'SCRAPING_ASSISTIDO',
+          status: 'SUCESSO',
+          dadosExtraidos: dadosProjudi as any,
+          movimentacoes: (dadosProjudi.movimentacoes || []) as any,
+          userId,
+          ipAddress: req.ip
+        }
+      });
+
+      // 5. Registrar auditoria
+      await AuditService.createLog({
+        entityType: 'Processo',
+        entityId: processoNovo.id,
+        action: AuditAction.CREATED,
+        userId,
+        newValue: JSON.stringify({ ...processoNovo, fonte: 'AUTO_CADASTRO_PROJUDI' })
+      });
+
+      res.status(201).json({
+        sucesso: true,
+        processo: processoNovo,
+        cliente: { id: clienteId, criado: !clienteExistente },
+        totalPartes: dadosProjudi.partes?.length || 0,
+        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0,
+        mensagem: 'Processo cadastrado automaticamente com sucesso!'
+      });
+    } catch (error: any) {
+      console.error('Erro no auto-cadastro:', error);
+      next(error);
+    }
+  }
+
+  /**
    * Endpoint para testar configuracao
    */
   async testarConfiguracao(req: AuthRequest, res: Response, next: NextFunction) {
