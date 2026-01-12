@@ -233,7 +233,7 @@ export class ProcessoService {
     return processo;
   }
 
-  async update(id: string, data: any) {
+  async update(id: string, data: any, userId?: string) {
     const processo = await prisma.processo.findUnique({
       where: { id }
     });
@@ -267,15 +267,22 @@ export class ProcessoService {
       }
     });
 
-    // FASE 3.2: Registrar auditoria
-    await AuditService.createLog({
-      entityType: 'Processo',
-      entityId: id,
-      action: AuditAction.PROFILE_UPDATED, // Usar action mais apropriada
-      userId: updated.advogadoId,
-      oldValue: JSON.stringify(processo),
-      newValue: JSON.stringify(updated)
-    });
+    // FASE 3.2: Registrar auditoria (somente se userId for fornecido)
+    if (userId) {
+      try {
+        await AuditService.createLog({
+          entityType: 'Processo',
+          entityId: id,
+          action: AuditAction.PROFILE_UPDATED,
+          userId: userId,
+          oldValue: JSON.stringify(processo),
+          newValue: JSON.stringify(updated)
+        });
+      } catch (error) {
+        console.error('Erro ao criar log de auditoria:', error);
+        // Não falhar a atualização se o log de auditoria falhar
+      }
+    }
 
     return updated;
   }

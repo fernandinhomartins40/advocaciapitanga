@@ -136,7 +136,7 @@ export class ProjudiController {
       }
 
       // Atualizar processo
-      const processoAtualizado = await processoService.update(id, dadosAtualizacao);
+      const processoAtualizado = await processoService.update(id, dadosAtualizacao, userId);
 
       // Atualizar partes se disponiveis
       if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {

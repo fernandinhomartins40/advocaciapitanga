@@ -404,68 +404,114 @@ export class ProjudiScraperService {
     };
 
     try {
-      // Número do processo
-      const numeroTexto = $('.processo-numero, .numero-processo, #numeroProcesso').first().text().trim();
-      if (numeroTexto) dados.numero = numeroTexto;
+      // Número do processo (do <h3>)
+      const numeroTexto = $('h3').first().text().trim();
+      const numeroMatch = numeroTexto.match(/Processo\s+(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/);
+      if (numeroMatch) dados.numero = numeroMatch[1];
 
-      // Comarca
-      const comarcaTexto = $('.comarca, .processo-comarca').first().text().trim();
-      if (comarcaTexto) dados.comarca = comarcaTexto.replace('Comarca:', '').trim();
+      // Extrair dados da tabela .form usando labels
+      $('table.form tr').each((i, row) => {
+        const label = $(row).find('td.label, td.labelRadio').text().trim().replace(':', '');
+        const valor = $(row).find('td:not(.label):not(.labelRadio)').first().text().trim();
 
-      // Vara
-      const varaTexto = $('.vara, .processo-vara').first().text().trim();
-      if (varaTexto) dados.vara = varaTexto.replace('Vara:', '').trim();
+        if (!label || !valor) return;
 
-      // Foro
-      const foroTexto = $('.foro, .processo-foro').first().text().trim();
-      if (foroTexto) dados.foro = foroTexto.replace('Foro:', '').trim();
-
-      // Status
-      const statusTexto = $('.status, .processo-status, .situacao').first().text().trim();
-      if (statusTexto) dados.status = statusTexto.replace('Status:', '').trim();
-
-      // Data de distribuição
-      const dataDistTexto = $('.data-distribuicao, .distribuicao').first().text().trim();
-      if (dataDistTexto) {
-        const dataMatch = dataDistTexto.match(/(\d{2}\/\d{2}\/\d{4})/);
-        if (dataMatch) dados.dataDistribuicao = dataMatch[1];
-      }
-
-      // Valor da causa
-      const valorCausaTexto = $('.valor-causa, .valorCausa').first().text().trim();
-      if (valorCausaTexto) {
-        dados.valorCausa = valorCausaTexto.replace(/[^\d,\.]/g, '');
-      }
-
-      // Objeto da ação
-      const objetoTexto = $('.objeto-acao, .objetoAcao, .assunto').first().text().trim();
-      if (objetoTexto) dados.objetoAcao = objetoTexto;
-
-      // Partes processuais
-      $('.parte, .parte-processual, tr[class*="parte"]').each((i, elem) => {
-        const tipo = $(elem).find('.tipo-parte, td:first').text().trim();
-        const nome = $(elem).find('.nome-parte, td:nth-child(2)').text().trim();
-        const cpf = $(elem).find('.cpf-parte, .documento').text().trim();
-
-        if (tipo && nome) {
-          dados.partes?.push({
-            tipo: tipo.replace(':', '').trim(),
-            nome: nome.trim(),
-            cpf: cpf || undefined
-          });
+        switch (label.toLowerCase()) {
+          case 'comarca':
+            dados.comarca = valor;
+            break;
+          case 'juízo':
+            dados.vara = valor;
+            break;
+          case 'competência':
+            if (!dados.foro) dados.foro = valor;
+            break;
+          case 'distribuição':
+            const dataMatch = valor.match(/(\d{2}\/\d{2}\/\d{4})/);
+            if (dataMatch) dados.dataDistribuicao = dataMatch[1];
+            break;
+          case 'juiz':
+            // Pode armazenar se necessário
+            break;
         }
       });
 
-      // Movimentações
-      $('.movimentacao, .processo-movimentacao, tr[class*="movimentacao"]').slice(0, 10).each((i, elem) => {
-        const data = $(elem).find('.data, .data-movimentacao, td:first').text().trim();
-        const descricao = $(elem).find('.descricao, .texto-movimentacao, td:last').text().trim();
+      // Classe Processual e Assunto
+      $('table.form tr').each((i, row) => {
+        const cells = $(row).find('td');
+        if (cells.length >= 2) {
+          const label = cells.eq(0).text().trim().replace(':', '');
+          const valor = cells.eq(1).text().trim();
 
-        if (data && descricao) {
-          dados.movimentacoes?.push({
-            data,
-            descricao: descricao.substring(0, 500) // Limitar tamanho
-          });
+          if (label === 'Classe Processual' && valor) {
+            // Extrair apenas o nome da classe
+            const classeMatch = valor.match(/\d+\s+-\s+(.+)/);
+            if (classeMatch) {
+              if (!dados.objetoAcao) dados.objetoAcao = classeMatch[1];
+            }
+          }
+
+          if (label === 'Assunto Principal' && valor) {
+            const assuntoMatch = valor.match(/\d+\s+-\s+(.+)/);
+            if (assuntoMatch && !dados.objetoAcao) {
+              dados.objetoAcao = assuntoMatch[1];
+            }
+          }
+        }
+      });
+
+      // Status (extrair dos dias em tramitação)
+      const statusMatch = numeroTexto.match(/\((\d+)\s+dia\(s\)\s+em\s+tramitação\)/);
+      if (statusMatch) {
+        dados.status = `Em tramitação (${statusMatch[1]} dias)`;
+      }
+
+      // Partes processuais - Exequente, Executado, Terceiros
+      const secoes = ['Exequente', 'Executado', 'Terceiros'];
+
+      secoes.forEach(secao => {
+        // Procurar o <h4> com o nome da seção
+        $('h4').each((i, h4Elem) => {
+          const h4Text = $(h4Elem).text().trim();
+          if (h4Text === secao) {
+            // Encontrar a tabela seguinte
+            const tabela = $(h4Elem).nextAll('table.resultTable').first();
+
+            // Extrair partes da tabela
+            tabela.find('tbody tr').each((j, row) => {
+              const cells = $(row).find('td');
+              if (cells.length >= 3) {
+                const nomeCompleto = cells.eq(0).text().trim();
+
+                // Limpar nome (remover quebras de linha extras)
+                const nome = nomeCompleto.replace(/\s+/g, ' ').trim();
+
+                if (nome && nome.length > 3) {
+                  dados.partes?.push({
+                    tipo: secao,
+                    nome: nome,
+                    cpf: undefined
+                  });
+                }
+              }
+            });
+          }
+        });
+      });
+
+      // Movimentações (extrair as 10 primeiras)
+      $('table.resultTable#idTableMovimentacoesmov1Grau1 tbody tr').slice(0, 10).each((i, row) => {
+        const cells = $(row).find('td');
+        if (cells.length >= 4) {
+          const data = cells.eq(2).text().trim(); // Coluna "Data"
+          const evento = cells.eq(3).text().trim(); // Coluna "Evento"
+
+          if (data && evento) {
+            dados.movimentacoes?.push({
+              data,
+              descricao: evento.substring(0, 500) // Limitar tamanho
+            });
+          }
         }
       });
 
