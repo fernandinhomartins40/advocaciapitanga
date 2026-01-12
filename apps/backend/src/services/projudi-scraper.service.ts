@@ -482,28 +482,53 @@ export class ProjudiScraperService {
 
       // Extrair dados da tabela .form usando labels
       $('table.form tr').each((i, row) => {
-        const label = $(row).find('td.label, td.labelRadio').text().trim().replace(':', '');
-        const valor = $(row).find('td:not(.label):not(.labelRadio)').first().text().trim();
+        const labelCell = $(row).find('td.label, td.labelRadio');
+        const valueCell = $(row).find('td:not(.label):not(.labelRadio)').first();
 
-        if (!label || !valor) return;
+        let label = labelCell.text().trim().replace(/:/g, '');
+        let valor = valueCell.text().trim();
 
-        console.log(`[PROJUDI EXTRACT] Label: "${label}" | Valor: "${valor}"`);
+        // Se label está vazio, pode ser que label e valor estejam na mesma célula
+        if (!label) {
+          const rowText = $(row).text().trim();
+          console.log(`[PROJUDI EXTRACT] Row text completo: "${rowText.substring(0, 100)}"`);
+          return;
+        }
 
-        switch (label.toLowerCase()) {
+        if (!valor) return;
+
+        console.log(`[PROJUDI EXTRACT] Label: "${label}" | Valor: "${valor.substring(0, 100)}"`);
+
+        // Extrair a primeira palavra do label para matching (ignora texto concatenado)
+        const firstWord = label.split(/\s+/)[0].toLowerCase();
+
+        switch (firstWord) {
           case 'comarca':
             dados.comarca = valor;
             console.log('[PROJUDI EXTRACT] ✓ Comarca atribuída:', valor);
             break;
           case 'juízo':
+          case 'juizo':
             dados.vara = valor;
             console.log('[PROJUDI EXTRACT] ✓ Vara atribuída:', valor);
             break;
           case 'competência':
+          case 'competencia':
             if (!dados.foro) dados.foro = valor;
             break;
           case 'distribuição':
-            const dataMatch = valor.match(/(\d{2}\/\d{2}\/\d{4})/);
-            if (dataMatch) dados.dataDistribuicao = dataMatch[1];
+          case 'distribuicao':
+            const dataMatch = valor.match(/(\d{4}-\d{2}-\d{2})/);
+            if (dataMatch) {
+              // Converter de YYYY-MM-DD para DD/MM/YYYY
+              const [ano, mes, dia] = dataMatch[1].split('-');
+              dados.dataDistribuicao = `${dia}/${mes}/${ano}`;
+              console.log('[PROJUDI EXTRACT] ✓ Data distribuição atribuída:', dados.dataDistribuicao);
+            }
+            break;
+          case 'autuação':
+          case 'autuacao':
+            // Extrair data de autuação se necessário
             break;
           case 'juiz':
             // Pode armazenar se necessário
