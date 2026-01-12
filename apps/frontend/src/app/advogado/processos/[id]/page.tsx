@@ -434,6 +434,18 @@ export default function ProcessoDetalhesPage() {
     try {
       const response = await api.get(`/projudi/processos/${id}/movimentacoes`);
 
+      // Debug: verificar dados recebidos
+      console.log('📊 Dados recebidos do backend:', {
+        total: response.data.movimentacoes?.length || 0,
+        movimentacoes: response.data.movimentacoes
+      });
+
+      // Debug: verificar quais movimentações têm documentos
+      const comDocumentos = response.data.movimentacoes?.filter((m: any) => m.documentos && m.documentos.length > 0) || [];
+      if (comDocumentos.length > 0) {
+        console.log(`📎 ${comDocumentos.length} movimentações com documentos:`, comDocumentos);
+      }
+
       // Sempre atualiza o estado, mesmo que vazio
       setMovimentacoes(response.data.movimentacoes || []);
       setInfoMovimentacoes({
@@ -725,7 +737,13 @@ export default function ProcessoDetalhesPage() {
                 </div>
               ) : movimentacoes.length > 0 ? (
                 <div className="space-y-4">
-                  {movimentacoes.map((mov: any, index: number) => (
+                  {movimentacoes.map((mov: any, index: number) => {
+                    // Debug: verificar se há documentos
+                    if (mov.documentos && mov.documentos.length > 0) {
+                      console.log(`Movimentação #${mov.sequencial || index + 1} tem ${mov.documentos.length} documento(s):`, mov.documentos);
+                    }
+
+                    return (
                     <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -779,7 +797,8 @@ export default function ProcessoDetalhesPage() {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
