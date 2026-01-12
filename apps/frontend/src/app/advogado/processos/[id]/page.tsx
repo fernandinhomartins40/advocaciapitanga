@@ -452,7 +452,7 @@ export default function ProcessoDetalhesPage() {
       toast({
         title: 'Informação',
         description: 'Nenhuma movimentação encontrada. Faça uma consulta PROJUDI primeiro.',
-        variant: 'info'
+        variant: 'default'
       });
     } finally {
       setLoadingMovimentacoes(false);
