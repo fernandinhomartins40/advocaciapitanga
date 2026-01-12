@@ -67,6 +67,8 @@ export default function ProcessoDetalhesPage() {
   const [currentTab, setCurrentTab] = useState('basico');
   const [isParteModalOpen, setIsParteModalOpen] = useState(false);
   const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
+  const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
+  const [loadingMovimentacoes, setLoadingMovimentacoes] = useState(false);
   const [tabValidation, setTabValidation] = useState<Record<string, boolean>>({
     basico: false,
     localizacao: false,
@@ -418,6 +420,26 @@ export default function ProcessoDetalhesPage() {
     }
   };
 
+  /**
+   * Carregar movimentações do PROJUDI
+   */
+  const carregarMovimentacoes = async () => {
+    setLoadingMovimentacoes(true);
+    try {
+      const response = await api.get(`/projudi/processos/${id}/movimentacoes`);
+      setMovimentacoes(response.data.movimentacoes || []);
+    } catch (error: any) {
+      console.error('Erro ao carregar movimentações:', error);
+      toast({
+        title: 'Informação',
+        description: 'Nenhuma movimentação encontrada. Faça uma consulta PROJUDI primeiro.',
+        variant: 'info'
+      });
+    } finally {
+      setLoadingMovimentacoes(false);
+    }
+  };
+
   const statusColors: Record<string, any> = {
     EM_ANDAMENTO: 'info',
     SUSPENSO: 'warning',
@@ -473,11 +495,18 @@ export default function ProcessoDetalhesPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="info">
+      <Tabs defaultValue="info" onValueChange={(value) => {
+        if (value === 'movimentacoes' && movimentacoes.length === 0) {
+          carregarMovimentacoes();
+        }
+      }}>
         <TabsList>
           <TabsTrigger value="info">Informações</TabsTrigger>
           <TabsTrigger value="partes">
             Partes ({processo.partes?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="movimentacoes">
+            Movimentações ({movimentacoes.length})
           </TabsTrigger>
           <TabsTrigger value="documentos">
             Documentos ({processo.documentos?.length || 0})
@@ -620,6 +649,76 @@ export default function ProcessoDetalhesPage() {
                 onEdit={handleEditParte}
                 onRemove={handleRemoveParte}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="movimentacoes">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Movimentações do Processo</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={carregarMovimentacoes}
+                  disabled={loadingMovimentacoes}
+                >
+                  <RefreshCw className={`mr-2 h-4 w-4 ${loadingMovimentacoes ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {loadingMovimentacoes ? (
+                <div className="flex justify-center py-8">
+                  <LoadingSpinner size="lg" />
+                </div>
+              ) : movimentacoes.length > 0 ? (
+                <div className="space-y-4">
+                  {movimentacoes.map((mov: any, index: number) => (
+                    <div key={index} className="border-l-4 border-blue-500 pl-4 py-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              #{mov.sequencial || index + 1}
+                            </Badge>
+                            <span className="text-sm font-medium text-gray-600">
+                              {mov.data}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-gray-900 mt-1">
+                            {mov.evento}
+                          </h4>
+                          {mov.descricao && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              {mov.descricao}
+                            </p>
+                          )}
+                          {mov.movimentadoPor && (
+                            <p className="text-xs text-gray-500 mt-2">
+                              Movimentado por: {mov.movimentadoPor}
+                            </p>
+                          )}
+                        </div>
+                        {mov.tipoMovimento && (
+                          <Badge variant="secondary">
+                            {mov.tipoMovimento}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Nenhuma movimentação encontrada.</p>
+                  <p className="text-sm mt-2">
+                    Faça uma consulta PROJUDI para carregar as movimentações.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
