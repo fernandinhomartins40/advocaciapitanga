@@ -360,8 +360,10 @@ export class ProjudiScraperService {
       await Promise.all([
         page.waitForNavigation({ waitUntil: 'networkidle', timeout: 30000 }),
         page.evaluate(() => {
+          // @ts-ignore - document is available in browser context
           const form = document.querySelector('form');
           if (form) {
+            // @ts-ignore - form.submit() is valid in browser
             form.submit();
           }
         })
