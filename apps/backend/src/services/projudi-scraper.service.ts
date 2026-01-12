@@ -604,8 +604,12 @@ export class ProjudiScraperService {
       });
 
       // Movimentações (extrair TODAS, não apenas 10)
-      $('table.resultTable#idTableMovimentacoesmov1Grau1 tbody tr').each((i, row) => {
+      const rowsMovimentacoes = $('table.resultTable#idTableMovimentacoesmov1Grau1 tbody tr').toArray();
+
+      for (let i = 0; i < rowsMovimentacoes.length; i++) {
+        const row = rowsMovimentacoes[i];
         const cells = $(row).find('td');
+
         if (cells.length >= 5) {
           const sequencial = cells.eq(1).text().trim(); // Coluna "Seq."
           const data = cells.eq(2).text().trim(); // Coluna "Data"
@@ -619,28 +623,44 @@ export class ProjudiScraperService {
             const eventoDescricao = eventoElement.text().replace(eventoNome, '').trim();
 
             // Extrair links de documentos da movimentação
+            // Documentos podem estar na próxima linha em uma div expandida
             const documentos: Array<{ titulo: string; url: string }> = [];
-            eventoElement.find('a').each((linkIndex, linkEl) => {
-              const link = $(linkEl);
-              const href = link.attr('href');
-              const titulo = link.text().trim();
 
-              // Verificar se é um link de documento (geralmente contém 'documento' ou 'download' no href)
-              if (href && (href.includes('documento') || href.includes('download') || href.includes('.pdf') || titulo)) {
-                // Converter URL relativa para absoluta
-                let urlCompleta = href;
-                if (href.startsWith('/')) {
-                  urlCompleta = `https://projudi.tjpr.jus.br${href}`;
-                } else if (!href.startsWith('http')) {
-                  urlCompleta = `https://projudi.tjpr.jus.br/${href}`;
-                }
+            // Procurar na próxima linha por divs de arquivos
+            if (i + 1 < rowsMovimentacoes.length) {
+              const nextRow = rowsMovimentacoes[i + 1];
+              const divArquivos = $(nextRow).find('div[id^="divArquivosMovimentacaoProcesso"]');
 
-                documentos.push({
-                  titulo: titulo || 'Documento',
-                  url: urlCompleta
+              if (divArquivos.length > 0) {
+                // Encontrou div de arquivos, extrair links
+                divArquivos.find('a[href*="arquivo.do"]').each((linkIndex, linkEl) => {
+                  const link = $(linkEl);
+                  const href = link.attr('href');
+                  let titulo = link.text().trim();
+
+                  // Se não tiver título no link, buscar no texto anterior (pode estar em td separada)
+                  if (!titulo || titulo === '') {
+                    const tdArquivo = $(linkEl).closest('td');
+                    titulo = tdArquivo.text().replace('Arquivo:', '').trim().split('\n')[0].trim();
+                  }
+
+                  if (href && titulo) {
+                    // Converter URL relativa para absoluta
+                    let urlCompleta = href;
+                    if (href.startsWith('/')) {
+                      urlCompleta = `https://projudi.tjpr.jus.br${href}`;
+                    } else if (!href.startsWith('http')) {
+                      urlCompleta = `https://projudi.tjpr.jus.br/${href}`;
+                    }
+
+                    documentos.push({
+                      titulo: titulo,
+                      url: urlCompleta
+                    });
+                  }
                 });
               }
-            });
+            }
 
             // Determinar tipo de movimento baseado no ID da linha
             const rowId = $(row).attr('id') || '';
@@ -664,7 +684,7 @@ export class ProjudiScraperService {
             });
           }
         }
-      });
+      }
 
     } catch (error: any) {
       console.error('Erro ao extrair dados:', error);
