@@ -230,21 +230,21 @@ export class ProjudiController {
       const { id } = req.params;
       const userId = req.user!.userId;
 
-      // Buscar a última consulta PROJUDI bem-sucedida do processo
-      const consulta = await prisma.consultaProjudi.findFirst({
+      // Buscar todas as consultas PROJUDI bem-sucedidas do processo
+      const consultas = await prisma.consultaProjudi.findMany({
         where: {
           processoId: id,
-          status: 'SUCESSO',
-          NOT: {
-            movimentacoes: null
-          }
+          status: 'SUCESSO'
         },
         orderBy: {
           createdAt: 'desc'
         }
       });
 
-      if (!consulta || !consulta.movimentacoes) {
+      // Filtrar consultas que têm movimentações
+      const consultaComMovimentacoes = consultas.find(c => c.movimentacoes !== null);
+
+      if (!consultaComMovimentacoes || !consultaComMovimentacoes.movimentacoes) {
         return res.json({
           movimentacoes: [],
           total: 0,
@@ -253,9 +253,9 @@ export class ProjudiController {
       }
 
       res.json({
-        movimentacoes: consulta.movimentacoes,
-        total: Array.isArray(consulta.movimentacoes) ? consulta.movimentacoes.length : 0,
-        dataConsulta: consulta.createdAt
+        movimentacoes: consultaComMovimentacoes.movimentacoes,
+        total: Array.isArray(consultaComMovimentacoes.movimentacoes) ? consultaComMovimentacoes.movimentacoes.length : 0,
+        dataConsulta: consultaComMovimentacoes.createdAt
       });
     } catch (error: any) {
       next(error);

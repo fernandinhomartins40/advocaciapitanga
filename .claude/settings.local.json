@@ -53,7 +53,8 @@
       "Bash(NUL)",
       "Bash(if exist \"apps\\frontend\\.next\" rmdir /s /q \"apps\\frontend\\.next\")",
       "Bash(git log:*)",
-      "Bash(tar:*)"
+      "Bash(tar:*)",
+      "Bash(bash:*)"
     ],
     "deny": [],
     "ask": []
