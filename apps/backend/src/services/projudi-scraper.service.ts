@@ -344,8 +344,9 @@ export class ProjudiScraperService {
       await page.waitForSelector('#numeroProcesso', { timeout: 10000 });
       await page.fill('#numeroProcesso', session.numeroProcesso);
 
-      await page.waitForSelector('#captcha', { timeout: 10000 });
-      await page.fill('#captcha', captchaResposta.toUpperCase());
+      // Preencher resposta do CAPTCHA
+      await page.waitForSelector('input[name="answer"]', { timeout: 10000 });
+      await page.fill('input[name="answer"]', captchaResposta.toUpperCase());
 
       // Submeter formulário
       await Promise.all([
