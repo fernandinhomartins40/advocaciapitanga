@@ -75,6 +75,48 @@ export class ProjudiController {
   }
 
   /**
+   * ESTRATEGIA 1 (SCRAPING): Inicia consulta para auto-cadastro (sem processo existente)
+   */
+  async iniciarCaptchaAutoCadastro(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { numeroProcesso } = req.body;
+      const userId = req.user!.userId;
+
+      if (!numeroProcesso) {
+        return res.status(400).json({
+          error: 'Número do processo é obrigatório'
+        });
+      }
+
+      // Validar formato do número do processo (CNJ)
+      const numeroLimpo = numeroProcesso.replace(/[^0-9]/g, '');
+      if (numeroLimpo.length !== 20) {
+        return res.status(400).json({
+          error: 'Número do processo inválido. Use o formato CNJ com 20 dígitos.'
+        });
+      }
+
+      // Validar se é processo do Paraná (tribunal = 16)
+      const tribunal = numeroLimpo.substring(13, 15);
+      if (tribunal !== '16') {
+        return res.status(400).json({
+          error: 'Consulta PROJUDI disponível apenas para processos do Paraná (tribunal 16)'
+        });
+      }
+
+      // Iniciar consulta e obter CAPTCHA
+      const resultado = await projudiScraperService.iniciarConsulta(
+        numeroProcesso,
+        userId
+      );
+
+      res.json(resultado);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  /**
    * ESTRATEGIA 1 (SCRAPING): Consulta com CAPTCHA resolvido
    */
   async consultarComCaptcha(req: AuthRequest, res: Response, next: NextFunction) {

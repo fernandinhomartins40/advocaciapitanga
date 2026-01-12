@@ -104,9 +104,9 @@ export function useIniciarCaptchaProjudi() {
 export function useIniciarCaptchaAutoCadastro() {
   return useMutation({
     mutationFn: async (numeroProcesso: string) => {
-      // Cria um ID temporário baseado no número do processo
-      const tempId = 'temp_' + numeroProcesso.replace(/[^0-9]/g, '');
-      const response = await api.post(`/projudi/processos/${tempId}/iniciar-captcha`);
+      const response = await api.post('/projudi/auto-cadastro/iniciar-captcha', {
+        numeroProcesso
+      });
       return response.data;
     },
   });

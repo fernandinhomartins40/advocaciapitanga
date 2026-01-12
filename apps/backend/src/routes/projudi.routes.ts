@@ -65,6 +65,17 @@ router.get(
 );
 
 /**
+ * POST /projudi/auto-cadastro/iniciar-captcha
+ * Inicia CAPTCHA para auto-cadastro (sem processo existente)
+ */
+router.post(
+  '/auto-cadastro/iniciar-captcha',
+  authMiddleware,
+  captchaRateLimiter,
+  projudiController.iniciarCaptchaAutoCadastro.bind(projudiController)
+);
+
+/**
  * POST /projudi/processos/auto-cadastrar
  * Auto-cadastra processo consultando PROJUDI (cria Cliente, Partes e Processo)
  */
