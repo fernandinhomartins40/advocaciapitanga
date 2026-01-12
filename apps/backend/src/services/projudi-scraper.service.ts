@@ -465,6 +465,32 @@ export class ProjudiScraperService {
    * Extrai dados da página de resultado
    */
   private async extrairDadosProcesso(page: Page): Promise<DadosProcessoProjudi> {
+    // IMPORTANTE: Expandir todas as movimentações que têm documentos
+    // Os documentos são carregados via JavaScript quando o usuário clica no ícone "+"
+    console.log('[PROJUDI EXTRACT] Expandindo movimentações com documentos...');
+
+    try {
+      // Encontrar todos os ícones de expansão (links com classe linkArquivosmovimentacoes)
+      const icones = await page.$$('a[class^="linkArquivosmovimentacoes"]');
+      console.log(`[PROJUDI EXTRACT] Encontrados ${icones.length} ícones de expansão`);
+
+      // Clicar em cada ícone para expandir os documentos
+      for (let i = 0; i < icones.length; i++) {
+        try {
+          await icones[i].click();
+          // Aguardar um pouco para o conteúdo carregar
+          await page.waitForTimeout(200);
+        } catch (e) {
+          console.log(`[PROJUDI EXTRACT] Erro ao clicar no ícone ${i}:`, e.message);
+        }
+      }
+
+      console.log('[PROJUDI EXTRACT] Expansão concluída, aguardando carregamento...');
+      await page.waitForTimeout(1000);
+    } catch (error) {
+      console.log('[PROJUDI EXTRACT] Erro ao expandir movimentações:', error.message);
+    }
+
     const html = await page.content();
     const $ = cheerio.load(html);
 
