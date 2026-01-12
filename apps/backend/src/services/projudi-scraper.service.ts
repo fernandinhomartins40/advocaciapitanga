@@ -643,7 +643,13 @@ export class ProjudiScraperService {
               const nextRow = rowsMovimentacoes[i + 1];
               const divArquivos = $(nextRow).find('div[id^="divArquivosMovimentacaoProcesso"]');
 
+              console.log(`[PROJUDI EXTRACT] Mov #${sequencial}: divs de arquivos encontradas = ${divArquivos.length}`);
+
               if (divArquivos.length > 0) {
+                const tableForms = divArquivos.find('table.form');
+                const trs = tableForms.find('tbody > tr');
+                console.log(`[PROJUDI EXTRACT] Mov #${sequencial}: table.form = ${tableForms.length}, TRs = ${trs.length}`);
+
                 // Cada documento está em uma <tr> dentro de table.form
                 divArquivos.find('table.form > tbody > tr').each((docIndex, docRow) => {
                   const $docRow = $(docRow);
