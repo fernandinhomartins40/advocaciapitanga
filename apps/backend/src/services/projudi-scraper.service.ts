@@ -402,6 +402,9 @@ export class ProjudiScraperService {
     const html = await page.content();
     const $ = cheerio.load(html);
 
+    console.log('[PROJUDI EXTRACT] Iniciando extração de dados');
+    console.log('[PROJUDI EXTRACT] HTML length:', html.length);
+
     const dados: DadosProcessoProjudi = {
       partes: [],
       movimentacoes: []
@@ -410,8 +413,16 @@ export class ProjudiScraperService {
     try {
       // Número do processo (do <h3>)
       const numeroTexto = $('h3').first().text().trim();
+      console.log('[PROJUDI EXTRACT] H3 texto:', numeroTexto);
       const numeroMatch = numeroTexto.match(/Processo\s+(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/);
-      if (numeroMatch) dados.numero = numeroMatch[1];
+      if (numeroMatch) {
+        dados.numero = numeroMatch[1];
+        console.log('[PROJUDI EXTRACT] Número extraído:', dados.numero);
+      }
+
+      // Contar tabelas .form
+      const tableForms = $('table.form');
+      console.log('[PROJUDI EXTRACT] Tabelas com classe .form encontradas:', tableForms.length);
 
       // Extrair dados da tabela .form usando labels
       $('table.form tr').each((i, row) => {
@@ -420,12 +431,16 @@ export class ProjudiScraperService {
 
         if (!label || !valor) return;
 
+        console.log(`[PROJUDI EXTRACT] Label: "${label}" | Valor: "${valor}"`);
+
         switch (label.toLowerCase()) {
           case 'comarca':
             dados.comarca = valor;
+            console.log('[PROJUDI EXTRACT] ✓ Comarca atribuída:', valor);
             break;
           case 'juízo':
             dados.vara = valor;
+            console.log('[PROJUDI EXTRACT] ✓ Vara atribuída:', valor);
             break;
           case 'competência':
             if (!dados.foro) dados.foro = valor;
@@ -545,6 +560,17 @@ export class ProjudiScraperService {
       console.error('Erro ao extrair dados:', error);
       // Continua mesmo com erros parciais
     }
+
+    console.log('[PROJUDI EXTRACT] Extração concluída');
+    console.log('[PROJUDI EXTRACT] Dados extraídos:', JSON.stringify({
+      numero: dados.numero,
+      comarca: dados.comarca,
+      vara: dados.vara,
+      foro: dados.foro,
+      status: dados.status,
+      totalPartes: dados.partes?.length || 0,
+      totalMovimentacoes: dados.movimentacoes?.length || 0
+    }));
 
     return dados;
   }
