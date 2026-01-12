@@ -65,6 +65,7 @@ export default function ProcessoDetalhesPage() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('basico');
+  const [activeTab, setActiveTab] = useState('info');
   const [isParteModalOpen, setIsParteModalOpen] = useState(false);
   const [parteEditIndex, setParteEditIndex] = useState<number | null>(null);
   const [movimentacoes, setMovimentacoes] = useState<any[]>([]);
@@ -432,15 +433,21 @@ export default function ProcessoDetalhesPage() {
     setLoadingMovimentacoes(true);
     try {
       const response = await api.get(`/projudi/processos/${id}/movimentacoes`);
+
+      // Sempre atualiza o estado, mesmo que vazio
       setMovimentacoes(response.data.movimentacoes || []);
       setInfoMovimentacoes({
-        dataConsulta: response.data.dataConsulta,
-        dataConsultaAnterior: response.data.dataConsultaAnterior,
+        dataConsulta: response.data.dataConsulta || null,
+        dataConsultaAnterior: response.data.dataConsultaAnterior || null,
         totalNovas: response.data.totalNovas || 0
       });
 
-      // Mostrar toast se houver novas movimentações
-      if (response.data.totalNovas > 0) {
+      // Mostrar mensagem se não houver movimentações
+      if (!response.data.movimentacoes || response.data.movimentacoes.length === 0) {
+        // Não mostra toast, apenas deixa a UI mostrar que está vazio
+        console.log('Nenhuma movimentação encontrada');
+      } else if (response.data.totalNovas > 0) {
+        // Mostrar toast se houver novas movimentações
         toast({
           title: 'Novas Movimentações!',
           description: `${response.data.totalNovas} nova(s) movimentação(ões) desde a última consulta.`,
@@ -449,11 +456,8 @@ export default function ProcessoDetalhesPage() {
       }
     } catch (error: any) {
       console.error('Erro ao carregar movimentações:', error);
-      toast({
-        title: 'Informação',
-        description: 'Nenhuma movimentação encontrada. Faça uma consulta PROJUDI primeiro.',
-        variant: 'default'
-      });
+      setMovimentacoes([]);
+      // Não mostra toast de erro, apenas loga
     } finally {
       setLoadingMovimentacoes(false);
     }
@@ -514,9 +518,12 @@ export default function ProcessoDetalhesPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="info" onValueChange={(value) => {
-        if (value === 'movimentacoes' && movimentacoes.length === 0) {
-          carregarMovimentacoes();
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        if (value === 'movimentacoes' && movimentacoes.length === 0 && !loadingMovimentacoes) {
+          carregarMovimentacoes().catch(err => {
+            console.error('Erro ao carregar movimentações:', err);
+          });
         }
       }}>
         <TabsList>
