@@ -98,11 +98,13 @@ export function ModalAutoCadastroProcesso({
     setEnviando(true);
     try {
       const dados = await onConsultar(captchaResposta);
+      console.log('[AUTO-CADASTRO] Dados recebidos:', dados);
       setDadosExtraidos(dados);
       setEtapa('extracao');
 
       // Após 2 segundos, prepara formulário do cliente
       setTimeout(() => {
+        console.log('[AUTO-CADASTRO] Preparando dados do cliente...');
         prepararDadosCliente(dados);
         setEtapa('cliente');
       }, 2000);
@@ -115,22 +117,49 @@ export function ModalAutoCadastroProcesso({
 
   // Prepara dados do cliente a partir da primeira parte AUTOR/EXEQUENTE
   const prepararDadosCliente = (dados: any) => {
-    if (!dados.partes || dados.partes.length === 0) return;
+    console.log('[AUTO-CADASTRO] prepararDadosCliente - dados:', dados);
+    console.log('[AUTO-CADASTRO] prepararDadosCliente - partes:', dados?.partes);
+
+    if (!dados?.partes || dados.partes.length === 0) {
+      console.warn('[AUTO-CADASTRO] Nenhuma parte encontrada nos dados!');
+      // Mesmo sem partes, criar estrutura básica para o usuário preencher
+      setClienteData({
+        tipoPessoa: 'FISICA' as const,
+        nome: '',
+        cpf: '',
+        email: '',
+        nacionalidade: 'Brasileiro(a)',
+      });
+      return;
+    }
 
     // Buscar primeira parte do polo ativo (AUTOR, EXEQUENTE, REQUERENTE)
     const primeiraParteAutor = dados.partes.find((p: any) => {
-      const tipo = p.tipo.toUpperCase();
+      const tipo = p.tipo?.toUpperCase() || '';
       return tipo.includes('AUTOR') ||
              tipo.includes('EXEQUENTE') ||
              tipo.includes('REQUERENTE');
     });
+
+    console.log('[AUTO-CADASTRO] Primeira parte AUTOR encontrada:', primeiraParteAutor);
 
     if (primeiraParteAutor) {
       setClienteData({
         tipoPessoa: 'FISICA' as const,
         nome: primeiraParteAutor.nome || '',
         cpf: primeiraParteAutor.cpf || '',
-        email: '', // Usuário precisa preencher
+        email: '',
+        nacionalidade: 'Brasileiro(a)',
+      });
+    } else {
+      console.warn('[AUTO-CADASTRO] Nenhuma parte AUTOR/EXEQUENTE/REQUERENTE encontrada');
+      // Pegar a primeira parte disponível
+      const primeiraParte = dados.partes[0];
+      setClienteData({
+        tipoPessoa: 'FISICA' as const,
+        nome: primeiraParte?.nome || '',
+        cpf: primeiraParte?.cpf || '',
+        email: '',
         nacionalidade: 'Brasileiro(a)',
       });
     }
@@ -375,8 +404,15 @@ export function ModalAutoCadastroProcesso({
             </div>
           )}
 
+          {/* DEBUG: Mostrar etapa atual */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
+              <strong>DEBUG:</strong> Etapa atual: {etapa} | clienteData: {clienteData ? 'SIM' : 'NÃO'}
+            </div>
+          )}
+
           {/* Etapa 4: Formulário do Cliente (PRÉ-PREENCHIDO) */}
-          {etapa === 'cliente' && clienteData && (
+          {etapa === 'cliente' && (
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800 font-semibold">
@@ -389,14 +425,18 @@ export function ModalAutoCadastroProcesso({
 
               <form onSubmit={(e) => {
                 e.preventDefault();
+                if (!clienteData) return;
                 handleSalvarCliente(clienteData);
               }} className="space-y-3">
                 <div>
                   <Label htmlFor="nomeCliente">Nome Completo *</Label>
                   <Input
                     id="nomeCliente"
-                    value={clienteData.nome}
-                    onChange={(e) => setClienteData({ ...clienteData, nome: e.target.value })}
+                    value={clienteData?.nome || ''}
+                    onChange={(e) => setClienteData({
+                      ...(clienteData || { tipoPessoa: 'FISICA' as const, nacionalidade: 'Brasileiro(a)' }),
+                      nome: e.target.value
+                    })}
                     required
                   />
                 </div>
@@ -405,8 +445,11 @@ export function ModalAutoCadastroProcesso({
                   <Label htmlFor="cpfCliente">CPF * (obrigatório para identificação)</Label>
                   <Input
                     id="cpfCliente"
-                    value={clienteData.cpf}
-                    onChange={(e) => setClienteData({ ...clienteData, cpf: e.target.value })}
+                    value={clienteData?.cpf || ''}
+                    onChange={(e) => setClienteData({
+                      ...(clienteData || { tipoPessoa: 'FISICA' as const, nacionalidade: 'Brasileiro(a)' }),
+                      cpf: e.target.value
+                    })}
                     placeholder="000.000.000-00"
                     required
                   />
@@ -420,8 +463,11 @@ export function ModalAutoCadastroProcesso({
                   <Input
                     id="emailCliente"
                     type="email"
-                    value={clienteData.email}
-                    onChange={(e) => setClienteData({ ...clienteData, email: e.target.value })}
+                    value={clienteData?.email || ''}
+                    onChange={(e) => setClienteData({
+                      ...(clienteData || { tipoPessoa: 'FISICA' as const, nacionalidade: 'Brasileiro(a)' }),
+                      email: e.target.value
+                    })}
                     placeholder="cliente@email.com"
                     required
                   />
