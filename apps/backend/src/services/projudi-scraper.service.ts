@@ -602,18 +602,39 @@ export class ProjudiScraperService {
         dados.status = `Em tramitação (${statusMatch[1]} dias)`;
       }
 
-      // Partes processuais - Exequente, Executado, Terceiros
-      const secoes = ['Exequente', 'Executado', 'Terceiros'];
+      // Partes processuais - Todos os tipos possíveis
+      const secoes = [
+        'Autor', 'Réu',                   // Processos de conhecimento
+        'Exequente', 'Executado',         // Processos de execução
+        'Requerente', 'Requerido',        // Procedimentos especiais
+        'Terceiros', 'Terceiro Interessado', // Terceiros
+        'Assistente', 'Denunciado à Lide'    // Outros
+      ];
+
+      // DEBUG: Log de todos os h4 encontrados
+      console.log('[PROJUDI EXTRACT] Buscando seções de partes...');
+      const h4sEncontrados: string[] = [];
+      $('h4').each((i, h4Elem) => {
+        h4sEncontrados.push($(h4Elem).text().trim());
+      });
+      console.log('[PROJUDI EXTRACT] Tags <h4> encontradas:', h4sEncontrados);
 
       secoes.forEach(secao => {
         // Procurar o <h4> com o nome da seção
         $('h4').each((i, h4Elem) => {
           const h4Text = $(h4Elem).text().trim();
           if (h4Text === secao) {
+            console.log(`[PROJUDI EXTRACT] ✓ Seção "${secao}" encontrada`);
             // Encontrar a tabela seguinte
             const tabela = $(h4Elem).nextAll('table.resultTable').first();
 
+            if (tabela.length === 0) {
+              console.log(`[PROJUDI EXTRACT] ⚠️ Nenhuma tabela encontrada após seção "${secao}"`);
+              return;
+            }
+
             // Extrair partes da tabela
+            let partesNaSecao = 0;
             tabela.find('tbody tr').each((j, row) => {
               const cells = $(row).find('td');
               if (cells.length >= 3) {
@@ -628,9 +649,11 @@ export class ProjudiScraperService {
                     nome: nome,
                     cpf: undefined
                   });
+                  partesNaSecao++;
                 }
               }
             });
+            console.log(`[PROJUDI EXTRACT] "${secao}": ${partesNaSecao} parte(s) extraída(s)`);
           }
         });
       });
