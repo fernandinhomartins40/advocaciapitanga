@@ -637,11 +637,14 @@ export class ProjudiScraperService {
             let partesNaSecao = 0;
             tabela.find('tbody tr').each((j, row) => {
               const cells = $(row).find('td');
+              console.log(`[PROJUDI EXTRACT] Processando linha ${j} da seção "${secao}": ${cells.length} células`);
+
               if (cells.length >= 3) {
                 const nomeCompleto = cells.eq(0).text().trim();
 
                 // Limpar nome (remover quebras de linha extras)
                 const nome = nomeCompleto.replace(/\s+/g, ' ').trim();
+                console.log(`[PROJUDI EXTRACT] Nome extraído: "${nome}" (comprimento: ${nome.length})`);
 
                 if (nome && nome.length > 3) {
                   dados.partes?.push({
@@ -649,6 +652,7 @@ export class ProjudiScraperService {
                     nome: nome,
                     cpf: undefined
                   });
+                  console.log(`[PROJUDI EXTRACT] ✓ Parte adicionada ao array: ${dados.partes?.length || 0} total`);
                   partesNaSecao++;
                 }
               }
@@ -827,6 +831,18 @@ export class ProjudiScraperService {
       totalPartes: dados.partes?.length || 0,
       totalMovimentacoes: dados.movimentacoes?.length || 0
     }));
+
+    // Log detalhado de todas as partes
+    console.log('[PROJUDI EXTRACT] ===== PARTES FINAIS =====');
+    console.log('[PROJUDI EXTRACT] Total de partes:', dados.partes?.length || 0);
+    if (dados.partes && dados.partes.length > 0) {
+      dados.partes.forEach((p: any, i: number) => {
+        console.log(`[PROJUDI EXTRACT] Parte ${i}: "${p.nome}" | Tipo: "${p.tipo}"`);
+      });
+    } else {
+      console.log('[PROJUDI EXTRACT] ⚠️ ARRAY DE PARTES VAZIO!');
+    }
+    console.log('[PROJUDI EXTRACT] ===========================');
 
     return dados;
   }

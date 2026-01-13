@@ -127,11 +127,18 @@ export function ModalAutoCadastroProcesso({
 
   // Prepara dados do cliente a partir da primeira parte AUTOR/EXEQUENTE
   const prepararDadosCliente = (dados: any) => {
-    console.log('[AUTO-CADASTRO] prepararDadosCliente - dados:', dados);
-    console.log('[AUTO-CADASTRO] prepararDadosCliente - partes:', dados?.partes);
+    console.log('[AUTO-CADASTRO FRONTEND] ===== PREPARAR DADOS CLIENTE =====');
+    console.log('[AUTO-CADASTRO FRONTEND] dados recebidos:', dados);
+    console.log('[AUTO-CADASTRO FRONTEND] Type of dados:', typeof dados);
+    console.log('[AUTO-CADASTRO FRONTEND] Keys de dados:', dados ? Object.keys(dados) : 'null');
+    console.log('[AUTO-CADASTRO FRONTEND] dados.partes:', dados?.partes);
+    console.log('[AUTO-CADASTRO FRONTEND] Type of partes:', typeof dados?.partes);
+    console.log('[AUTO-CADASTRO FRONTEND] Array.isArray(partes):', Array.isArray(dados?.partes));
+    console.log('[AUTO-CADASTRO FRONTEND] Comprimento do array:', dados?.partes?.length);
 
     if (!dados?.partes || dados.partes.length === 0) {
-      console.warn('[AUTO-CADASTRO] Nenhuma parte encontrada nos dados!');
+      console.warn('[AUTO-CADASTRO FRONTEND] ⚠️ Nenhuma parte encontrada nos dados!');
+      console.warn('[AUTO-CADASTRO FRONTEND] Criando estrutura básica para preenchimento manual');
       // Mesmo sem partes, criar estrutura básica para o usuário preencher
       setClienteData({
         tipoPessoa: 'FISICA' as const,
@@ -144,16 +151,29 @@ export function ModalAutoCadastroProcesso({
     }
 
     // Buscar primeira parte do polo ativo (AUTOR, EXEQUENTE, REQUERENTE)
-    const primeiraParteAutor = dados.partes.find((p: any) => {
-      const tipo = p.tipo?.toUpperCase() || '';
-      return tipo.includes('AUTOR') ||
-             tipo.includes('EXEQUENTE') ||
-             tipo.includes('REQUERENTE');
+    console.log('[AUTO-CADASTRO FRONTEND] Buscando parte AUTOR/EXEQUENTE/REQUERENTE...');
+    console.log('[AUTO-CADASTRO FRONTEND] Total de partes para buscar:', dados.partes.length);
+
+    dados.partes.forEach((p: any, idx: number) => {
+      console.log(`[AUTO-CADASTRO FRONTEND] Parte ${idx}: Nome="${p.nome}" | Tipo="${p.tipo}"`);
     });
 
-    console.log('[AUTO-CADASTRO] Primeira parte AUTOR encontrada:', primeiraParteAutor);
+    const primeiraParteAutor = dados.partes.find((p: any) => {
+      const tipo = p.tipo?.toUpperCase() || '';
+      const isAutor = tipo.includes('AUTOR') ||
+                      tipo.includes('EXEQUENTE') ||
+                      tipo.includes('REQUERENTE');
+      console.log(`[AUTO-CADASTRO FRONTEND] Verificando "${p.nome}" (${p.tipo}) → isAutor: ${isAutor}`);
+      return isAutor;
+    });
+
+    console.log('[AUTO-CADASTRO FRONTEND] Primeira parte AUTOR encontrada:', primeiraParteAutor);
 
     if (primeiraParteAutor) {
+      console.log('[AUTO-CADASTRO FRONTEND] ✓ Criando clienteData com parte AUTOR:', {
+        nome: primeiraParteAutor.nome,
+        cpf: primeiraParteAutor.cpf
+      });
       setClienteData({
         tipoPessoa: 'FISICA' as const,
         nome: primeiraParteAutor.nome || '',
@@ -162,9 +182,10 @@ export function ModalAutoCadastroProcesso({
         nacionalidade: 'Brasileiro(a)',
       });
     } else {
-      console.warn('[AUTO-CADASTRO] Nenhuma parte AUTOR/EXEQUENTE/REQUERENTE encontrada');
+      console.warn('[AUTO-CADASTRO FRONTEND] ⚠️ Nenhuma parte AUTOR/EXEQUENTE/REQUERENTE encontrada');
       // Pegar a primeira parte disponível
       const primeiraParte = dados.partes[0];
+      console.log('[AUTO-CADASTRO FRONTEND] Usando primeira parte disponível:', primeiraParte);
       setClienteData({
         tipoPessoa: 'FISICA' as const,
         nome: primeiraParte?.nome || '',
@@ -173,6 +194,8 @@ export function ModalAutoCadastroProcesso({
         nacionalidade: 'Brasileiro(a)',
       });
     }
+
+    console.log('[AUTO-CADASTRO FRONTEND] ==========================================');
   };
 
   const handleSalvarCliente = async (cliente: any) => {
@@ -422,7 +445,10 @@ export function ModalAutoCadastroProcesso({
           )}
 
           {/* Etapa 4: Formulário do Cliente (PRÉ-PREENCHIDO) */}
-          {etapa === 'cliente' && (
+          {etapa === 'cliente' && (() => {
+            console.log('[AUTO-CADASTRO FRONTEND] Renderizando formulário do cliente');
+            console.log('[AUTO-CADASTRO FRONTEND] clienteData atual:', clienteData);
+            return (
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800 font-semibold">
@@ -443,12 +469,18 @@ export function ModalAutoCadastroProcesso({
                   <Input
                     id="nomeCliente"
                     value={clienteData?.nome || ''}
-                    onChange={(e) => setClienteData({
-                      ...(clienteData || { tipoPessoa: 'FISICA' as const, nacionalidade: 'Brasileiro(a)' }),
-                      nome: e.target.value
-                    })}
+                    onChange={(e) => {
+                      console.log('[AUTO-CADASTRO FRONTEND] Campo nome alterado:', e.target.value);
+                      setClienteData({
+                        ...(clienteData || { tipoPessoa: 'FISICA' as const, nacionalidade: 'Brasileiro(a)' }),
+                        nome: e.target.value
+                      });
+                    }}
                     required
                   />
+                  {process.env.NODE_ENV === 'development' && (
+                    <p className="text-xs text-gray-500 mt-1">Valor: {clienteData?.nome || '(vazio)'}</p>
+                  )}
                 </div>
 
                 <div>
@@ -501,7 +533,8 @@ export function ModalAutoCadastroProcesso({
                 </div>
               </form>
             </div>
-          )}
+            );
+          })()}
 
           {/* Etapa 5: Formulário do Processo (PRÉ-PREENCHIDO) */}
           {etapa === 'processo' && dadosExtraidos && clienteCriado && (

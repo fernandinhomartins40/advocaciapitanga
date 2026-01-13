@@ -387,6 +387,25 @@ export class ProjudiController {
         console.log('[AUTO-CADASTRO CONSULTA] Dados completos recebidos:', JSON.stringify(dadosProjudi, null, 2));
       }
 
+      // Log da resposta antes de enviar ao frontend
+      console.log('[CONTROLLER] ===== RESPOSTA PARA FRONTEND =====');
+      console.log('[CONTROLLER] Estrutura:', {
+        sucesso: true,
+        dados: {
+          numero: dadosProjudi.numero,
+          totalPartes: dadosProjudi.partes?.length || 0,
+          primeirasPartes: dadosProjudi.partes?.slice(0, 3).map((p: any) => ({
+            nome: p.nome,
+            tipo: p.tipo
+          }))
+        }
+      });
+      console.log('[CONTROLLER] Dados completos sendo enviados:', JSON.stringify({
+        ...dadosProjudi,
+        movimentacoes: `[${dadosProjudi.movimentacoes?.length || 0} movimentações]` // Não logar todas
+      }, null, 2));
+      console.log('[CONTROLLER] =====================================');
+
       // Retorna APENAS os dados extraídos, sem cadastrar
       res.json({
         sucesso: true,
