@@ -419,6 +419,12 @@ export class ProjudiController {
 
   /**
    * Auto-cadastrar processo com CAPTCHA - Cria Cliente, Partes e Processo automaticamente
+   * LÓGICA: Igual à consulta normal do PROJUDI que já funciona
+   * 1. Extrair primeira parte AUTOR/EXEQUENTE
+   * 2. Criar cliente com dados mínimos (nome + email temporário)
+   * 3. Criar processo vinculado ao cliente
+   * 4. Criar partes processuais
+   * 5. Importar movimentações
    */
   async autoCadastrarProcessoComCaptcha(req: AuthRequest, res: Response, next: NextFunction) {
     try {
@@ -430,6 +436,14 @@ export class ProjudiController {
           erro: 'Dados extraídos do PROJUDI são obrigatórios'
         });
       }
+
+      const dadosProjudi = dadosExtraidos;
+
+      console.log('[AUTO-CADASTRO] Iniciando cadastro automático:', {
+        numero: dadosProjudi.numero,
+        totalPartes: dadosProjudi.partes?.length || 0,
+        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
+      });
 
       // Buscar advogado vinculado ao usuário
       const advogado = await prisma.advogado.findUnique({
@@ -443,70 +457,90 @@ export class ProjudiController {
       }
 
       const advogadoId = advogado.id;
-      const dadosProjudi = dadosExtraidos;
 
-      console.log('[AUTO-CADASTRO] Cadastrando processo com dados extraídos:', {
-        numero: dadosProjudi.numero,
-        totalPartes: dadosProjudi.partes?.length || 0,
-        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
-      });
+      // PASSO 1: Identificar primeira parte AUTOR/EXEQUENTE para criar cliente
+      let primeiraParteAutor: any = null;
 
-      // DEBUG: Log detalhado das partes
       if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
-        console.log('[AUTO-CADASTRO] Partes recebidas:');
-        dadosProjudi.partes.forEach((p: any, idx: number) => {
-          console.log(`  [${idx}] Nome: ${p.nome}, Tipo Original: "${p.tipo}", Tipo Mapeado: "${this.mapearTipoParte(p.tipo)}"`);
+        console.log('[AUTO-CADASTRO] Buscando parte AUTOR/EXEQUENTE nas partes extraídas...');
+
+        // Procurar por parte do polo ativo (AUTOR, EXEQUENTE, REQUERENTE)
+        primeiraParteAutor = dadosProjudi.partes.find((p: any) => {
+          const tipoMapeado = this.mapearTipoParte(p.tipo);
+          console.log(`[AUTO-CADASTRO] - Parte: "${p.nome}" | Tipo: "${p.tipo}" | Mapeado: "${tipoMapeado}"`);
+          return tipoMapeado === 'AUTOR';
         });
-      } else {
-        console.log('[AUTO-CADASTRO] ⚠️ NENHUMA PARTE ENCONTRADA NOS DADOS EXTRAÍDOS!');
       }
 
-      // 1. Criar ou buscar Cliente (primeira parte AUTOR/EXEQUENTE)
-      const parteAutor = dadosProjudi.partes?.find((p: any) =>
-        this.mapearTipoParte(p.tipo) === 'AUTOR'
-      );
+      if (!primeiraParteAutor) {
+        console.error('[AUTO-CADASTRO] ❌ Nenhuma parte AUTOR encontrada!');
+        console.error('[AUTO-CADASTRO] Partes disponíveis:',
+          dadosProjudi.partes?.map((p: any) => `"${p.nome}" (${p.tipo})`));
 
-      console.log('[AUTO-CADASTRO] Parte AUTOR encontrada:', parteAutor ? parteAutor.nome : 'NENHUMA');
+        return res.status(400).json({
+          erro: 'Nenhuma parte AUTOR/EXEQUENTE/REQUERENTE encontrada nos dados extraídos. O processo precisa ter ao menos uma parte do polo ativo para criar o cliente.',
+          partesEncontradas: dadosProjudi.partes?.map((p: any) => ({
+            nome: p.nome,
+            tipo: p.tipo
+          }))
+        });
+      }
 
+      console.log('[AUTO-CADASTRO] ✓ Primeira parte AUTOR identificada:', primeiraParteAutor.nome);
+
+      // PASSO 2: Criar ou buscar Cliente
       let clienteId: string;
       let clienteExistente = null;
+      let clienteCriado = false;
 
-      if (parteAutor) {
-        // Verificar se já existe cliente com esse CPF
-        clienteExistente = parteAutor.cpf
-          ? await prisma.cliente.findUnique({ where: { cpf: parteAutor.cpf } })
-          : null;
-
-        if (clienteExistente) {
-          clienteId = clienteExistente.id;
-        } else {
-          // Criar novo cliente
-          const bcrypt = require('bcrypt');
-          const senhaHash = await bcrypt.hash('temporaria123', 10);
-
-          const novoUsuario = await prisma.user.create({
-            data: {
-              nome: parteAutor.nome,
-              email: `cliente_${Date.now()}@temp.com`, // Email temporário
-              password: senhaHash, // Senha temporária hasheada
-              role: 'CLIENTE'
+      // Verificar se já existe cliente com esse nome (busca por nome completo)
+      const clientesPorNome = await prisma.cliente.findMany({
+        where: {
+          user: {
+            nome: {
+              equals: primeiraParteAutor.nome,
+              mode: 'insensitive'
             }
-          });
-
-          const novoCliente = await prisma.cliente.create({
-            data: {
-              userId: novoUsuario.id,
-              tipoPessoa: parteAutor.cpf ? 'FISICA' : 'JURIDICA',
-              cpf: parteAutor.cpf || null
-            }
-          });
-
-          clienteId = novoCliente.id;
+          }
+        },
+        include: {
+          user: true
         }
+      });
+
+      if (clientesPorNome.length > 0) {
+        clienteExistente = clientesPorNome[0];
+        clienteId = clienteExistente.id;
+        console.log('[AUTO-CADASTRO] ✓ Cliente existente encontrado:', clienteExistente.user.nome);
       } else {
-        return res.status(400).json({
-          erro: 'Nenhuma parte AUTOR/EXEQUENTE encontrada para criar cliente'
+        // Criar novo cliente com dados mínimos
+        console.log('[AUTO-CADASTRO] Criando novo cliente:', primeiraParteAutor.nome);
+
+        const bcrypt = require('bcrypt');
+        const timestamp = Date.now();
+        const emailTemp = `cliente_${timestamp}@temp.advocacia.com`;
+        const senhaTemp = await bcrypt.hash(`temp${timestamp}`, 10);
+
+        const novoUsuario = await prisma.user.create({
+          data: {
+            nome: primeiraParteAutor.nome,
+            email: emailTemp,
+            password: senhaTemp,
+            role: 'CLIENTE'
+          }
         });
+
+        const novoCliente = await prisma.cliente.create({
+          data: {
+            userId: novoUsuario.id,
+            tipoPessoa: primeiraParteAutor.cpf ? 'FISICA' : 'JURIDICA',
+            cpf: primeiraParteAutor.cpf || null
+          }
+        });
+
+        clienteId = novoCliente.id;
+        clienteCriado = true;
+        console.log('[AUTO-CADASTRO] ✓ Novo cliente criado:', novoUsuario.nome);
       }
 
       // 2. Criar Processo
@@ -547,24 +581,37 @@ export class ProjudiController {
         }
       });
 
-      // 3. Criar ParteProcessual para todas as partes
+      // PASSO 3: Criar ParteProcessual para TODAS as partes extraídas
+      console.log('[AUTO-CADASTRO] Criando partes processuais...');
+
       if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
-        const partesMapeadas = dadosProjudi.partes.map((parte: any) => ({
-          processoId: processoNovo.id,
-          tipoParte: this.mapearTipoParte(parte.tipo),
-          tipoPessoa: (parte.cpf ? 'FISICA' : 'JURIDICA') as 'FISICA' | 'JURIDICA',
-          nomeCompleto: parte.nome,
-          cpf: parte.cpf || null,
-          // Vincular com cliente se for o autor
-          clienteId: parte.nome === parteAutor?.nome ? clienteId : null
-        }));
+        const partesMapeadas = dadosProjudi.partes.map((parte: any) => {
+          const tipoMapeado = this.mapearTipoParte(parte.tipo);
+          const ehClienteAutor = parte.nome === primeiraParteAutor.nome;
+
+          console.log(`[AUTO-CADASTRO] - Criando parte: "${parte.nome}" | Tipo: ${tipoMapeado} | É cliente: ${ehClienteAutor}`);
+
+          return {
+            processoId: processoNovo.id,
+            tipoParte: tipoMapeado,
+            tipoPessoa: (parte.cpf ? 'FISICA' : 'JURIDICA') as 'FISICA' | 'JURIDICA',
+            nomeCompleto: parte.nome,
+            cpf: parte.cpf || null,
+            // Vincular com cliente se for a primeira parte AUTOR
+            clienteId: ehClienteAutor ? clienteId : null
+          };
+        });
 
         await prisma.parteProcessual.createMany({
           data: partesMapeadas
         });
+
+        console.log(`[AUTO-CADASTRO] ✓ ${partesMapeadas.length} parte(s) processual(is) criada(s)`);
       }
 
-      // 4. Salvar consulta PROJUDI
+      console.log('[AUTO-CADASTRO] ✓ Processo criado:', processoNovo.numero);
+
+      // PASSO 4: Salvar consulta PROJUDI no histórico
       await prisma.consultaProjudi.create({
         data: {
           processoId: processoNovo.id,
@@ -577,7 +624,9 @@ export class ProjudiController {
         }
       });
 
-      // 5. Registrar auditoria
+      console.log('[AUTO-CADASTRO] ✓ Consulta PROJUDI salva no histórico');
+
+      // PASSO 5: Registrar auditoria
       await AuditService.createLog({
         entityType: 'Processo',
         entityId: processoNovo.id,
@@ -586,13 +635,26 @@ export class ProjudiController {
         newValue: JSON.stringify({ ...processoNovo, fonte: 'AUTO_CADASTRO_PROJUDI' })
       });
 
+      console.log('[AUTO-CADASTRO] ✓ Auditoria registrada');
+      console.log('[AUTO-CADASTRO] ========================================');
+      console.log('[AUTO-CADASTRO] ✅ AUTO-CADASTRO CONCLUÍDO COM SUCESSO!');
+      console.log('[AUTO-CADASTRO] ========================================');
+      console.log(`[AUTO-CADASTRO] Processo: ${processoNovo.numero}`);
+      console.log(`[AUTO-CADASTRO] Cliente: ${clienteCriado ? 'CRIADO' : 'EXISTENTE'} - ID: ${clienteId}`);
+      console.log(`[AUTO-CADASTRO] Partes: ${dadosProjudi.partes?.length || 0}`);
+      console.log(`[AUTO-CADASTRO] Movimentações: ${dadosProjudi.movimentacoes?.length || 0}`);
+
       res.status(201).json({
         sucesso: true,
         processo: processoNovo,
-        cliente: { id: clienteId, criado: !clienteExistente },
+        cliente: {
+          id: clienteId,
+          criado: clienteCriado,
+          nome: primeiraParteAutor.nome
+        },
         totalPartes: dadosProjudi.partes?.length || 0,
         totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0,
-        mensagem: 'Processo cadastrado automaticamente com sucesso!'
+        mensagem: `Processo cadastrado automaticamente com sucesso! ${clienteCriado ? 'Cliente criado.' : 'Cliente existente vinculado.'}`
       });
     } catch (error: any) {
       console.error('[AUTO-CADASTRO] Erro detalhado:', {
