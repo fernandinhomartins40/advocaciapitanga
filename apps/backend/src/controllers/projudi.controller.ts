@@ -366,12 +366,20 @@ export class ProjudiController {
         });
       }
 
+      console.log('[AUTO-CADASTRO] Iniciando consulta PROJUDI...', { numeroProcesso, sessionId });
+
       // Consultar PROJUDI
       const dadosProjudi = await projudiScraperService.consultarComCaptcha(
         sessionId,
         captchaResposta,
         userId
       );
+
+      console.log('[AUTO-CADASTRO] Dados extraídos do PROJUDI:', {
+        numero: dadosProjudi.numero,
+        totalPartes: dadosProjudi.partes?.length || 0,
+        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
+      });
 
       // 1. Criar ou buscar Cliente (primeira parte AUTOR/EXEQUENTE)
       const parteAutor = dadosProjudi.partes?.find(p =>
@@ -505,7 +513,27 @@ export class ProjudiController {
         mensagem: 'Processo cadastrado automaticamente com sucesso!'
       });
     } catch (error: any) {
-      console.error('Erro no auto-cadastro:', error);
+      console.error('[AUTO-CADASTRO] Erro detalhado:', {
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 3),
+        numeroProcesso: req.body.numeroProcesso
+      });
+
+      // Tratamento de erros específicos
+      if (error.message?.includes('Processo') && error.message?.includes('encontr')) {
+        return res.status(404).json({
+          erro: 'Processo não encontrado no PROJUDI. Verifique o número do processo.',
+          detalhes: error.message
+        });
+      }
+
+      if (error.message?.includes('CAPTCHA')) {
+        return res.status(400).json({
+          erro: 'CAPTCHA inválido ou expirado. Tente novamente.',
+          detalhes: error.message
+        });
+      }
+
       next(error);
     }
   }
