@@ -97,8 +97,18 @@ export function ModalAutoCadastroProcesso({
 
     setEnviando(true);
     try {
-      const dados = await onConsultar(captchaResposta);
-      console.log('[AUTO-CADASTRO] Dados recebidos:', dados);
+      const resposta = await onConsultar(captchaResposta);
+      console.log('[AUTO-CADASTRO] ===================================');
+      console.log('[AUTO-CADASTRO] Resposta COMPLETA:', JSON.stringify(resposta, null, 2));
+      console.log('[AUTO-CADASTRO] Tipo:', typeof resposta);
+      console.log('[AUTO-CADASTRO] Keys:', resposta ? Object.keys(resposta) : 'null');
+
+      // A resposta pode estar em resposta.dados ou diretamente em resposta
+      const dados = resposta?.dados || resposta;
+      console.log('[AUTO-CADASTRO] Dados extraídos:', dados);
+      console.log('[AUTO-CADASTRO] dados.partes:', dados?.partes);
+      console.log('[AUTO-CADASTRO] ===================================');
+
       setDadosExtraidos(dados);
       setEtapa('extracao');
 
