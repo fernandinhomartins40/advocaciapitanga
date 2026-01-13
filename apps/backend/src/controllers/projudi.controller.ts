@@ -376,6 +376,17 @@ export class ProjudiController {
         totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
       });
 
+      // DEBUG: Log detalhado das partes extraídas
+      if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
+        console.log('[AUTO-CADASTRO CONSULTA] Partes extraídas:');
+        dadosProjudi.partes.forEach((p: any, idx: number) => {
+          console.log(`  [${idx}] Nome: ${p.nome}, Tipo: "${p.tipo}", CPF: ${p.cpf || 'N/A'}`);
+        });
+      } else {
+        console.log('[AUTO-CADASTRO CONSULTA] ⚠️ NENHUMA PARTE FOI EXTRAÍDA DO PROJUDI!');
+        console.log('[AUTO-CADASTRO CONSULTA] Dados completos recebidos:', JSON.stringify(dadosProjudi, null, 2));
+      }
+
       // Retorna APENAS os dados extraídos, sem cadastrar
       res.json({
         sucesso: true,
