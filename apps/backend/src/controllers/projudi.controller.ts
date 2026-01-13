@@ -271,12 +271,18 @@ export class ProjudiController {
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase();
 
-    if (tipoUpper.includes('AUTOR') || tipoUpper.includes('REQUERENTE') || tipoUpper.includes('ATIVO')) {
+    // Polo ativo (autor)
+    if (tipoUpper.includes('AUTOR') || tipoUpper.includes('REQUERENTE') || tipoUpper.includes('ATIVO') ||
+        tipoUpper.includes('EXEQUENTE') || tipoUpper.includes('CREDOR')) {
       return 'AUTOR';
     }
-    if (tipoUpper.includes('REU') || tipoUpper.includes('REQUERIDO') || tipoUpper.includes('PASSIVO')) {
+
+    // Polo passivo (réu)
+    if (tipoUpper.includes('REU') || tipoUpper.includes('REQUERIDO') || tipoUpper.includes('PASSIVO') ||
+        tipoUpper.includes('EXECUTADO') || tipoUpper.includes('DEVEDOR')) {
       return 'REU';
     }
+
     if (tipoUpper.includes('TERCEIRO')) {
       return 'TERCEIRO_INTERESSADO';
     }
