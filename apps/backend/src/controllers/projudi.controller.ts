@@ -435,7 +435,7 @@ export class ProjudiController {
       });
 
       // 1. Criar ou buscar Cliente (primeira parte AUTOR/EXEQUENTE)
-      const parteAutor = dadosProjudi.partes?.find(p =>
+      const parteAutor = dadosProjudi.partes?.find((p: any) =>
         this.mapearTipoParte(p.tipo) === 'AUTOR'
       );
 
@@ -520,7 +520,7 @@ export class ProjudiController {
 
       // 3. Criar ParteProcessual para todas as partes
       if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
-        const partesMapeadas = dadosProjudi.partes.map(parte => ({
+        const partesMapeadas = dadosProjudi.partes.map((parte: any) => ({
           processoId: processoNovo.id,
           tipoParte: this.mapearTipoParte(parte.tipo),
           tipoPessoa: (parte.cpf ? 'FISICA' : 'JURIDICA') as 'FISICA' | 'JURIDICA',
