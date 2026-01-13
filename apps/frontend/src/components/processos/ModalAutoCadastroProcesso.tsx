@@ -63,7 +63,7 @@ export function ModalAutoCadastroProcesso({
 
   // Atualizar etapa quando tem sucesso
   useEffect(() => {
-    if (sucesso && etapa === 'revisao') {
+    if (sucesso && etapa === 'processo') {
       setEtapa('sucesso');
       setTimeout(() => {
         onOpenChange(false);
@@ -526,127 +526,7 @@ export function ModalAutoCadastroProcesso({
             </div>
           )}
 
-          {/* Antiga Etapa 3: Revisão (REMOVIDA - substituída pelo fluxo em etapas) */}
-          {etapa === 'revisao' && dadosExtraidos && (
-            <div className="space-y-4">
-              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                <p className="text-sm text-green-800 font-semibold">
-                  ✓ Dados extraídos com sucesso!
-                </p>
-                <p className="text-xs text-green-600 mt-1">
-                  Revise as informações abaixo antes de cadastrar
-                </p>
-              </div>
-
-              {/* Informações do Processo */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                <div className="bg-gray-50 rounded-lg p-3">
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Processo</h4>
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Número:</span>
-                      <span className="font-mono">{dadosExtraidos.numero}</span>
-                    </div>
-                    {dadosExtraidos.comarca && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Comarca:</span>
-                        <span>{dadosExtraidos.comarca}</span>
-                      </div>
-                    )}
-                    {dadosExtraidos.vara && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Vara:</span>
-                        <span>{dadosExtraidos.vara}</span>
-                      </div>
-                    )}
-                    {dadosExtraidos.status && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span>{dadosExtraidos.status}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Partes */}
-                {dadosExtraidos.partes && dadosExtraidos.partes.length > 0 && (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                      Partes ({dadosExtraidos.partes.length})
-                    </h4>
-                    <div className="space-y-2">
-                      {dadosExtraidos.partes.slice(0, 5).map((parte: any, idx: number) => (
-                        <div key={idx} className="text-xs bg-white rounded p-2">
-                          <div className="font-semibold text-gray-900">{parte.nome}</div>
-                          <div className="text-gray-600">{parte.tipo}</div>
-                          {parte.cpf && <div className="text-gray-500">CPF: {parte.cpf}</div>}
-                        </div>
-                      ))}
-                      {dadosExtraidos.partes.length > 5 && (
-                        <p className="text-xs text-gray-500">
-                          + {dadosExtraidos.partes.length - 5} parte(s)
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Movimentações */}
-                {dadosExtraidos.movimentacoes && dadosExtraidos.movimentacoes.length > 0 && (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                      Movimentações ({dadosExtraidos.movimentacoes.length})
-                    </h4>
-                    <p className="text-xs text-gray-600">
-                      As movimentações serão importadas automaticamente
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
-                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-red-800">Erro</p>
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2 mt-6">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEtapa('captcha')}
-                  disabled={enviando}
-                  className="flex-1"
-                >
-                  Voltar
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleCadastrar}
-                  disabled={enviando || loading}
-                  className="flex-1"
-                >
-                  {enviando ? (
-                    <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                      Cadastrando...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Cadastrar Processo
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Etapa 4: Sucesso */}
+          {/* Etapa 6: Sucesso */}
           {etapa === 'sucesso' && (
             <div className="text-center py-8">
               <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
