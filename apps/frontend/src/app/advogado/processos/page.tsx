@@ -11,7 +11,7 @@ import { SelectNative as Select } from '@/components/ui/select-native';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, FileText, Check, AlertCircle, Trash2, RefreshCw } from 'lucide-react';
-import { useProcessos, useCreateProcesso, useDeleteProcesso, useIniciarCaptchaAutoCadastro, useAutoCadastrarProcesso } from '@/hooks/useProcessos';
+import { useProcessos, useCreateProcesso, useDeleteProcesso, useIniciarCaptchaAutoCadastro, useConsultarAutoCadastro, useAutoCadastrarProcesso } from '@/hooks/useProcessos';
 import { useClientes } from '@/hooks/useClientes';
 import { useAdvogados } from '@/hooks/useAdvogados';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
@@ -120,6 +120,7 @@ export default function ProcessosPage() {
   const createMutation = useCreateProcesso();
   const deleteMutation = useDeleteProcesso();
   const iniciarCaptchaMutation = useIniciarCaptchaAutoCadastro();
+  const consultarMutation = useConsultarAutoCadastro();
   const autoCadastrarMutation = useAutoCadastrarProcesso();
   const { toast } = useToast();
 
@@ -301,24 +302,42 @@ export default function ProcessosPage() {
     }
   };
 
-  const handleAutoCadastrar = async (captchaResposta: string) => {
+  const handleConsultarAutoCadastro = async (captchaResposta: string) => {
     if (!captchaData) return;
 
     setAutoCadastroLoading(true);
     setAutoCadastroError(null);
 
     try {
-      const response = await autoCadastrarMutation.mutateAsync({
-        numeroProcesso: captchaData.numeroProcesso,
+      const response = await consultarMutation.mutateAsync({
         sessionId: captchaData.sessionId,
         captchaResposta,
       });
+
+      // Retorna os dados extraídos para o modal exibir na etapa de revisão
+      return response.dados;
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.erro || error.response?.data?.error || 'Erro ao consultar PROJUDI';
+      setAutoCadastroError(errorMsg);
+      console.error('Erro ao consultar:', error);
+      throw error;
+    } finally {
+      setAutoCadastroLoading(false);
+    }
+  };
+
+  const handleAutoCadastrar = async (dadosExtraidos: any) => {
+    setAutoCadastroLoading(true);
+    setAutoCadastroError(null);
+
+    try {
+      const response = await autoCadastrarMutation.mutateAsync(dadosExtraidos);
 
       setAutoCadastroSucesso(true);
 
       toast({
         title: 'Processo cadastrado!',
-        description: `Processo ${captchaData.numeroProcesso} cadastrado com sucesso`,
+        description: `Processo cadastrado com sucesso`,
         variant: 'success',
       });
 
@@ -330,7 +349,7 @@ export default function ProcessosPage() {
         }
       }, 2000);
     } catch (error: any) {
-      const errorMsg = error.response?.data?.error || 'Erro ao cadastrar processo';
+      const errorMsg = error.response?.data?.erro || error.response?.data?.error || 'Erro ao cadastrar processo';
       setAutoCadastroError(errorMsg);
       console.error('Erro ao auto-cadastrar:', error);
       setAutoCadastroSucesso(false);
@@ -919,6 +938,7 @@ export default function ProcessosPage() {
         open={isAutoCadastroOpen}
         onOpenChange={setIsAutoCadastroOpen}
         onIniciarCaptcha={handleIniciarCaptchaAutoCadastro}
+        onConsultar={handleConsultarAutoCadastro}
         onCadastrar={handleAutoCadastrar}
         captchaData={captchaData}
         loading={autoCadastroLoading}

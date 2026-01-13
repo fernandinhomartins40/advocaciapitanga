@@ -342,12 +342,77 @@ export class ProjudiController {
   }
 
   /**
+   * Consultar PROJUDI para auto-cadastro (apenas extrai dados, não cadastra)
+   */
+  async consultarParaAutoCadastro(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { sessionId, captchaResposta } = req.body;
+      const userId = req.user!.userId;
+
+      if (!sessionId || !captchaResposta) {
+        return res.status(400).json({
+          erro: 'SessionId e resposta do CAPTCHA são obrigatórios'
+        });
+      }
+
+      console.log('[AUTO-CADASTRO] Consultando PROJUDI...', { sessionId });
+
+      // Consultar PROJUDI
+      const dadosProjudi = await projudiScraperService.consultarComCaptcha(
+        sessionId,
+        captchaResposta,
+        userId
+      );
+
+      console.log('[AUTO-CADASTRO] Dados extraídos:', {
+        numero: dadosProjudi.numero,
+        totalPartes: dadosProjudi.partes?.length || 0,
+        totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
+      });
+
+      // Retorna APENAS os dados extraídos, sem cadastrar
+      res.json({
+        sucesso: true,
+        dados: dadosProjudi
+      });
+    } catch (error: any) {
+      console.error('[AUTO-CADASTRO] Erro na consulta:', {
+        message: error.message,
+        stack: error.stack?.split('\n').slice(0, 3)
+      });
+
+      // Tratamento de erros específicos
+      if (error.message?.includes('Processo') && error.message?.includes('encontr')) {
+        return res.status(404).json({
+          erro: 'Processo não encontrado no PROJUDI. Verifique o número do processo.',
+          detalhes: error.message
+        });
+      }
+
+      if (error.message?.includes('CAPTCHA')) {
+        return res.status(400).json({
+          erro: 'CAPTCHA inválido ou expirado. Tente novamente.',
+          detalhes: error.message
+        });
+      }
+
+      next(error);
+    }
+  }
+
+  /**
    * Auto-cadastrar processo com CAPTCHA - Cria Cliente, Partes e Processo automaticamente
    */
   async autoCadastrarProcessoComCaptcha(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { numeroProcesso, sessionId, captchaResposta } = req.body;
+      const { dadosExtraidos } = req.body;
       const userId = req.user!.userId;
+
+      if (!dadosExtraidos) {
+        return res.status(400).json({
+          erro: 'Dados extraídos do PROJUDI são obrigatórios'
+        });
+      }
 
       // Buscar advogado vinculado ao usuário
       const advogado = await prisma.advogado.findUnique({
@@ -361,23 +426,9 @@ export class ProjudiController {
       }
 
       const advogadoId = advogado.id;
+      const dadosProjudi = dadosExtraidos;
 
-      if (!numeroProcesso || !sessionId || !captchaResposta) {
-        return res.status(400).json({
-          erro: 'Número do processo, sessionId e resposta do CAPTCHA são obrigatórios'
-        });
-      }
-
-      console.log('[AUTO-CADASTRO] Iniciando consulta PROJUDI...', { numeroProcesso, sessionId });
-
-      // Consultar PROJUDI
-      const dadosProjudi = await projudiScraperService.consultarComCaptcha(
-        sessionId,
-        captchaResposta,
-        userId
-      );
-
-      console.log('[AUTO-CADASTRO] Dados extraídos do PROJUDI:', {
+      console.log('[AUTO-CADASTRO] Cadastrando processo com dados extraídos:', {
         numero: dadosProjudi.numero,
         totalPartes: dadosProjudi.partes?.length || 0,
         totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
@@ -431,7 +482,7 @@ export class ProjudiController {
 
       // 2. Criar Processo
       const dadosProcesso: any = {
-        numero: numeroProcesso,
+        numero: dadosProjudi.numero,
         clienteId,
         advogadoId,
         dataInicio: new Date(),

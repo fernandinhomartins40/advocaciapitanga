@@ -76,8 +76,19 @@ router.post(
 );
 
 /**
+ * POST /projudi/auto-cadastro/consultar
+ * Consulta PROJUDI e retorna dados extraídos (não cadastra)
+ */
+router.post(
+  '/auto-cadastro/consultar',
+  authMiddleware,
+  projudiRateLimiter,
+  projudiController.consultarParaAutoCadastro.bind(projudiController)
+);
+
+/**
  * POST /projudi/processos/auto-cadastrar
- * Auto-cadastra processo consultando PROJUDI (cria Cliente, Partes e Processo)
+ * Auto-cadastra processo com dados já extraídos (cria Cliente, Partes e Processo)
  */
 router.post(
   '/processos/auto-cadastrar',

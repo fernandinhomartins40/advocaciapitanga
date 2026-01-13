@@ -12,7 +12,8 @@ interface ModalAutoCadastroProcessoProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onIniciarCaptcha: (numeroProcesso: string) => Promise<void>;
-  onCadastrar: (captchaResposta: string) => Promise<void>;
+  onConsultar: (captchaResposta: string) => Promise<any>; // Retorna dados extraídos
+  onCadastrar: (dadosExtraidos: any) => Promise<void>; // Cadastra com dados
   captchaData: {
     sessionId: string;
     captchaImage: string;
@@ -27,6 +28,7 @@ export function ModalAutoCadastroProcesso({
   open,
   onOpenChange,
   onIniciarCaptcha,
+  onConsultar,
   onCadastrar,
   captchaData,
   loading = false,
@@ -35,8 +37,9 @@ export function ModalAutoCadastroProcesso({
 }: ModalAutoCadastroProcessoProps) {
   const [numeroProcesso, setNumeroProcesso] = useState('');
   const [captchaResposta, setCaptchaResposta] = useState('');
-  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'sucesso'>('numero');
+  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'revisao' | 'sucesso'>('numero');
   const [enviando, setEnviando] = useState(false);
+  const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
 
   // Reset ao abrir/fechar modal
   useEffect(() => {
@@ -45,6 +48,7 @@ export function ModalAutoCadastroProcesso({
       setCaptchaResposta('');
       setEtapa('numero');
       setEnviando(false);
+      setDadosExtraidos(null);
     }
   }, [open]);
 
@@ -57,7 +61,7 @@ export function ModalAutoCadastroProcesso({
 
   // Atualizar etapa quando tem sucesso
   useEffect(() => {
-    if (sucesso && etapa === 'captcha') {
+    if (sucesso && etapa === 'revisao') {
       setEtapa('sucesso');
       setTimeout(() => {
         onOpenChange(false);
@@ -82,7 +86,7 @@ export function ModalAutoCadastroProcesso({
     }
   };
 
-  const handleCadastrar = async (e: React.FormEvent) => {
+  const handleConsultar = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!captchaResposta || captchaResposta.length < 4) {
@@ -91,7 +95,22 @@ export function ModalAutoCadastroProcesso({
 
     setEnviando(true);
     try {
-      await onCadastrar(captchaResposta);
+      const dados = await onConsultar(captchaResposta);
+      setDadosExtraidos(dados);
+      setEtapa('revisao');
+    } catch (error) {
+      console.error('Erro ao consultar:', error);
+    } finally {
+      setEnviando(false);
+    }
+  };
+
+  const handleCadastrar = async () => {
+    if (!dadosExtraidos) return;
+
+    setEnviando(true);
+    try {
+      await onCadastrar(dadosExtraidos);
     } catch (error) {
       console.error('Erro ao cadastrar:', error);
     } finally {
@@ -107,7 +126,7 @@ export function ModalAutoCadastroProcesso({
 
   const handleKeyPressCaptcha = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && captchaResposta.length >= 4 && !enviando) {
-      handleCadastrar(e as any);
+      handleConsultar(e as any);
     }
   };
 
@@ -202,7 +221,7 @@ export function ModalAutoCadastroProcesso({
 
           {/* Etapa 2: CAPTCHA */}
           {etapa === 'captcha' && captchaData && (
-            <form onSubmit={handleCadastrar}>
+            <form onSubmit={handleConsultar}>
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
@@ -284,12 +303,12 @@ export function ModalAutoCadastroProcesso({
                     {enviando ? (
                       <>
                         <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                        Cadastrando...
+                        Consultando...
                       </>
                     ) : (
                       <>
-                        <Plus className="mr-2 h-4 w-4" />
-                        Cadastrar
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Consultar
                       </>
                     )}
                   </Button>
@@ -298,7 +317,127 @@ export function ModalAutoCadastroProcesso({
             </form>
           )}
 
-          {/* Etapa 3: Sucesso */}
+          {/* Etapa 3: Revisão dos Dados Extraídos */}
+          {etapa === 'revisao' && dadosExtraidos && (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800 font-semibold">
+                  ✓ Dados extraídos com sucesso!
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  Revise as informações abaixo antes de cadastrar
+                </p>
+              </div>
+
+              {/* Informações do Processo */}
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Processo</h4>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Número:</span>
+                      <span className="font-mono">{dadosExtraidos.numero}</span>
+                    </div>
+                    {dadosExtraidos.comarca && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Comarca:</span>
+                        <span>{dadosExtraidos.comarca}</span>
+                      </div>
+                    )}
+                    {dadosExtraidos.vara && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Vara:</span>
+                        <span>{dadosExtraidos.vara}</span>
+                      </div>
+                    )}
+                    {dadosExtraidos.status && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Status:</span>
+                        <span>{dadosExtraidos.status}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Partes */}
+                {dadosExtraidos.partes && dadosExtraidos.partes.length > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      Partes ({dadosExtraidos.partes.length})
+                    </h4>
+                    <div className="space-y-2">
+                      {dadosExtraidos.partes.slice(0, 5).map((parte: any, idx: number) => (
+                        <div key={idx} className="text-xs bg-white rounded p-2">
+                          <div className="font-semibold text-gray-900">{parte.nome}</div>
+                          <div className="text-gray-600">{parte.tipo}</div>
+                          {parte.cpf && <div className="text-gray-500">CPF: {parte.cpf}</div>}
+                        </div>
+                      ))}
+                      {dadosExtraidos.partes.length > 5 && (
+                        <p className="text-xs text-gray-500">
+                          + {dadosExtraidos.partes.length - 5} parte(s)
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Movimentações */}
+                {dadosExtraidos.movimentacoes && dadosExtraidos.movimentacoes.length > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                      Movimentações ({dadosExtraidos.movimentacoes.length})
+                    </h4>
+                    <p className="text-xs text-gray-600">
+                      As movimentações serão importadas automaticamente
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2">
+                  <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-800">Erro</p>
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEtapa('captcha')}
+                  disabled={enviando}
+                  className="flex-1"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleCadastrar}
+                  disabled={enviando || loading}
+                  className="flex-1"
+                >
+                  {enviando ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Cadastrando...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Cadastrar Processo
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Etapa 4: Sucesso */}
           {etapa === 'sucesso' && (
             <div className="text-center py-8">
               <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />

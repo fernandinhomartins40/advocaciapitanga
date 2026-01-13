@@ -113,25 +113,36 @@ export function useIniciarCaptchaAutoCadastro() {
 }
 
 /**
- * Hook para auto-cadastrar processo via PROJUDI
+ * Hook para consultar PROJUDI no auto-cadastro (apenas extrai dados)
+ */
+export function useConsultarAutoCadastro() {
+  return useMutation({
+    mutationFn: async ({
+      sessionId,
+      captchaResposta
+    }: {
+      sessionId: string;
+      captchaResposta: string;
+    }) => {
+      const response = await api.post('/projudi/auto-cadastro/consultar', {
+        sessionId,
+        captchaResposta
+      });
+      return response.data;
+    },
+  });
+}
+
+/**
+ * Hook para auto-cadastrar processo via PROJUDI (com dados já extraídos)
  */
 export function useAutoCadastrarProcesso() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      numeroProcesso,
-      sessionId,
-      captchaResposta
-    }: {
-      numeroProcesso: string;
-      sessionId: string;
-      captchaResposta: string;
-    }) => {
+    mutationFn: async (dadosExtraidos: any) => {
       const response = await api.post('/projudi/processos/auto-cadastrar', {
-        numeroProcesso,
-        sessionId,
-        captchaResposta
+        dadosExtraidos
       });
       return response.data;
     },
