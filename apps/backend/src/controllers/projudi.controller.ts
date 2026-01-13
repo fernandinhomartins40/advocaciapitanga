@@ -97,7 +97,9 @@ export class ProjudiController {
       }
 
       // Validar se é processo do Paraná (tribunal = 16)
-      const tribunal = numeroLimpo.substring(13, 15);
+      // Formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
+      // Sem formatação: posições 14-15 = tribunal
+      const tribunal = numeroLimpo.substring(14, 16);
       if (tribunal !== '16') {
         return res.status(400).json({
           error: 'Consulta PROJUDI disponível apenas para processos do Paraná (tribunal 16)'
