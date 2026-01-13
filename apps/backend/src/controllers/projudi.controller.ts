@@ -271,15 +271,17 @@ export class ProjudiController {
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase();
 
-    // Polo ativo (autor)
+    // Polo ativo (autor) - inclui todos os tipos que iniciam ação/recurso
     if (tipoUpper.includes('AUTOR') || tipoUpper.includes('REQUERENTE') || tipoUpper.includes('ATIVO') ||
-        tipoUpper.includes('EXEQUENTE') || tipoUpper.includes('CREDOR')) {
+        tipoUpper.includes('EXEQUENTE') || tipoUpper.includes('CREDOR') || tipoUpper.includes('EMBARGANTE') ||
+        tipoUpper.includes('APELANTE') || tipoUpper.includes('AGRAVANTE') || tipoUpper.includes('RECORRENTE')) {
       return 'AUTOR';
     }
 
-    // Polo passivo (réu)
+    // Polo passivo (réu) - inclui todos os tipos contra quem se move a ação/recurso
     if (tipoUpper.includes('REU') || tipoUpper.includes('REQUERIDO') || tipoUpper.includes('PASSIVO') ||
-        tipoUpper.includes('EXECUTADO') || tipoUpper.includes('DEVEDOR')) {
+        tipoUpper.includes('EXECUTADO') || tipoUpper.includes('DEVEDOR') || tipoUpper.includes('EMBARGADO') ||
+        tipoUpper.includes('APELADO') || tipoUpper.includes('AGRAVADO') || tipoUpper.includes('RECORRIDO')) {
       return 'REU';
     }
 

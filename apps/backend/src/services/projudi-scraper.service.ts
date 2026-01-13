@@ -606,9 +606,13 @@ export class ProjudiScraperService {
       const secoes = [
         'Autor', 'Réu',                   // Processos de conhecimento
         'Exequente', 'Executado',         // Processos de execução
+        'Embargante', 'Embargado',        // Embargos
+        'Apelante', 'Apelado',            // Apelações
+        'Agravante', 'Agravado',          // Agravos
+        'Recorrente', 'Recorrido',        // Recursos em geral
         'Requerente', 'Requerido',        // Procedimentos especiais
         'Terceiros', 'Terceiro Interessado', // Terceiros
-        'Assistente', 'Denunciado à Lide'    // Outros
+        'Assistente', 'Denunciado à Lide', 'Chamado ao Processo'  // Outros
       ];
 
       // DEBUG: Log de todos os h4 encontrados
