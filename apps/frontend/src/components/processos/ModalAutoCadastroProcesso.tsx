@@ -37,9 +37,11 @@ export function ModalAutoCadastroProcesso({
 }: ModalAutoCadastroProcessoProps) {
   const [numeroProcesso, setNumeroProcesso] = useState('');
   const [captchaResposta, setCaptchaResposta] = useState('');
-  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'revisao' | 'sucesso'>('numero');
+  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'extracao' | 'cliente' | 'processo' | 'sucesso'>('numero');
   const [enviando, setEnviando] = useState(false);
   const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
+  const [clienteData, setClienteData] = useState<any>(null);
+  const [clienteCriado, setClienteCriado] = useState<any>(null);
 
   // Reset ao abrir/fechar modal
   useEffect(() => {
@@ -97,7 +99,13 @@ export function ModalAutoCadastroProcesso({
     try {
       const dados = await onConsultar(captchaResposta);
       setDadosExtraidos(dados);
-      setEtapa('revisao');
+      setEtapa('extracao');
+
+      // Após 2 segundos, prepara formulário do cliente
+      setTimeout(() => {
+        prepararDadosCliente(dados);
+        setEtapa('cliente');
+      }, 2000);
     } catch (error) {
       console.error('Erro ao consultar:', error);
     } finally {
@@ -105,14 +113,49 @@ export function ModalAutoCadastroProcesso({
     }
   };
 
-  const handleCadastrar = async () => {
-    if (!dadosExtraidos) return;
+  // Prepara dados do cliente a partir da primeira parte AUTOR/EXEQUENTE
+  const prepararDadosCliente = (dados: any) => {
+    if (!dados.partes || dados.partes.length === 0) return;
+
+    // Buscar primeira parte do polo ativo (AUTOR, EXEQUENTE, REQUERENTE)
+    const primeiraParteAutor = dados.partes.find((p: any) => {
+      const tipo = p.tipo.toUpperCase();
+      return tipo.includes('AUTOR') ||
+             tipo.includes('EXEQUENTE') ||
+             tipo.includes('REQUERENTE');
+    });
+
+    if (primeiraParteAutor) {
+      setClienteData({
+        tipoPessoa: 'FISICA' as const,
+        nome: primeiraParteAutor.nome || '',
+        cpf: primeiraParteAutor.cpf || '',
+        email: '', // Usuário precisa preencher
+        nacionalidade: 'Brasileiro(a)',
+      });
+    }
+  };
+
+  const handleSalvarCliente = async (cliente: any) => {
+    // Salvar cliente e ir para etapa de processo
+    setClienteCriado(cliente);
+    setEtapa('processo');
+  };
+
+  const handleCadastrarProcesso = async (processoData: any) => {
+    if (!clienteCriado || !dadosExtraidos) return;
 
     setEnviando(true);
     try {
-      await onCadastrar(dadosExtraidos);
+      // Cadastrar processo com cliente vinculado
+      await onCadastrar({
+        ...dadosExtraidos,
+        clienteId: clienteCriado.id,
+        ...processoData
+      });
+      setEtapa('sucesso');
     } catch (error) {
-      console.error('Erro ao cadastrar:', error);
+      console.error('Erro ao cadastrar processo:', error);
     } finally {
       setEnviando(false);
     }
@@ -317,7 +360,173 @@ export function ModalAutoCadastroProcesso({
             </form>
           )}
 
-          {/* Etapa 3: Revisão dos Dados Extraídos */}
+          {/* Etapa 3: Extração em Andamento */}
+          {etapa === 'extracao' && (
+            <div className="space-y-4 py-8">
+              <div className="flex flex-col items-center justify-center">
+                <LoadingSpinner size="lg" />
+                <p className="text-sm text-gray-600 mt-4 text-center">
+                  Extraindo dados do PROJUDI...
+                </p>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Aguarde enquanto processamos as informações do processo
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Etapa 4: Formulário do Cliente (PRÉ-PREENCHIDO) */}
+          {etapa === 'cliente' && clienteData && (
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-sm text-blue-800 font-semibold">
+                  📋 Etapa 1 de 2: Cadastro do Cliente
+                </p>
+                <p className="text-xs text-blue-600 mt-1">
+                  Preencha os dados obrigatórios do cliente (CPF e Email são essenciais)
+                </p>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleSalvarCliente(clienteData);
+              }} className="space-y-3">
+                <div>
+                  <Label htmlFor="nomeCliente">Nome Completo *</Label>
+                  <Input
+                    id="nomeCliente"
+                    value={clienteData.nome}
+                    onChange={(e) => setClienteData({ ...clienteData, nome: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="cpfCliente">CPF * (obrigatório para identificação)</Label>
+                  <Input
+                    id="cpfCliente"
+                    value={clienteData.cpf}
+                    onChange={(e) => setClienteData({ ...clienteData, cpf: e.target.value })}
+                    placeholder="000.000.000-00"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    O CPF é essencial para identificar o cliente no sistema
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="emailCliente">E-mail * (para acesso ao sistema)</Label>
+                  <Input
+                    id="emailCliente"
+                    type="email"
+                    value={clienteData.email}
+                    onChange={(e) => setClienteData({ ...clienteData, email: e.target.value })}
+                    placeholder="cliente@email.com"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-2 mt-6">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEtapa('captcha')}
+                    className="flex-1"
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                  >
+                    Próximo: Cadastrar Processo
+                  </Button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Etapa 5: Formulário do Processo (PRÉ-PREENCHIDO) */}
+          {etapa === 'processo' && dadosExtraidos && clienteCriado && (
+            <div className="space-y-4">
+              <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                <p className="text-sm text-green-800 font-semibold">
+                  ✓ Cliente "{clienteCriado.nome}" cadastrado com sucesso!
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  📋 Etapa 2 de 2: Confirme os dados do processo
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {/* Informações do Processo */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">Dados do Processo</h4>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Número:</span>
+                      <span className="font-mono">{dadosExtraidos.numero}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Cliente:</span>
+                      <span className="font-semibold text-green-700">{clienteCriado.nome}</span>
+                    </div>
+                    {dadosExtraidos.comarca && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Comarca:</span>
+                        <span>{dadosExtraidos.comarca}</span>
+                      </div>
+                    )}
+                    {dadosExtraidos.partes && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Partes:</span>
+                        <span>{dadosExtraidos.partes.length}</span>
+                      </div>
+                    )}
+                    {dadosExtraidos.movimentacoes && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Movimentações:</span>
+                        <span>{dadosExtraidos.movimentacoes.length}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEtapa('cliente')}
+                  disabled={enviando}
+                  className="flex-1"
+                >
+                  Voltar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => handleCadastrarProcesso({})}
+                  disabled={enviando}
+                  className="flex-1"
+                >
+                  {enviando ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                      Finalizando...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="mr-2 h-4 w-4" />
+                      Finalizar Cadastro
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Antiga Etapa 3: Revisão (REMOVIDA - substituída pelo fluxo em etapas) */}
           {etapa === 'revisao' && dadosExtraidos && (
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
