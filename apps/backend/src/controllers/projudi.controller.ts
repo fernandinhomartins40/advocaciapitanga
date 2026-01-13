@@ -440,10 +440,22 @@ export class ProjudiController {
         totalMovimentacoes: dadosProjudi.movimentacoes?.length || 0
       });
 
+      // DEBUG: Log detalhado das partes
+      if (dadosProjudi.partes && dadosProjudi.partes.length > 0) {
+        console.log('[AUTO-CADASTRO] Partes recebidas:');
+        dadosProjudi.partes.forEach((p: any, idx: number) => {
+          console.log(`  [${idx}] Nome: ${p.nome}, Tipo Original: "${p.tipo}", Tipo Mapeado: "${this.mapearTipoParte(p.tipo)}"`);
+        });
+      } else {
+        console.log('[AUTO-CADASTRO] ⚠️ NENHUMA PARTE ENCONTRADA NOS DADOS EXTRAÍDOS!');
+      }
+
       // 1. Criar ou buscar Cliente (primeira parte AUTOR/EXEQUENTE)
       const parteAutor = dadosProjudi.partes?.find((p: any) =>
         this.mapearTipoParte(p.tipo) === 'AUTOR'
       );
+
+      console.log('[AUTO-CADASTRO] Parte AUTOR encontrada:', parteAutor ? parteAutor.nome : 'NENHUMA');
 
       let clienteId: string;
       let clienteExistente = null;
