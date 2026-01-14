@@ -1071,16 +1071,18 @@ export class ProjudiScraperService {
             const caminhoCompleto = path.join(projudiDir, nomeArquivo);
             const caminhoRelativo = path.join('projudi', processoId, nomeArquivo);
 
-            // Fazer download usando Playwright (mantém cookies de sessão)
-            const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+            // Fazer download usando fetch do contexto do Playwright (mantém cookies de sessão)
+            const context = page.context();
+            const response = await context.request.get(versao.url);
 
-            // Navegar para a URL do documento
-            await page.goto(versao.url, { waitUntil: 'networkidle', timeout: 30000 });
+            if (!response.ok()) {
+              throw new Error(`HTTP ${response.status()}: ${response.statusText()}`);
+            }
 
-            const download = await downloadPromise;
+            const buffer = await response.body();
 
             // Salvar arquivo
-            await download.saveAs(caminhoCompleto);
+            await fs.writeFile(caminhoCompleto, buffer);
 
             documentosBaixados.push({
               numeroDocumento: doc.numeroDocumento,
