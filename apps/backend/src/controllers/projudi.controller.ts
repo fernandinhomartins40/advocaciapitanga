@@ -47,10 +47,12 @@ export class ProjudiController {
         throw err;
       }
 
-      // Validar se e processo do Parana
-      if (processo.uf !== 'PR') {
+      // Validar se e processo do Parana (TJPR)
+      const isProjudi = processo.uf === 'PR' || processo.numero?.includes('8.16');
+
+      if (!isProjudi) {
         return res.status(400).json({
-          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (PR)'
+          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (TJPR)'
         });
       }
 
@@ -143,9 +145,12 @@ export class ProjudiController {
         throw err;
       }
 
-      if (processo.uf !== 'PR') {
+      // Verificar se é processo do PROJUDI (Paraná - TJPR - código 8.16)
+      const isProjudi = processo.uf === 'PR' || processo.numero?.includes('8.16');
+
+      if (!isProjudi) {
         return res.status(400).json({
-          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (PR)'
+          error: 'Consulta PROJUDI disponivel apenas para processos do Parana (TJPR)'
         });
       }
 
