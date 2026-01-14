@@ -358,10 +358,13 @@ export default function ProcessoDetalhesPage() {
    * Inicia consulta PROJUDI (scraping assistido)
    */
   const handleAtualizarManual = async () => {
-    if (!processo || processo.uf !== 'PR') {
+    // Verificar se é processo do PROJUDI (Paraná - TJPR - código 8.16)
+    const isProjudi = processo?.uf === 'PR' || processo?.numero?.includes('8.16');
+
+    if (!processo || !isProjudi) {
       toast({
         title: 'Nao disponivel',
-        description: 'Atualizacao PROJUDI disponivel apenas para processos do Parana (PR)',
+        description: 'Atualizacao PROJUDI disponivel apenas para processos do Parana (TJPR)',
         variant: 'error'
       });
       return;
@@ -515,7 +518,7 @@ export default function ProcessoDetalhesPage() {
             Editar Processo
           </Button>
 
-          {processo.uf === 'PR' && (
+          {(processo.uf === 'PR' || processo.numero?.includes('8.16')) && (
             <Button
               onClick={handleAtualizarManual}
               disabled={captchaLoading}
