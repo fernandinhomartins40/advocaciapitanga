@@ -27,7 +27,9 @@ import { useQueryClient } from '@tanstack/react-query';
 import { ModalCaptchaProjudi } from '@/components/processos/ModalCaptchaProjudi';
 import {
   useIniciarCaptchaProjudi,
-  useConsultarComCaptcha
+  useConsultarComCaptcha,
+  useObterInfoLimiteProjudi,
+  useResetarLimiteProjudi
 } from '@/hooks/useProcessos';
 
 interface ProcessoFormData {
@@ -118,6 +120,8 @@ export default function ProcessoDetalhesPage() {
   // Hooks PROJUDI
   const iniciarCaptchaMutation = useIniciarCaptchaProjudi();
   const consultarCaptchaMutation = useConsultarComCaptcha();
+  const { data: limiteInfo } = useObterInfoLimiteProjudi();
+  const resetarLimiteMutation = useResetarLimiteProjudi();
 
   // FASE 1.4: Reset correto do formulário quando modal fechar
   useEffect(() => {
@@ -355,6 +359,26 @@ export default function ProcessoDetalhesPage() {
   };
 
   /**
+   * Reseta o limite de consultas PROJUDI
+   */
+  const handleResetarLimite = async () => {
+    try {
+      await resetarLimiteMutation.mutateAsync();
+      toast({
+        title: 'Sucesso',
+        description: 'Limite de consultas resetado com sucesso',
+        variant: 'success'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Erro',
+        description: 'Erro ao resetar limite',
+        variant: 'error'
+      });
+    }
+  };
+
+  /**
    * Inicia consulta PROJUDI (scraping assistido)
    */
   const handleAtualizarManual = async () => {
@@ -379,11 +403,21 @@ export default function ProcessoDetalhesPage() {
       setIsCaptchaModalOpen(true);
     } catch (error: any) {
       const mensagemErro = getProjudiErrorMessage(error, 'Erro ao iniciar consulta');
-      toast({
-        title: 'Erro',
-        description: mensagemErro,
-        variant: 'error'
-      });
+
+      // Se for erro 429 (rate limit), mostrar informações do limite
+      if (error?.response?.status === 429) {
+        toast({
+          title: 'Limite atingido',
+          description: `${mensagemErro}. ${limiteInfo?.consultasRestantes !== undefined ? `Restam ${limiteInfo.consultasRestantes} consultas.` : ''}`,
+          variant: 'error'
+        });
+      } else {
+        toast({
+          title: 'Erro',
+          description: mensagemErro,
+          variant: 'error'
+        });
+      }
     } finally {
       setCaptchaLoading(false);
     }
@@ -532,6 +566,44 @@ export default function ProcessoDetalhesPage() {
           )}
         </div>
       </div>
+
+      {/* Info do limite PROJUDI */}
+      {(processo.uf === 'PR' || processo.numero?.includes('8.16')) && limiteInfo && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-700">
+                    Consultas restantes hoje:
+                  </span>
+                  <Badge variant={limiteInfo.consultasRestantes > 20 ? 'success' : limiteInfo.consultasRestantes > 5 ? 'warning' : 'danger'}>
+                    {limiteInfo.consultasRestantes}
+                  </Badge>
+                </div>
+                {limiteInfo.tempoAteProximaConsulta > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">
+                      Próxima consulta em: {Math.ceil(limiteInfo.tempoAteProximaConsulta / 1000)}s
+                    </span>
+                  </div>
+                )}
+                <div className="text-sm text-gray-600">
+                  Total hoje: {limiteInfo.totalConsultasHoje}
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetarLimite}
+                disabled={resetarLimiteMutation.isPending}
+              >
+                {resetarLimiteMutation.isPending ? 'Resetando...' : 'Resetar Limite'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={(value) => {
         setActiveTab(value);

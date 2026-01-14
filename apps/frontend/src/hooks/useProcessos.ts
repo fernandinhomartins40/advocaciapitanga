@@ -191,6 +191,33 @@ export function useConsultarComCaptcha() {
   });
 }
 
+/**
+ * Hook para obter informações do limite PROJUDI
+ */
+export function useObterInfoLimiteProjudi() {
+  return useQuery({
+    queryKey: ['projudi-limite'],
+    queryFn: async () => {
+      const response = await api.get('/projudi/limite');
+      return response.data;
+    },
+    refetchInterval: 30000, // Atualiza a cada 30 segundos
+  });
+}
 
+/**
+ * Hook para resetar limite PROJUDI
+ */
+export function useResetarLimiteProjudi() {
+  const queryClient = useQueryClient();
 
-
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.post('/projudi/resetar-limite');
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projudi-limite'] });
+    },
+  });
+}
