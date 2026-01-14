@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RefreshCw, AlertCircle, Plus, CheckCircle } from 'lucide-react';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import { useClientes } from '@/hooks/useClientes';
 
 interface ModalAutoCadastroProcessoProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function ModalAutoCadastroProcesso({
   const [parteSelecionada, setParteSelecionada] = useState<any>(null);
   const [clienteData, setClienteData] = useState<any>(null);
   const [clienteCriado, setClienteCriado] = useState<any>(null);
+  const [clientesEncontrados, setClientesEncontrados] = useState<Record<number, any[]>>({});
 
   // Reset ao abrir/fechar modal
   useEffect(() => {
@@ -113,6 +115,11 @@ export function ModalAutoCadastroProcesso({
       setDadosExtraidos(dados);
       setEtapa('extracao');
 
+      // Buscar clientes existentes para cada parte
+      if (dados?.partes && dados.partes.length > 0) {
+        buscarClientesExistentes(dados.partes);
+      }
+
       // Após 2 segundos, mostrar seleção de parte
       setTimeout(() => {
         console.log('[AUTO-CADASTRO] Mostrando seleção de partes...');
@@ -123,6 +130,35 @@ export function ModalAutoCadastroProcesso({
     } finally {
       setEnviando(false);
     }
+  };
+
+  // Busca clientes existentes com nome igual ou parecido
+  const buscarClientesExistentes = async (partes: any[]) => {
+    console.log('[AUTO-CADASTRO] Buscando clientes existentes para', partes.length, 'partes...');
+
+    const resultados: Record<number, any[]> = {};
+
+    for (let i = 0; i < partes.length; i++) {
+      const parte = partes[i];
+      if (!parte.nome || parte.nome.length < 3) continue;
+
+      try {
+        // Buscar por nome exato ou similar
+        const response = await fetch(`/api/clientes?search=${encodeURIComponent(parte.nome)}&limit=3`);
+        const data = await response.json();
+
+        console.log(`[AUTO-CADASTRO] Clientes encontrados para "${parte.nome}":`, data.clientes?.length || 0);
+
+        if (data.clientes && data.clientes.length > 0) {
+          resultados[i] = data.clientes;
+        }
+      } catch (error) {
+        console.error(`[AUTO-CADASTRO] Erro ao buscar clientes para "${parte.nome}":`, error);
+      }
+    }
+
+    setClientesEncontrados(resultados);
+    console.log('[AUTO-CADASTRO] Total de partes com clientes encontrados:', Object.keys(resultados).length);
   };
 
   // Prepara dados do cliente a partir da parte selecionada pelo usuário
@@ -165,6 +201,21 @@ export function ModalAutoCadastroProcesso({
     setParteSelecionada(parte);
     prepararDadosCliente(parte);
     setEtapa('cliente');
+  };
+
+  // Handler para quando usuário seleciona um cliente existente
+  const handleSelecionarClienteExistente = (cliente: any) => {
+    console.log('[AUTO-CADASTRO] Cliente existente selecionado:', cliente);
+
+    // Pular direto para o formulário de processo, usando o cliente existente
+    setClienteCriado({
+      id: cliente.id,
+      nome: cliente.user?.nome || cliente.nome,
+      cpf: cliente.cpf,
+      email: cliente.user?.email || cliente.email
+    });
+
+    setEtapa('processo');
   };
 
   const handleSalvarCliente = async (cliente: any) => {
@@ -431,31 +482,73 @@ export function ModalAutoCadastroProcesso({
                   <p className="text-xs mt-2">Você poderá preencher os dados manualmente.</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-4">
                   {dadosExtraidos.partes.map((parte: any, index: number) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => handleSelecionarParte(parte)}
-                      className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-900">{parte.nome}</p>
-                          <p className="text-sm text-gray-600 mt-1">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
-                              {parte.tipo}
-                            </span>
-                            {parte.cpf && (
-                              <span className="ml-2 text-gray-500">CPF: {parte.cpf}</span>
-                            )}
-                          </p>
+                    <div key={index} className="space-y-2">
+                      {/* Card da Parte */}
+                      <button
+                        type="button"
+                        onClick={() => handleSelecionarParte(parte)}
+                        className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">{parte.nome}</p>
+                            <p className="text-sm text-gray-600 mt-1">
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                {parte.tipo}
+                              </span>
+                              {parte.cpf && (
+                                <span className="ml-2 text-gray-500">CPF: {parte.cpf}</span>
+                              )}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 italic">
+                              Cadastrar como novo cliente
+                            </p>
+                          </div>
+                          <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
                         </div>
-                        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
-                      </div>
-                    </button>
+                      </button>
+
+                      {/* Clientes Existentes para esta Parte */}
+                      {clientesEncontrados[index] && clientesEncontrados[index].length > 0 && (
+                        <div className="ml-4 pl-4 border-l-2 border-green-200 space-y-2">
+                          <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                            ✓ Cliente(s) já cadastrado(s) com nome similar:
+                          </p>
+                          {clientesEncontrados[index].map((cliente: any, clienteIdx: number) => (
+                            <button
+                              key={clienteIdx}
+                              type="button"
+                              onClick={() => handleSelecionarClienteExistente(cliente)}
+                              className="w-full text-left p-3 border-2 border-green-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all bg-green-50/50"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-900 text-sm">
+                                    {cliente.user?.nome || cliente.nome}
+                                  </p>
+                                  <p className="text-xs text-gray-600 mt-0.5">
+                                    {cliente.cpf && <span>CPF: {cliente.cpf}</span>}
+                                    {cliente.user?.email && (
+                                      <span className="ml-2">• {cliente.user.email}</span>
+                                    )}
+                                  </p>
+                                  <p className="text-xs text-green-600 mt-1 font-medium">
+                                    Usar cliente existente (pular cadastro)
+                                  </p>
+                                </div>
+                                <svg className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
