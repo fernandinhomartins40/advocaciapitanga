@@ -37,9 +37,10 @@ export function ModalAutoCadastroProcesso({
 }: ModalAutoCadastroProcessoProps) {
   const [numeroProcesso, setNumeroProcesso] = useState('');
   const [captchaResposta, setCaptchaResposta] = useState('');
-  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'extracao' | 'cliente' | 'processo' | 'sucesso'>('numero');
+  const [etapa, setEtapa] = useState<'numero' | 'captcha' | 'extracao' | 'selecao-parte' | 'cliente' | 'processo' | 'sucesso'>('numero');
   const [enviando, setEnviando] = useState(false);
   const [dadosExtraidos, setDadosExtraidos] = useState<any>(null);
+  const [parteSelecionada, setParteSelecionada] = useState<any>(null);
   const [clienteData, setClienteData] = useState<any>(null);
   const [clienteCriado, setClienteCriado] = useState<any>(null);
 
@@ -112,11 +113,10 @@ export function ModalAutoCadastroProcesso({
       setDadosExtraidos(dados);
       setEtapa('extracao');
 
-      // Após 2 segundos, prepara formulário do cliente
+      // Após 2 segundos, mostrar seleção de parte
       setTimeout(() => {
-        console.log('[AUTO-CADASTRO] Preparando dados do cliente...');
-        prepararDadosCliente(dados);
-        setEtapa('cliente');
+        console.log('[AUTO-CADASTRO] Mostrando seleção de partes...');
+        setEtapa('selecao-parte');
       }, 2000);
     } catch (error) {
       console.error('Erro ao consultar:', error);
@@ -125,21 +125,13 @@ export function ModalAutoCadastroProcesso({
     }
   };
 
-  // Prepara dados do cliente a partir da primeira parte AUTOR/EXEQUENTE
-  const prepararDadosCliente = (dados: any) => {
+  // Prepara dados do cliente a partir da parte selecionada pelo usuário
+  const prepararDadosCliente = (parte: any) => {
     console.log('[AUTO-CADASTRO FRONTEND] ===== PREPARAR DADOS CLIENTE =====');
-    console.log('[AUTO-CADASTRO FRONTEND] dados recebidos:', dados);
-    console.log('[AUTO-CADASTRO FRONTEND] Type of dados:', typeof dados);
-    console.log('[AUTO-CADASTRO FRONTEND] Keys de dados:', dados ? Object.keys(dados) : 'null');
-    console.log('[AUTO-CADASTRO FRONTEND] dados.partes:', dados?.partes);
-    console.log('[AUTO-CADASTRO FRONTEND] Type of partes:', typeof dados?.partes);
-    console.log('[AUTO-CADASTRO FRONTEND] Array.isArray(partes):', Array.isArray(dados?.partes));
-    console.log('[AUTO-CADASTRO FRONTEND] Comprimento do array:', dados?.partes?.length);
+    console.log('[AUTO-CADASTRO FRONTEND] Parte selecionada:', parte);
 
-    if (!dados?.partes || dados.partes.length === 0) {
-      console.warn('[AUTO-CADASTRO FRONTEND] ⚠️ Nenhuma parte encontrada nos dados!');
-      console.warn('[AUTO-CADASTRO FRONTEND] Criando estrutura básica para preenchimento manual');
-      // Mesmo sem partes, criar estrutura básica para o usuário preencher
+    if (!parte) {
+      console.warn('[AUTO-CADASTRO FRONTEND] ⚠️ Nenhuma parte selecionada!');
       setClienteData({
         tipoPessoa: 'FISICA' as const,
         nome: '',
@@ -150,52 +142,29 @@ export function ModalAutoCadastroProcesso({
       return;
     }
 
-    // Buscar primeira parte do polo ativo (AUTOR, EXEQUENTE, REQUERENTE)
-    console.log('[AUTO-CADASTRO FRONTEND] Buscando parte AUTOR/EXEQUENTE/REQUERENTE...');
-    console.log('[AUTO-CADASTRO FRONTEND] Total de partes para buscar:', dados.partes.length);
-
-    dados.partes.forEach((p: any, idx: number) => {
-      console.log(`[AUTO-CADASTRO FRONTEND] Parte ${idx}: Nome="${p.nome}" | Tipo="${p.tipo}"`);
+    console.log('[AUTO-CADASTRO FRONTEND] ✓ Criando clienteData com parte selecionada:', {
+      nome: parte.nome,
+      tipo: parte.tipo,
+      cpf: parte.cpf
     });
 
-    const primeiraParteAutor = dados.partes.find((p: any) => {
-      const tipo = p.tipo?.toUpperCase() || '';
-      const isAutor = tipo.includes('AUTOR') ||
-                      tipo.includes('EXEQUENTE') ||
-                      tipo.includes('REQUERENTE');
-      console.log(`[AUTO-CADASTRO FRONTEND] Verificando "${p.nome}" (${p.tipo}) → isAutor: ${isAutor}`);
-      return isAutor;
+    setClienteData({
+      tipoPessoa: 'FISICA' as const,
+      nome: parte.nome || '',
+      cpf: parte.cpf || '',
+      email: '',
+      nacionalidade: 'Brasileiro(a)',
     });
-
-    console.log('[AUTO-CADASTRO FRONTEND] Primeira parte AUTOR encontrada:', primeiraParteAutor);
-
-    if (primeiraParteAutor) {
-      console.log('[AUTO-CADASTRO FRONTEND] ✓ Criando clienteData com parte AUTOR:', {
-        nome: primeiraParteAutor.nome,
-        cpf: primeiraParteAutor.cpf
-      });
-      setClienteData({
-        tipoPessoa: 'FISICA' as const,
-        nome: primeiraParteAutor.nome || '',
-        cpf: primeiraParteAutor.cpf || '',
-        email: '',
-        nacionalidade: 'Brasileiro(a)',
-      });
-    } else {
-      console.warn('[AUTO-CADASTRO FRONTEND] ⚠️ Nenhuma parte AUTOR/EXEQUENTE/REQUERENTE encontrada');
-      // Pegar a primeira parte disponível
-      const primeiraParte = dados.partes[0];
-      console.log('[AUTO-CADASTRO FRONTEND] Usando primeira parte disponível:', primeiraParte);
-      setClienteData({
-        tipoPessoa: 'FISICA' as const,
-        nome: primeiraParte?.nome || '',
-        cpf: primeiraParte?.cpf || '',
-        email: '',
-        nacionalidade: 'Brasileiro(a)',
-      });
-    }
 
     console.log('[AUTO-CADASTRO FRONTEND] ==========================================');
+  };
+
+  // Handler para quando usuário seleciona uma parte
+  const handleSelecionarParte = (parte: any) => {
+    console.log('[AUTO-CADASTRO] Parte selecionada pelo usuário:', parte);
+    setParteSelecionada(parte);
+    prepararDadosCliente(parte);
+    setEtapa('cliente');
   };
 
   const handleSalvarCliente = async (cliente: any) => {
@@ -444,7 +413,79 @@ export function ModalAutoCadastroProcesso({
             </div>
           )}
 
-          {/* Etapa 4: Formulário do Cliente (PRÉ-PREENCHIDO) */}
+          {/* Etapa 4: Seleção de Parte (NOVA ETAPA) */}
+          {etapa === 'selecao-parte' && dadosExtraidos?.partes && (
+            <div className="space-y-4">
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                <p className="text-sm text-purple-800 font-semibold">
+                  👥 Selecione a Parte que Representa o Cliente
+                </p>
+                <p className="text-xs text-purple-600 mt-1">
+                  Um processo pode ter múltiplas partes. Selecione qual delas é o seu cliente (pode ser autor, réu, embargante, embargado, etc.)
+                </p>
+              </div>
+
+              {dadosExtraidos.partes.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Nenhuma parte foi extraída do processo.</p>
+                  <p className="text-xs mt-2">Você poderá preencher os dados manualmente.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {dadosExtraidos.partes.map((parte: any, index: number) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelecionarParte(parte)}
+                      className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition-all"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-900">{parte.nome}</p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                              {parte.tipo}
+                            </span>
+                            {parte.cpf && (
+                              <span className="ml-2 text-gray-500">CPF: {parte.cpf}</span>
+                            )}
+                          </p>
+                        </div>
+                        <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEtapa('captcha')}
+                  className="flex-1"
+                >
+                  Voltar
+                </Button>
+                {dadosExtraidos.partes.length === 0 && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      prepararDadosCliente(null);
+                      setEtapa('cliente');
+                    }}
+                    className="flex-1"
+                  >
+                    Cadastrar Manualmente
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Etapa 5: Formulário do Cliente (PRÉ-PREENCHIDO) */}
           {etapa === 'cliente' && (() => {
             console.log('[AUTO-CADASTRO FRONTEND] Renderizando formulário do cliente');
             console.log('[AUTO-CADASTRO FRONTEND] clienteData atual:', clienteData);
@@ -452,7 +493,7 @@ export function ModalAutoCadastroProcesso({
             <div className="space-y-4">
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                 <p className="text-sm text-blue-800 font-semibold">
-                  📋 Etapa 1 de 2: Cadastro do Cliente
+                  📋 Etapa 2 de 3: Cadastro do Cliente
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Preencha os dados obrigatórios do cliente (CPF e Email são essenciais)
@@ -536,7 +577,7 @@ export function ModalAutoCadastroProcesso({
             );
           })()}
 
-          {/* Etapa 5: Formulário do Processo (PRÉ-PREENCHIDO) */}
+          {/* Etapa 6: Formulário do Processo (PRÉ-PREENCHIDO) */}
           {etapa === 'processo' && dadosExtraidos && clienteCriado && (
             <div className="space-y-4">
               <div className="bg-green-50 border border-green-200 rounded-lg p-3">
@@ -544,7 +585,7 @@ export function ModalAutoCadastroProcesso({
                   ✓ Cliente "{clienteCriado.nome}" cadastrado com sucesso!
                 </p>
                 <p className="text-xs text-green-600 mt-1">
-                  📋 Etapa 2 de 2: Confirme os dados do processo
+                  📋 Etapa 3 de 3: Confirme os dados do processo
                 </p>
               </div>
 
