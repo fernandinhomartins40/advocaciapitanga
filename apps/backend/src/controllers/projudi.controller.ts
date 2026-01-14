@@ -173,12 +173,41 @@ export class ProjudiController {
           // Ignora se data invalida
         }
       }
+      if (dadosProjudi.dataAutuacao) {
+        try {
+          const [dia, mes, ano] = dadosProjudi.dataAutuacao.split('/');
+          dadosAtualizacao.dataAutuacao = new Date(`${ano}-${mes}-${dia}`);
+          console.log('[CONSULTA PROJUDI] ✓ Data de autuação atualizada:', dadosAtualizacao.dataAutuacao);
+        } catch {
+          // Ignora se data invalida
+        }
+      }
       if (dadosProjudi.valorCausa) {
         const valor = projudiScraperService.parseValor(dadosProjudi.valorCausa);
         if (valor) dadosAtualizacao.valorCausa = valor;
       }
       if (dadosProjudi.objetoAcao) {
         dadosAtualizacao.objetoAcao = dadosProjudi.objetoAcao;
+      }
+      if (dadosProjudi.tipoAcao) {
+        dadosAtualizacao.tipoAcao = dadosProjudi.tipoAcao;
+        console.log('[CONSULTA PROJUDI] ✓ Tipo de ação atualizado:', dadosProjudi.tipoAcao);
+      }
+      if (dadosProjudi.areaDireito) {
+        dadosAtualizacao.areaDireito = dadosProjudi.areaDireito;
+        console.log('[CONSULTA PROJUDI] ✓ Área do direito atualizada:', dadosProjudi.areaDireito);
+      }
+      if (dadosProjudi.justica) {
+        dadosAtualizacao.justica = dadosProjudi.justica;
+        console.log('[CONSULTA PROJUDI] ✓ Justiça atualizada:', dadosProjudi.justica);
+      }
+      if (dadosProjudi.instancia) {
+        dadosAtualizacao.instancia = dadosProjudi.instancia;
+        console.log('[CONSULTA PROJUDI] ✓ Instância atualizada:', dadosProjudi.instancia);
+      }
+      if (dadosProjudi.uf) {
+        dadosAtualizacao.uf = dadosProjudi.uf;
+        console.log('[CONSULTA PROJUDI] ✓ UF atualizada:', dadosProjudi.uf);
       }
 
       // Atualizar processo
@@ -611,8 +640,37 @@ export class ProjudiController {
           console.error('Erro ao parsear data de distribuição:', e);
         }
       }
+      if (dadosProjudi.dataAutuacao) {
+        try {
+          const [dia, mes, ano] = dadosProjudi.dataAutuacao.split('/');
+          dadosProcesso.dataAutuacao = new Date(`${ano}-${mes}-${dia}`);
+          console.log('[AUTO-CADASTRO] ✓ Data de autuação definida:', dadosProcesso.dataAutuacao);
+        } catch (e) {
+          console.error('Erro ao parsear data de autuação:', e);
+        }
+      }
       if (dadosProjudi.valorCausa) dadosProcesso.valorCausa = dadosProjudi.valorCausa;
       if (dadosProjudi.objetoAcao) dadosProcesso.objetoAcao = dadosProjudi.objetoAcao;
+      if (dadosProjudi.tipoAcao) {
+        dadosProcesso.tipoAcao = dadosProjudi.tipoAcao;
+        console.log('[AUTO-CADASTRO] ✓ Tipo de ação definido:', dadosProjudi.tipoAcao);
+      }
+      if (dadosProjudi.areaDireito) {
+        dadosProcesso.areaDireito = dadosProjudi.areaDireito;
+        console.log('[AUTO-CADASTRO] ✓ Área do direito definida:', dadosProjudi.areaDireito);
+      }
+      if (dadosProjudi.justica) {
+        dadosProcesso.justica = dadosProjudi.justica;
+        console.log('[AUTO-CADASTRO] ✓ Justiça definida:', dadosProjudi.justica);
+      }
+      if (dadosProjudi.instancia) {
+        dadosProcesso.instancia = dadosProjudi.instancia;
+        console.log('[AUTO-CADASTRO] ✓ Instância definida:', dadosProjudi.instancia);
+      }
+      if (dadosProjudi.uf) {
+        dadosProcesso.uf = dadosProjudi.uf;
+        console.log('[AUTO-CADASTRO] ✓ UF definida:', dadosProjudi.uf);
+      }
       if (dadosProjudi.status) {
         // Mapear status do PROJUDI para enum do sistema
         if (dadosProjudi.status.toLowerCase().includes('tramitação')) {

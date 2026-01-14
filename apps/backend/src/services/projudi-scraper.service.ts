@@ -22,10 +22,16 @@ interface DadosProcessoProjudi {
   comarca?: string;
   vara?: string;
   foro?: string;
+  uf?: string;
   status?: string;
   dataDistribuicao?: string;
+  dataAutuacao?: string;
   valorCausa?: string;
   objetoAcao?: string;
+  tipoAcao?: string;
+  areaDireito?: string;
+  justica?: string;
+  instancia?: string;
   partes?: Array<{
     tipo: string;
     nome: string;
@@ -564,7 +570,12 @@ export class ProjudiScraperService {
             break;
           case 'autuação':
           case 'autuacao':
-            // Extrair data de autuação se necessário
+            // Extrair data de autuação
+            const dataAutuacaoMatch = valor.match(/(\d{2}\/\d{2}\/\d{4})/);
+            if (dataAutuacaoMatch) {
+              dados.dataAutuacao = dataAutuacaoMatch[1];
+              console.log('[PROJUDI EXTRACT] ✓ Data autuação atribuída:', dados.dataAutuacao);
+            }
             break;
           case 'juiz':
             // Pode armazenar se necessário
@@ -572,7 +583,7 @@ export class ProjudiScraperService {
         }
       });
 
-      // Classe Processual e Assunto
+      // Classe Processual, Assunto e outros campos da tabela form
       $('table.form tr').each((i, row) => {
         const cells = $(row).find('td');
         if (cells.length >= 2) {
@@ -580,17 +591,26 @@ export class ProjudiScraperService {
           const valor = cells.eq(1).text().trim();
 
           if (label === 'Classe Processual' && valor) {
-            // Extrair apenas o nome da classe
+            // Extrair apenas o nome da classe para tipoAcao
             const classeMatch = valor.match(/\d+\s+-\s+(.+)/);
             if (classeMatch) {
+              dados.tipoAcao = classeMatch[1];
+              console.log('[PROJUDI EXTRACT] ✓ Tipo de Ação (Classe):', classeMatch[1]);
+              // Também manter em objetoAcao se estiver vazio
               if (!dados.objetoAcao) dados.objetoAcao = classeMatch[1];
             }
           }
 
           if (label === 'Assunto Principal' && valor) {
+            // Extrair assunto para areaDireito
             const assuntoMatch = valor.match(/\d+\s+-\s+(.+)/);
-            if (assuntoMatch && !dados.objetoAcao) {
-              dados.objetoAcao = assuntoMatch[1];
+            if (assuntoMatch) {
+              dados.areaDireito = assuntoMatch[1];
+              console.log('[PROJUDI EXTRACT] ✓ Área do Direito (Assunto):', assuntoMatch[1]);
+              // Também usar em objetoAcao se classe não foi extraída
+              if (!dados.objetoAcao) {
+                dados.objetoAcao = assuntoMatch[1];
+              }
             }
           }
         }
@@ -600,6 +620,27 @@ export class ProjudiScraperService {
       const statusMatch = numeroTexto.match(/\((\d+)\s+dia\(s\)\s+em\s+tramitação\)/);
       if (statusMatch) {
         dados.status = `Em tramitação (${statusMatch[1]} dias)`;
+      }
+
+      // Inferir campos baseados no contexto do PROJUDI
+      // Justiça: PROJUDI é sempre Justiça Estadual (TJPR)
+      dados.justica = 'ESTADUAL';
+      console.log('[PROJUDI EXTRACT] ✓ Justiça inferida: ESTADUAL (TJPR)');
+
+      // UF: PROJUDI do Paraná
+      dados.uf = 'PR';
+      console.log('[PROJUDI EXTRACT] ✓ UF inferida: PR');
+
+      // Instância: inferir da vara
+      if (dados.vara) {
+        const varaLower = dados.vara.toLowerCase();
+        if (varaLower.includes('vara')) {
+          dados.instancia = 'PRIMEIRA';
+          console.log('[PROJUDI EXTRACT] ✓ Instância inferida: PRIMEIRA (contém "Vara")');
+        } else if (varaLower.includes('câmara') || varaLower.includes('camara') || varaLower.includes('turma')) {
+          dados.instancia = 'SEGUNDA';
+          console.log('[PROJUDI EXTRACT] ✓ Instância inferida: SEGUNDA (contém "Câmara" ou "Turma")');
+        }
       }
 
       // Partes processuais - Todos os tipos possíveis
