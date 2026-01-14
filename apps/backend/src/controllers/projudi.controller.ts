@@ -4,6 +4,7 @@ import { ProcessoService } from '../services/processo.service';
 import { AuthRequest } from '../types';
 import { AuditService, AuditAction } from '../services/audit.service';
 import { prisma } from 'database';
+import { hashPassword } from '../utils/bcrypt';
 
 const projudiScraperService = new ProjudiScraperService();
 const processoService = new ProcessoService();
@@ -537,10 +538,9 @@ export class ProjudiController {
         // Criar novo cliente com dados mínimos
         console.log('[AUTO-CADASTRO] Criando novo cliente:', primeiraParteAutor.nome);
 
-        const bcrypt = require('bcrypt');
         const timestamp = Date.now();
         const emailTemp = `cliente_${timestamp}@temp.advocacia.com`;
-        const senhaTemp = await bcrypt.hash(`temp${timestamp}`, 10);
+        const senhaTemp = await hashPassword(`temp${timestamp}`);
 
         const novoUsuario = await prisma.user.create({
           data: {
