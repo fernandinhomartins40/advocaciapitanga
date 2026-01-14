@@ -244,6 +244,12 @@ export class ProjudiController {
         }
       });
 
+      // Baixar documentos das movimentações em background (não bloqueia a resposta)
+      this.baixarDocumentosProjudiBackground(consultaProjudi.id, id, dadosProjudi.movimentacoes || [])
+        .catch(err => {
+          console.error('[PROJUDI] Erro ao baixar documentos:', err);
+        });
+
       // Registrar sucesso
       await AuditService.createLog({
         entityType: 'Processo',
@@ -372,12 +378,61 @@ export class ProjudiController {
           )
         : 0;
 
+      // Buscar documentos baixados para esta consulta
+      const documentosBaixados = await prisma.documentoProjudi.findMany({
+        where: {
+          consultaId: consultaComMovimentacoes.id
+        }
+      });
+
+      // Mapear documentos por movimentação
+      const docsMap = new Map<string, any[]>();
+      for (const doc of documentosBaixados) {
+        const key = `${doc.sequencialMov}_${doc.dataMov}`;
+        if (!docsMap.has(key)) {
+          docsMap.set(key, []);
+        }
+        docsMap.get(key)!.push(doc);
+      }
+
+      // Substituir URLs temporárias por rotas de download locais
+      const movimentacoes = Array.isArray(consultaComMovimentacoes.movimentacoes)
+        ? (consultaComMovimentacoes.movimentacoes as any[]).map(mov => {
+            const key = `${mov.sequencial}_${mov.data}`;
+            const docsLocais = docsMap.get(key) || [];
+
+            // Se há documentos baixados, substituir as URLs
+            if (docsLocais.length > 0 && mov.documentos) {
+              mov.documentos = mov.documentos.map((doc: any) => {
+                // Encontrar documentos locais correspondentes
+                const docsCorrespondentes = docsLocais.filter(
+                  d => d.numeroDocumento === doc.numeroDocumento
+                );
+
+                if (docsCorrespondentes.length > 0) {
+                  // Substituir versões com URLs locais
+                  doc.versoes = docsCorrespondentes.map(d => ({
+                    titulo: d.versao,
+                    url: `/api/projudi/documentos/${d.id}/download`,
+                    local: true // Flag indicando que é arquivo local
+                  }));
+                }
+
+                return doc;
+              });
+            }
+
+            return mov;
+          })
+        : [];
+
       res.json({
-        movimentacoes: consultaComMovimentacoes.movimentacoes,
-        total: Array.isArray(consultaComMovimentacoes.movimentacoes) ? consultaComMovimentacoes.movimentacoes.length : 0,
+        movimentacoes,
+        total: movimentacoes.length,
         dataConsulta: consultaComMovimentacoes.createdAt,
         dataConsultaAnterior: consultaAnterior?.createdAt || null,
-        totalNovas: totalNovas
+        totalNovas: totalNovas,
+        totalDocumentosBaixados: documentosBaixados.length
       });
     } catch (error: any) {
       next(error);
@@ -853,6 +908,161 @@ export class ProjudiController {
     } catch (error: any) {
       next(error);
     }
+  }
+
+  /**
+   * Download de documento do PROJUDI salvo localmente
+   */
+  async downloadDocumentoProjudi(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.userId;
+
+      // Buscar documento
+      const documento = await prisma.documentoProjudi.findUnique({
+        where: { id },
+        include: {
+          processo: {
+            include: {
+              cliente: true,
+              advogado: true
+            }
+          }
+        }
+      });
+
+      if (!documento) {
+        return res.status(404).json({ error: 'Documento não encontrado' });
+      }
+
+      // Verificar permissão de acesso
+      const userRole = req.user!.role;
+      const podeAcessar =
+        userRole === 'ADMIN' ||
+        (userRole === 'ADVOGADO' && documento.processo.advogado.userId === userId) ||
+        (userRole === 'CLIENTE' && documento.processo.cliente.userId === userId);
+
+      if (!podeAcessar) {
+        return res.status(403).json({ error: 'Acesso negado' });
+      }
+
+      // Caminho do arquivo
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const uploadDir = process.env.UPLOAD_DIR || './uploads';
+      const caminhoCompleto = path.join(uploadDir, documento.caminho);
+
+      // Verificar se arquivo existe
+      try {
+        await fs.access(caminhoCompleto);
+      } catch {
+        return res.status(404).json({ error: 'Arquivo não encontrado no servidor' });
+      }
+
+      // Enviar arquivo
+      res.download(caminhoCompleto, documento.nomeArquivo);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  /**
+   * Baixa documentos das movimentações do PROJUDI em background
+   */
+  private async baixarDocumentosProjudiBackground(
+    consultaId: string,
+    processoId: string,
+    movimentacoes: any[]
+  ): Promise<void> {
+    if (!movimentacoes || movimentacoes.length === 0) {
+      console.log('[PROJUDI DOWNLOAD] Nenhuma movimentação para baixar documentos');
+      return;
+    }
+
+    console.log(`[PROJUDI DOWNLOAD] Iniciando download de documentos de ${movimentacoes.length} movimentações`);
+
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    const axios = (await import('axios')).default;
+
+    // Diretório para armazenar documentos do PROJUDI
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    const projudiDir = path.join(uploadDir, 'projudi', processoId);
+
+    // Criar diretório se não existir
+    try {
+      await fs.mkdir(projudiDir, { recursive: true });
+    } catch (err) {
+      console.error('[PROJUDI DOWNLOAD] Erro ao criar diretório:', err);
+      return;
+    }
+
+    let totalDownloads = 0;
+    let sucessos = 0;
+    let erros = 0;
+
+    for (const mov of movimentacoes) {
+      if (!mov.documentos || mov.documentos.length === 0) continue;
+
+      for (const doc of mov.documentos) {
+        if (!doc.versoes || doc.versoes.length === 0) continue;
+
+        // Baixar todas as versões do documento
+        for (const versao of doc.versoes) {
+          totalDownloads++;
+
+          try {
+            console.log(`[PROJUDI DOWNLOAD] Baixando: ${doc.numeroDocumento} - ${versao.titulo}`);
+
+            // Fazer download do arquivo
+            const response = await axios.get(versao.url, {
+              responseType: 'arraybuffer',
+              timeout: 30000,
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+              }
+            });
+
+            // Nome do arquivo: numeroDoc_versao.pdf
+            const nomeArquivo = `${doc.numeroDocumento.replace(/\./g, '_')}_${versao.titulo.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+            const caminhoCompleto = path.join(projudiDir, nomeArquivo);
+            const caminhoRelativo = path.join('projudi', processoId, nomeArquivo);
+
+            // Salvar arquivo
+            await fs.writeFile(caminhoCompleto, response.data);
+
+            // Salvar no banco de dados
+            await prisma.documentoProjudi.create({
+              data: {
+                consultaId,
+                processoId,
+                numeroDocumento: doc.numeroDocumento,
+                tipoArquivo: doc.tipoArquivo,
+                assinatura: doc.assinatura,
+                nivelAcesso: doc.nivelAcesso,
+                sequencialMov: mov.sequencial ? parseInt(mov.sequencial) : null,
+                dataMov: mov.data,
+                eventoMov: mov.evento,
+                caminho: caminhoRelativo,
+                nomeArquivo,
+                tamanho: response.data.length,
+                versao: versao.titulo,
+                urlOriginal: versao.url
+              }
+            });
+
+            sucessos++;
+            console.log(`[PROJUDI DOWNLOAD] ✓ Salvo: ${nomeArquivo} (${response.data.length} bytes)`);
+
+          } catch (err: any) {
+            erros++;
+            console.error(`[PROJUDI DOWNLOAD] ✗ Erro ao baixar ${doc.numeroDocumento}:`, err?.message || err);
+          }
+        }
+      }
+    }
+
+    console.log(`[PROJUDI DOWNLOAD] Concluído: ${sucessos}/${totalDownloads} downloads bem-sucedidos, ${erros} erros`);
   }
 
   private handleProcessoErro(err: any, res: Response): boolean {

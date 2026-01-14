@@ -198,6 +198,7 @@ model Processo {
   documentosHistorico DocumentHistory[]
   documentosProcesso  DocumentoProcesso[]
   advogadosVinculados ProcessoAdvogado[]
+  documentosProjudi   DocumentoProjudi[]
 }
 
 model ParteProcessual {
@@ -532,10 +533,45 @@ model ConsultaProjudi {
 
   createdAt DateTime @default(now())
 
+  documentosProjudi DocumentoProjudi[]
+
   @@index([processoId])
   @@index([userId])
   @@index([createdAt])
   @@index([metodo])
+}
+
+model DocumentoProjudi {
+  id               String   @id @default(cuid())
+  consultaId       String
+  consulta         ConsultaProjudi @relation(fields: [consultaId], references: [id], onDelete: Cascade)
+  processoId       String
+  processo         Processo @relation(fields: [processoId], references: [id], onDelete: Cascade)
+
+  // Identificação do documento no PROJUDI
+  numeroDocumento  String   // Ex: "285.1"
+  tipoArquivo      String   // Ex: "Despacho", "Sentença"
+  assinatura       String?  // Informação de assinatura digital
+  nivelAcesso      String?  // Ex: "Público", "Sigiloso"
+
+  // Informações da movimentação
+  sequencialMov    Int?     // Sequencial da movimentação
+  dataMov          String?  // Data da movimentação
+  eventoMov        String?  // Evento da movimentação
+
+  // Arquivo baixado
+  caminho          String   // Caminho do arquivo no servidor
+  nomeArquivo      String   // Nome original do arquivo
+  tamanho          Int      // Tamanho em bytes
+  versao           String   // Ex: "Versão assinada", "Versão original"
+  urlOriginal      String   @db.Text // URL temporária original (para referência)
+
+  createdAt        DateTime @default(now())
+
+  @@index([consultaId])
+  @@index([processoId])
+  @@index([numeroDocumento])
+  @@index([createdAt])
 }
 
 enum MetodoConsulta {

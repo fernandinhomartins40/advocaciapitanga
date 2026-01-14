@@ -127,4 +127,14 @@ router.post(
   projudiController.resetarLimite.bind(projudiController)
 );
 
+/**
+ * GET /projudi/documentos/:id/download
+ * Download de documento do PROJUDI salvo localmente
+ */
+router.get(
+  '/documentos/:id/download',
+  authMiddleware,
+  projudiController.downloadDocumentoProjudi.bind(projudiController)
+);
+
 export default router;
