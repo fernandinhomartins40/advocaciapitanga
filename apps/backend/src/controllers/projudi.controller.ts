@@ -935,12 +935,23 @@ export class ProjudiController {
         return res.status(404).json({ error: 'Documento não encontrado' });
       }
 
+      // Debug: logar informações de permissão
+      console.log('[DOWNLOAD DOC] userId do request:', userId);
+      console.log('[DOWNLOAD DOC] role do user:', req.user!.role);
+      console.log('[DOWNLOAD DOC] advogadoId:', documento.processo.advogadoId);
+      console.log('[DOWNLOAD DOC] clienteId:', documento.processo.clienteId);
+      console.log('[DOWNLOAD DOC] advogado.userId:', documento.processo.advogado.userId);
+      console.log('[DOWNLOAD DOC] cliente.userId:', documento.processo.cliente.userId);
+
       // Verificar permissão de acesso
       const userRole = req.user!.role;
       const podeAcessar =
         userRole === 'ADMIN' ||
+        userRole === 'ADMIN_ESCRITORIO' ||
         (userRole === 'ADVOGADO' && documento.processo.advogado.userId === userId) ||
         (userRole === 'CLIENTE' && documento.processo.cliente.userId === userId);
+
+      console.log('[DOWNLOAD DOC] podeAcessar:', podeAcessar);
 
       if (!podeAcessar) {
         return res.status(403).json({ error: 'Acesso negado' });
