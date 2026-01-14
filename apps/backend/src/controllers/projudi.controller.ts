@@ -244,15 +244,22 @@ export class ProjudiController {
         }
       });
 
-      // Baixar documentos das movimentações - passar o sessionId para usar a mesma sessão do navegador
+      // Baixar documentos das movimentações em background e depois fechar a sessão
       this.baixarDocumentosProjudiBackground(
         consultaProjudi.id,
         id,
         dadosProjudi.movimentacoes || [],
         sessionId
-      ).catch(err => {
-        console.error('[PROJUDI] Erro ao baixar documentos:', err);
-      });
+      )
+        .then(() => {
+          // Fechar sessão do navegador após download
+          return projudiScraperService.fecharSessao(sessionId);
+        })
+        .catch(err => {
+          console.error('[PROJUDI] Erro ao baixar documentos:', err);
+          // Mesmo com erro, fechar a sessão
+          projudiScraperService.fecharSessao(sessionId).catch(() => {});
+        });
 
       // Registrar sucesso
       await AuditService.createLog({

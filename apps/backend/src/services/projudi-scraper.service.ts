@@ -445,11 +445,8 @@ export class ProjudiScraperService {
       // Extrair dados da página
       const dadosProcesso = await this.extrairDadosProcesso(page);
 
-      // Fechar navegador
-      await browser.close();
-
-      // Limpar sessão
-      this.sessions.delete(sessionId);
+      // NÃO fechar o navegador ainda - será usado para baixar documentos
+      // A sessão será fechada após o download dos documentos pelo controller
 
       return dadosProcesso;
     } catch (error: any) {
@@ -992,6 +989,22 @@ export class ProjudiScraperService {
       tempoAteProximaConsulta: Math.ceil(tempoAteProxima / 1000),
       totalConsultasHoje: registro.totalJanela
     };
+  }
+
+  /**
+   * Fecha a sessão do navegador após download dos documentos
+   */
+  async fecharSessao(sessionId: string): Promise<void> {
+    const session = this.sessions.get(sessionId);
+    if (session?.browser) {
+      try {
+        await session.browser.close();
+        console.log(`[PROJUDI SESSION] Sessão ${sessionId} fechada após download`);
+      } catch (e) {
+        console.error('[PROJUDI SESSION] Erro ao fechar navegador:', e);
+      }
+    }
+    this.sessions.delete(sessionId);
   }
 
   /**
