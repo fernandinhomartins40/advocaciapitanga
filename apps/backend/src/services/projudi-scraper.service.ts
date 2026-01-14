@@ -993,4 +993,118 @@ export class ProjudiScraperService {
       totalConsultasHoje: registro.totalJanela
     };
   }
+
+  /**
+   * Baixa documentos das movimentações usando a sessão ativa do Playwright
+   */
+  async baixarDocumentos(
+    sessionId: string,
+    movimentacoes: any[],
+    processoId: string
+  ): Promise<{
+    total: number;
+    sucessos: number;
+    erros: number;
+    documentosBaixados: Array<{
+      numeroDocumento: string;
+      tipoArquivo: string;
+      assinatura?: string;
+      nivelAcesso?: string;
+      sequencialMov?: number;
+      dataMov?: string;
+      eventoMov?: string;
+      caminhoCompleto: string;
+      caminhoRelativo: string;
+      nomeArquivo: string;
+      versao: string;
+      urlOriginal: string;
+    }>;
+  }> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error('Sessão expirada ou inválida');
+    }
+
+    const { page } = session;
+    const fs = await import('fs/promises');
+    const path = await import('path');
+
+    // Diretório para armazenar documentos
+    const uploadDir = process.env.UPLOAD_DIR || './uploads';
+    const projudiDir = path.join(uploadDir, 'projudi', processoId);
+
+    // Criar diretório se não existir
+    await fs.mkdir(projudiDir, { recursive: true });
+
+    const documentosBaixados: any[] = [];
+    let total = 0;
+    let sucessos = 0;
+    let erros = 0;
+
+    for (const mov of movimentacoes) {
+      if (!mov.documentos || mov.documentos.length === 0) continue;
+
+      for (const doc of mov.documentos) {
+        if (!doc.versoes || doc.versoes.length === 0) continue;
+
+        for (const versao of doc.versoes) {
+          total++;
+
+          try {
+            console.log(`[PROJUDI DOWNLOAD] Baixando via Playwright: ${doc.numeroDocumento} - ${versao.titulo}`);
+
+            // Nome do arquivo
+            const nomeArquivo = `${doc.numeroDocumento.replace(/\./g, '_')}_${versao.titulo.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+            const caminhoCompleto = path.join(projudiDir, nomeArquivo);
+            const caminhoRelativo = path.join('projudi', processoId, nomeArquivo);
+
+            // Fazer download usando Playwright (mantém cookies de sessão)
+            const downloadPromise = page.waitForEvent('download', { timeout: 30000 });
+
+            // Navegar para a URL do documento
+            await page.goto(versao.url, { waitUntil: 'networkidle', timeout: 30000 });
+
+            const download = await downloadPromise;
+
+            // Salvar arquivo
+            await download.saveAs(caminhoCompleto);
+
+            documentosBaixados.push({
+              numeroDocumento: doc.numeroDocumento,
+              tipoArquivo: doc.tipoArquivo,
+              assinatura: doc.assinatura,
+              nivelAcesso: doc.nivelAcesso,
+              sequencialMov: mov.sequencial ? parseInt(mov.sequencial) : undefined,
+              dataMov: mov.data,
+              eventoMov: mov.evento,
+              caminhoCompleto,
+              caminhoRelativo,
+              nomeArquivo,
+              versao: versao.titulo,
+              urlOriginal: versao.url
+            });
+
+            sucessos++;
+            console.log(`[PROJUDI DOWNLOAD] ✓ Download concluído: ${nomeArquivo}`);
+
+            // Aguardar um pouco entre downloads
+            await page.waitForTimeout(500);
+
+          } catch (err: any) {
+            erros++;
+            console.error(`[PROJUDI DOWNLOAD] ✗ Erro ao baixar ${doc.numeroDocumento}:`, err?.message || err);
+          }
+        }
+      }
+    }
+
+    console.log(`[PROJUDI DOWNLOAD] Resultado: ${sucessos}/${total} sucessos, ${erros} erros`);
+
+    return {
+      total,
+      sucessos,
+      erros,
+      documentosBaixados
+    };
+  }
 }

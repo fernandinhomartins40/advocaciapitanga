@@ -244,11 +244,15 @@ export class ProjudiController {
         }
       });
 
-      // Baixar documentos das movimentações em background (não bloqueia a resposta)
-      this.baixarDocumentosProjudiBackground(consultaProjudi.id, id, dadosProjudi.movimentacoes || [])
-        .catch(err => {
-          console.error('[PROJUDI] Erro ao baixar documentos:', err);
-        });
+      // Baixar documentos das movimentações - passar o sessionId para usar a mesma sessão do navegador
+      this.baixarDocumentosProjudiBackground(
+        consultaProjudi.id,
+        id,
+        dadosProjudi.movimentacoes || [],
+        sessionId
+      ).catch(err => {
+        console.error('[PROJUDI] Erro ao baixar documentos:', err);
+      });
 
       // Registrar sucesso
       await AuditService.createLog({
@@ -979,8 +983,84 @@ export class ProjudiController {
 
   /**
    * Baixa documentos das movimentações do PROJUDI em background
+   * IMPORTANTE: Precisa usar a mesma sessão do navegador para baixar os PDFs
    */
   private async baixarDocumentosProjudiBackground(
+    consultaId: string,
+    processoId: string,
+    movimentacoes: any[],
+    sessionId: string
+  ): Promise<void> {
+    if (!movimentacoes || movimentacoes.length === 0) {
+      console.log('[PROJUDI DOWNLOAD] Nenhuma movimentação para baixar documentos');
+      return;
+    }
+
+    console.log(`[PROJUDI DOWNLOAD] Iniciando download de documentos de ${movimentacoes.length} movimentações`);
+
+    // Usar o Playwright para fazer download com a mesma sessão
+    const resultado = await projudiScraperService.baixarDocumentos(
+      sessionId,
+      movimentacoes,
+      processoId
+    );
+
+    // Salvar metadados dos documentos baixados no banco
+    const fs = await import('fs/promises');
+    const path = await import('path');
+
+    let sucessos = 0;
+    let erros = 0;
+
+    for (const docBaixado of resultado.documentosBaixados) {
+      try {
+        // Verificar se arquivo existe
+        try {
+          await fs.access(docBaixado.caminhoCompleto);
+        } catch {
+          console.error(`[PROJUDI DOWNLOAD] Arquivo não encontrado: ${docBaixado.caminhoCompleto}`);
+          erros++;
+          continue;
+        }
+
+        // Obter tamanho do arquivo
+        const stats = await fs.stat(docBaixado.caminhoCompleto);
+
+        // Salvar no banco de dados
+        await prisma.documentoProjudi.create({
+          data: {
+            consultaId,
+            processoId,
+            numeroDocumento: docBaixado.numeroDocumento,
+            tipoArquivo: docBaixado.tipoArquivo,
+            assinatura: docBaixado.assinatura,
+            nivelAcesso: docBaixado.nivelAcesso,
+            sequencialMov: docBaixado.sequencialMov,
+            dataMov: docBaixado.dataMov,
+            eventoMov: docBaixado.eventoMov,
+            caminho: docBaixado.caminhoRelativo,
+            nomeArquivo: docBaixado.nomeArquivo,
+            tamanho: stats.size,
+            versao: docBaixado.versao,
+            urlOriginal: docBaixado.urlOriginal
+          }
+        });
+
+        sucessos++;
+        console.log(`[PROJUDI DOWNLOAD] ✓ Salvo no BD: ${docBaixado.nomeArquivo}`);
+      } catch (err: any) {
+        erros++;
+        console.error(`[PROJUDI DOWNLOAD] ✗ Erro ao salvar no BD:`, err?.message || err);
+      }
+    }
+
+    console.log(`[PROJUDI DOWNLOAD] Concluído: ${sucessos}/${resultado.total} downloads salvos no BD, ${erros} erros`);
+  }
+
+  /**
+   * DEPRECATED - Versão antiga que não funciona pois PROJUDI exige sessão ativa
+   */
+  private async baixarDocumentosProjudiBackgroundOLD(
     consultaId: string,
     processoId: string,
     movimentacoes: any[]
