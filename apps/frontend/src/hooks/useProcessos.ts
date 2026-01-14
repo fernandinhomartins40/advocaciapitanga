@@ -140,10 +140,18 @@ export function useAutoCadastrarProcesso() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (dadosExtraidos: any) => {
-      const response = await api.post('/projudi/processos/auto-cadastrar', {
-        dadosExtraidos
-      });
+    mutationFn: async (dados: any) => {
+      // Extrair clienteId se existir, o restante vai em dadosExtraidos
+      const { clienteId, ...dadosExtraidos } = dados;
+
+      const payload: any = { dadosExtraidos };
+
+      // Se clienteId foi fornecido, incluir no payload
+      if (clienteId) {
+        payload.clienteId = clienteId;
+      }
+
+      const response = await api.post('/projudi/processos/auto-cadastrar', payload);
       return response.data;
     },
     onSuccess: () => {
